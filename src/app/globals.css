@@ -1,8 +1,10 @@
 @import "tailwindcss";
+@plugin "daisyui";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-primary: 'Poppins', Arial, Helvetica, sans-serif; /* Added Poppins as the primary font */
 }
 
 @theme inline {
@@ -19,8 +21,16 @@
   }
 }
 
+input:-webkit-autofill {
+  background-color: #e5e7eb; /* Match the background color */
+  color: #6b7280; /* Match the text color */
+  border: 1px solid #d1d5db; /* Match the border color */
+  -webkit-text-fill-color: #6b7280; /* Ensure text color matches */
+  transition: background-color 5000s ease-in-out 0s; /* Prevent flashing */
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-primary); /* Updated to use the new font-primary variable */
 }
