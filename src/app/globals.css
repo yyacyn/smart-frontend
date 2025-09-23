@@ -5,16 +5,13 @@
   --background: #ffffff;
   --foreground: #171717;
   --font-primary: 'Poppins', Arial, Helvetica, sans-serif; /* Added Poppins as the primary font */
+  --color-green: #84994F;
+  --color-yellow: #FFE797;
+  --color-blue: #476EAE;
+  --color-orange: #ED775A;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
@@ -33,4 +30,18 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-primary); /* Updated to use the new font-primary variable */
+}
+
+/* Example usage */
+.green-custom {
+  background-color: var(--color-green);
+}
+.yellow-custom {
+  background-color: var(--color-yellow);
+}
+.blue-custom {
+  background-color: var(--color-blue);
+}
+.orange-custom {
+  background-color: var(--color-orange);
 }
