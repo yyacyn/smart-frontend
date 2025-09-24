@@ -7,6 +7,7 @@ import { FcGoogle } from "react-icons/fc";
 
 export default function Navbar() {
     const [searchQuery, setSearchQuery] = useState("");
+    const [isActive, setIsActive] = useState(false);
 
     return (
         <header className="bg-white shadow-md">
@@ -46,16 +47,17 @@ export default function Navbar() {
                     <button className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] hover:border-none">
                         <FiShoppingCart size={20} />
                     </button>
-                    <div className="dropdown dropdown-end">
-                        <div tabIndex={0} role="button" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] hover:border-none">
+                    <div className="dropdown dropdown-end" onClick={() => setIsActive(!isActive)} onBlur={() => setIsActive(false)}>
+                        <div tabIndex={0} role="button" className={`btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] focus:bg-[#ED775A] focus:text-white hover:border-none ${isActive ? 'bg-[#ED775A] text-white' : ''}`}>
                             <FiUser size={20} />
                         </div>
                         <ul
                             tabIndex={0}
                             className="menu menu-sm dropdown-content rounded-box z-1 mt-3 w-52 p-2 shadow bg-white">
                             <li className="flex items-center space-x-2">
-                                {/* <FcGoogle className="w-5 h-5 text-black" /> */}
-                                <a href="/auth/login" className="hover:bg-gray-200  w-full py-2"><FcGoogle className="w-4 h-4 text-black" />Login with Google</a>
+                                <a href="/auth/login" className="hover:bg-gray-200 w-full py-2">
+                                    <FcGoogle className="w-4 h-4 text-black" />Login with Google
+                                </a>
                             </li>
                         </ul>
                     </div>
