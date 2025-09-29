@@ -146,7 +146,7 @@ export default function LandingPage() {
                                 <div className="max-w-md">
                                     <h1 className="text-5xl font-bold text-white drop-shadow-lg">SMART</h1>
                                     <p className="py-6 text-white/90 text-lg font-medium">
-                                        Platform jual beli online terpercaya untuk masyarakat Sukmajaya. 
+                                        Platform jual beli online terpercaya untuk masyarakat Sukmajaya.
                                         Temukan produk lokal berkualitas dari penjual terverifikasi!
                                     </p>
                                     <button className="btn btn-lg bg-white text-[#ED775A] hover:bg-white/90 border-none shadow-lg">
@@ -193,58 +193,53 @@ export default function LandingPage() {
                     <div className="relative">
                         <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden">
                             <div className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#FFE797]/30">
-                                <figure className="relative overflow-hidden">
-                                    <img src="/images/categories/local.jpg" alt="Kerajinan Lokal" className="h-48 w-full object-cover transition-transform duration-500 hover:scale-110" />
+                                <figure className="relative overflow-hidden h-full w-full">
+                                    <img
+                                        src="/images/categories/local.jpg"
+                                        alt="Kerajinan Lokal"
+                                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                                    />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                    <div className="badge badge-warning absolute top-4 right-4">🏆 Unggulan</div>
                                 </figure>
-                                <div className="card-body text-center">
+
+                                <div className="card-body text-center py-2">
                                     <h3 className="card-title justify-center text-lg font-bold text-[#84994F]">Kerajinan Lokal</h3>
-                                    <p className="text-gray-600 text-sm">Produk khas Sukmajaya</p>
                                 </div>
                             </div>
-                            <div className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#476EAE]/30">
-                                <figure className="relative overflow-hidden">
-                                    <img src="/images/categories/food.jpg" alt="Makanan & Minuman" className="h-48 w-full object-cover transition-transform duration-500 hover:scale-110" />
+                            <div className="card bg-white mx-1 h-[400px] my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#476EAE]/30">
+                                <figure className="relative overflow-hidden h-full w-full">
+                                    <img src="/images/categories/food.jpg" alt="Makanan & Minuman" className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                    <div className="badge bg-[#476EAE] text-white border-none absolute top-4 right-4">🍽️ Fresh</div>
                                 </figure>
-                                <div className="card-body text-center">
+                                <div className="card-body text-center py-2">
                                     <h3 className="card-title justify-center text-lg font-bold text-[#476EAE]">Makanan & Minuman</h3>
-                                    <p className="text-gray-600 text-sm">Kuliner lokal terbaik</p>
                                 </div>
                             </div>
                             <div className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#ED775A]/30">
-                                <figure className="relative overflow-hidden">
-                                    <img src="/images/categories/clothes.jpg" alt="Pakaian" className="h-48 w-full object-cover transition-transform duration-500 hover:scale-110" />
+                                <figure className="relative overflow-hidden h-full w-full">
+                                    <img src="/images/categories/clothes.jpg" alt="Pakaian" className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                    <div className="badge bg-[#ED775A] text-white border-none absolute top-4 right-4">👕 Trendy</div>
                                 </figure>
-                                <div className="card-body text-center">
+                                <div className="card-body text-center py-2">
                                     <h3 className="card-title justify-center text-lg font-bold text-[#ED775A]">Pakaian</h3>
-                                    <p className="text-gray-600 text-sm">Fashion lokal berkualitas</p>
                                 </div>
                             </div>
                             <div className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#84994F]/30">
-                                <figure className="relative overflow-hidden">
-                                    <img src="/images/categories/dailies.jpg" alt="Kebutuhan Harian" className="h-48 w-full object-cover transition-transform duration-500 hover:scale-110" />
+                                <figure className="relative overflow-hidden h-full w-full">
+                                    <img src="/images/categories/dailies.jpg" alt="Kebutuhan Harian" className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                    <div className="badge bg-[#84994F] text-white border-none absolute top-4 right-4">🏠 Daily</div>
                                 </figure>
-                                <div className="card-body text-center">
+                                <div className="card-body text-center py-2">
                                     <h3 className="card-title justify-center text-lg font-bold text-[#84994F]">Kebutuhan Harian</h3>
-                                    <p className="text-gray-600 text-sm">Lengkapi kebutuhan rumah</p>
                                 </div>
                             </div>
                             <div className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#476EAE]/30">
-                                <figure className="relative overflow-hidden">
-                                    <img src="/images/categories/drugs.jpg" alt="Kesehatan & Kecantikan" className="h-48 w-full object-cover transition-transform duration-500 hover:scale-110" />
+                                <figure className="relative overflow-hidden h-full w-full">
+                                    <img src="/images/categories/drugs.jpg" alt="Kesehatan & Kecantikan" className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                    <div className="badge bg-[#476EAE] text-white border-none absolute top-4 right-4">💄 Beauty</div>
                                 </figure>
-                                <div className="card-body text-center">
+                                <div className="card-body text-center py-2">
                                     <h3 className="card-title justify-center text-lg font-bold text-[#476EAE]">Kesehatan & Kecantikan</h3>
-                                    <p className="text-gray-600 text-sm">Produk perawatan terpercaya</p>
                                 </div>
                             </div>
                         </div>
@@ -330,7 +325,7 @@ export default function LandingPage() {
                                 </span>
                                 <p className="text-gray-600 text-sm">Jangan sampai terlewat!</p>
                             </div>
-                            <button 
+                            <button
                                 className="btn btn-circle bg-[#ED775A] hover:bg-[#ED775A]/80 text-white border-none shadow-lg"
                                 onClick={() => window.location.href = '/flash-sale'}
                             >
@@ -448,139 +443,56 @@ export default function LandingPage() {
             {/* Information Section */}
             <section className="py-24 bg-gradient-to-br from-white via-[#FFE797]/5 to-[#84994F]/5">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-20">
-                        <div className="flex items-center justify-center gap-4 mb-6">
-                            <div className="badge badge-lg bg-gradient-to-r from-[#ED775A] to-[#FFE797] text-white border-none">🚀 Unggulan</div>
-                            <h2 className="text-5xl font-bold bg-gradient-to-r from-[#ED775A] to-[#476EAE] bg-clip-text text-transparent">Mengapa Memilih SMART?</h2>
-                            <div className="badge badge-lg bg-gradient-to-r from-[#84994F] to-[#476EAE] text-white border-none">✨ Terpercaya</div>
-                        </div>
-                        <p className="text-2xl text-gray-600 font-medium">Platform terpercaya untuk ekonomi digital Sukmajaya</p>
-                        <div className="divider divider-warning w-24 mx-auto mt-8"></div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-                        {/* Seller Info Card */}
-                        <div className="card bg-gradient-to-br from-[#84994F]/15 to-[#84994F]/5 shadow-2xl border border-[#84994F]/30 hover:shadow-3xl transition-all duration-500 hover:-translate-y-2">
-                            <div className="card-body p-10">
-                                <div className="flex gap-6 mb-8 items-center">
-                                    <span className="text-5xl">🏪</span>
-                                    <div>
-                                        <h2 className="text-3xl font-bold bg-gradient-to-r from-[#84994F] to-[#476EAE] bg-clip-text text-transparent">Untuk Seller</h2>
-                                        <p className="text-[#84994F] font-medium">Wujudkan impian bisnis Anda</p>
-                                    </div>
-                                </div>
-
-                                <p className="text-gray-700 mb-6 leading-relaxed text-lg">
-                                    Bergabunglah sebagai <span className="font-bold text-[#84994F] bg-[#84994F]/10 px-2 py-1 rounded">SMART Seller</span> dan nikmati
-                                    kemudahan mempromosikan produk Anda ke lebih banyak pelanggan di sekitar Sukmajaya.
-                                </p>
-
-                                <div className="divider">
-                                    <div className="badge badge-lg bg-[#84994F] text-white border-none">🚀 SMART Pro Benefits</div>
-                                </div>
-
-                                <div className="grid gap-4 mb-8">
-                                    {[
-                                        { icon: "✅", text: "Tanda verifikasi resmi di lapak Anda", color: "success" },
-                                        { icon: "⭐", text: "Produk tampil di halaman utama aplikasi", color: "warning" },
-                                        { icon: "📈", text: "Akses ke fitur promosi khusus", color: "info" },
-                                    ].map((benefit, index) => (
-                                        <div key={index} className="alert outline-none border-none shadow-none bg-white ">
-                                            <span className="text-2xl">{benefit.icon}</span>
-                                            <span className="text-gray-700 font-medium">{benefit.text}</span>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="card-actions justify-center">
-                                    <button className="btn btn-lg bg-gradient-to-r from-[#84994F] to-[#476EAE] hover:from-[#84994F]/80 hover:to-[#476EAE]/80 text-white border-none shadow-xl">
-                                        <span className="text-lg">🚀</span>
-                                        Mulai Jual Sekarang
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Buyer Info Card */}
-                        <div className="card bg-gradient-to-br from-[#476EAE]/15 to-[#476EAE]/5 shadow-2xl border border-[#476EAE]/30 hover:shadow-3xl transition-all duration-500 hover:-translate-y-2">
-                            <div className="card-body p-10">
-                                <div className="flex gap-6 mb-8 items-center">
-                                    <span className="text-5xl">🛒</span>
-                                    <div>
-                                        <h2 className="text-3xl font-bold bg-gradient-to-r from-[#476EAE] to-[#ED775A] bg-clip-text text-transparent">Untuk Pembeli</h2>
-                                        <p className="text-[#476EAE] font-medium">Belanja mudah, aman, terpercaya</p>
-                                    </div>
-                                </div>
-
-                                <p className="text-gray-700 mb-6 leading-relaxed text-lg">
-                                    Temukan beragam produk kebutuhan sehari-hari dari penjual lokal mulai dari makanan, kerajinan tangan,
-                                    hingga produk fashion dan rumah tangga yang berkualitas.
-                                </p>
-
-                                <div className="divider">
-                                    <div className="badge badge-lg bg-[#476EAE] text-white border-none">🎁 Promo Eksklusif</div>
-                                </div>
-
-                                <div className="grid gap-4 mb-8">
-                                    {[
-                                        { icon: "💰", text: "Voucher Cashback dari lapak tertentu", color: "success" },
-                                        { icon: "🚚", text: "Promo Gratis Ongkir Lokal", color: "warning" },
-                                        { icon: "🏷️", text: "Diskon Produk dari lapak berpartisipasi", color: "error" },
-                                    ].map((promo, index) => (
-                                        <div key={index} className="alert outline-none border-none shadow-none bg-white">
-                                            <span className="text-2xl">{promo.icon}</span>
-                                            <span className="text-gray-700 font-medium">{promo.text}</span>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="card-actions justify-center">
-                                    <button className="btn btn-lg bg-gradient-to-r from-[#476EAE] to-[#ED775A] hover:from-[#476EAE]/80 hover:to-[#ED775A]/80 text-white border-none shadow-xl">
-                                        <span className="text-lg">🛍️</span>
-                                        Mulai Belanja Sekarang
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="card bg-gradient-to-r from-[#FFE797]/30 via-[#FFE797]/20 to-[#FFE797]/10 shadow-2xl border-2 border-[#FFE797]/50 hover:shadow-3xl transition-all duration-500">
-                        <div className="card-body p-12 text-center">
-                            <span className="text-6xl">🏆</span>
-                            <h2 className="text-4xl font-bold bg-gradient-to-r from-[#ED775A] to-[#476EAE] bg-clip-text text-transparent mb-6">
-                                Belanja Aman di Lapak Terverifikasi
-                            </h2>
-                            <p className="text-gray-700 mb-8 max-w-4xl mx-auto leading-relaxed text-xl">
-                                Gunakan fitur <span className="font-bold text-[#ED775A] bg-[#ED775A]/10 px-3 py-1 rounded-full">Lapak Terverifikasi</span> yang sudah dicek
-                                tim SMART agar produk terjamin dan berasal dari pelaku usaha lokal terpercaya. Temukan produk khas
-                                Sukmajaya dengan kualitas terbaik!
-                            </p>
-
-                            <div className="flex flex-wrap justify-center gap-6 mb-8">
-                                <div className="stat bg-gradient-to-br from-[#84994F] to-[#84994F]/80 text-white rounded-2xl shadow-xl">
-                                    <span className="text-2xl">✓</span>
-                                    <div className="stat-title text-white/80">Jaminan</div>
-                                    <div className="stat-value text-lg">Produk Original</div>
-                                </div>
-                                <div className="stat bg-gradient-to-br from-[#476EAE] to-[#476EAE]/80 text-white rounded-2xl shadow-xl">
-                                    <span className="text-2xl">🛡️</span>
-                                    <div className="stat-title text-white/80">Terpercaya</div>
-                                    <div className="stat-value text-lg">Seller Verified</div>
-                                </div>
-                                <div className="stat bg-gradient-to-br from-[#ED775A] to-[#ED775A]/80 text-white rounded-2xl shadow-xl">
-                                    <span className="text-2xl">🏠</span>
-                                    <div className="stat-title text-white/80">Lokal</div>
-                                    <div className="stat-value text-lg">Khas Sukmajaya</div>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-center">
-                                <button className="btn btn-lg bg-gradient-to-r from-[#ED775A] to-[#FFE797] hover:from-[#ED775A]/80 hover:to-[#FFE797]/80 text-white border-none shadow-xl">
-                                    <span className="text-xl">🔍</span>
-                                    Cari Lapak Terverifikasi
-                                </button>
-                            </div>
-                        </div>
+                    <div className="text-left mb-12">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Nikmati Mudah dan Nyaman Berjualan Online di SMART</h2>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            SMART adalah platform jual beli online khusus untuk wilayah Sukmajaya. Tujuan kami adalah memudahkan masyarakat Sukmajaya dalam melakukan transaksi jual beli secara digital, sekaligus mendukung pertumbuhan ekonomi lokal dengan mempertemukan penjual dan pembeli dalam satu ekosistem online yang terintegrasi.
+                        </p>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            Anda memiliki usaha? Saatnya membawa bisnis Anda ke ranah online! Bergabunglah sebagai SMART Seller dan nikmati kemudahan mempromosikan produk Anda ke lebih banyak pelanggan di sekitar Sukmajaya. Proses pendaftarannya sangat mudah cukup isi data diri, buat nama lapak Anda, dan mulai unggah produk.
+                        </p>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            Untuk pelaku usaha yang ingin lebih menonjol, kami menyediakan fitur SMART Pro dengan berbagai keuntungan, seperti:
+                        </p>
+                        <ul className="list-disc list-inside text-left text-md text-gray-700 mb-8">
+                            <li>Tanda verifikasi resmi di lapak Anda untuk meningkatkan kepercayaan pembeli.</li>
+                            <li>Produk Anda tampil di halaman utama aplikasi.</li>
+                            <li>Akses ke fitur promosi khusus yang membantu meningkatkan visibilitas dan penjualan.</li>
+                        </ul>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            Ayo, kembangkan usaha Anda bersama komunitas lokal Sukmajaya melalui SMART!
+                        </p>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Belanja Produk Lokal Berkualitas di SMART</h2>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            SMART menghadirkan pengalaman berbelanja online yang lebih dekat dan relevan bagi warga Sukmajaya. Di sini, Anda bisa menemukan beragam produk kebutuhan sehari-hari dari penjual lokal mulai dari makanan, kerajinan tangan, hingga produk fesyen dan rumah tangga.
+                        </p>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            Karena SMART belum memiliki sistem pembayaran di dalam aplikasi, proses transaksi dilakukan langsung antara pembeli dan penjual. Anda bisa memilih metode pembayaran yang disepakati bersama, seperti transfer bank atau pembayaran di tempat (COD).
+                        </p>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            Pengiriman barang juga dilakukan oleh kurir lokal atau melalui metode yang telah disepakati antara pembeli dan penjual, sehingga prosesnya lebih fleksibel dan efisien.
+                        </p>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            Kami memastikan kenyamanan dan keamanan transaksi dengan menyediakan informasi lengkap lapak dan produk, serta sistem komunikasi langsung melalui aplikasi untuk mempermudah interaksi antara penjual dan pembeli.
+                        </p>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Belanja Produk Original dan Khas Sukmajaya di Lapak Terverifikasi SMART</h2>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            Masih ragu belanja online karena takut tertipu? Di SMART, Anda bisa berbelanja dengan tenang lewat fitur Lapak Terverifikasi. Lapak ini telah melewati proses verifikasi oleh tim SMART, sehingga produk yang ditawarkan memiliki kualitas yang lebih terjamin dan berasal dari pelaku usaha lokal terpercaya.
+                        </p>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            Temukan produk khas Sukmajaya, mulai dari kuliner tradisional, fesyen dari UMKM lokal, hingga berbagai kebutuhan rumah tangga.
+                        </p>
+                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                            Untuk membuat belanja Anda lebih menyenangkan, SMART juga menyediakan berbagai promo dan voucher menarik, seperti:
+                        </p>
+                        <ul className="list-disc list-inside text-left text-md text-gray-700 mb-8">
+                            <li>Voucher Cashback (dari lapak tertentu)</li>
+                            <li>Promo Gratis Ongkir Lokal (dengan ketentuan tertentu)</li>
+                            <li>Diskon Produk dari lapak yang berpartisipasi</li>
+                        </ul>
+                        <p className="text-md text-gray-700 leading-relaxed">
+                            Dukung pelaku usaha lokal dan nikmati pengalaman berbelanja yang lebih personal dengan menggunakan aplikasi SMART Pasar Online Sukmajaya.
+                        </p>
                     </div>
                 </div>
             </section>
