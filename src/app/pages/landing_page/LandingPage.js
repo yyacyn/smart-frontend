@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "../navbar/Navbar";
-import Footer from "../footer/Footer";
+import Navbar from "../../components/navbar/Navbar";
+import Footer from "../../components/footer/Footer";
 import { fetchProducts } from "../../api";
-import ProductCard from "../product/Card";
+import ProductCard from "../../components/product/Card";
 
 export default function LandingPage() {
     const [products, setProducts] = useState([]);
@@ -252,9 +252,7 @@ export default function LandingPage() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
                         <div className="flex items-center justify-center gap-4 mb-4">
-                            <div className="badge badge-lg bg-red-500 text-white border-none animate-pulse">🔥 HOT</div>
                             <h2 className="text-4xl font-bold text-white drop-shadow-lg">FLASH SALE</h2>
-                            <div className="badge badge-lg bg-red-500 text-white border-none animate-pulse">⚡ SALE</div>
                         </div>
                         <p className="text-xl text-white/90 font-medium">Buruan! Penawaran terbatas waktu dengan diskon fantastis</p>
                         <div className="flex justify-center mt-4">
@@ -344,9 +342,7 @@ export default function LandingPage() {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
                             <div className="flex items-center justify-center gap-3 mb-4">
-                                <div className="badge badge-lg bg-[#84994F] text-white border-none">🏆 Populer</div>
                                 <h2 className="text-4xl font-bold text-gray-900">Produk Terlaku</h2>
-                                <div className="badge badge-lg bg-[#84994F] text-white border-none">⭐ Best</div>
                             </div>
                             <p className="text-xl text-gray-600">Produk pilihan yang paling diminati pelanggan SMART</p>
                         </div>
@@ -383,9 +379,7 @@ export default function LandingPage() {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
                             <div className="flex items-center justify-center gap-3 mb-4">
-                                <div className="badge badge-lg bg-[#476EAE] text-white border-none">🎯 Personal</div>
                                 <h2 className="text-4xl font-bold text-gray-900">Rekomendasi Untukmu</h2>
-                                <div className="badge badge-lg bg-[#476EAE] text-white border-none">✨ Smart</div>
                             </div>
                             <p className="text-xl text-gray-600">Dipilih khusus berdasarkan preferensi dan minat Anda</p>
                         </div>
