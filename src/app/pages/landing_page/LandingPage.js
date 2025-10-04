@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 import { fetchProducts } from "../../api";
 import ProductCard from "../../components/product/Card";
+import RecsCard from "../../components/product/RecsCard";
+import FlashCard from '../../components/product/Flash';
 
 export default function LandingPage() {
+    const router = useRouter();
     const [products, setProducts] = useState([]);
     const [countdown, setCountdown] = useState("23:59:45");
     const [precomputedFlashSales, setPrecomputedFlashSales] = useState([]);
@@ -51,9 +55,33 @@ export default function LandingPage() {
                     setProducts(data.products);
                 } else {
                     console.error("Unexpected data format:", data);
+                    setProducts([
+                        {
+                            ID: 0,
+                            nama_produk: "Dummy Product",
+                            harga: 10000,
+                            discount: 20,
+                            rating: 4,
+                            reviews: 34,
+                            kategori: "Dummy",
+                            image: "https://soccerwearhouse.com/cdn/shop/files/Portugal_2025_Home_Jersey_by_PUMA_-_Cristiano_Ronaldo.jpg?v=1736466474", // Reverted to use the provided external link
+                        },
+                    ]);
                 }
             } catch (error) {
                 console.error("Failed to fetch products:", error);
+                setProducts([
+                    {
+                        ID: 0,
+                        nama_produk: "Dummy Product",
+                        harga: 10000,
+                        discount: 20,
+                        rating: 4,
+                        reviews: 34,
+                        kategori: "Dummy",
+                        image: "https://soccerwearhouse.com/cdn/shop/files/Portugal_2025_Home_Jersey_by_PUMA_-_Cristiano_Ronaldo.jpg?v=1736466474", // Reverted to use the provided external link
+                    },
+                ]);
             }
         };
 
@@ -133,12 +161,16 @@ export default function LandingPage() {
         setPrecomputedProducts(precomputed);
     }, [products]);
 
+    const handleProductClick = (productId) => {
+        router.push(`/product_detail/${productId}`);
+    };
+
     return (
         <div className="min-h-screen bg-white">
             <Navbar />
 
             {/* Hero Section */}
-            <section className="bg-gradient-to-br from-[#ED775A] to-[#FFE797] py-16">
+            <section className="bg-gradient-to-br from-[#ED775A] to-[#FFE797] py-16 mt-16">
                 <div className="max-w-7xl mx-auto px-4 my-5 sm:px-6 lg:px-8">
                     <div className="flex flex-col lg:flex-row gap-8">
                         <div className="hero bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm rounded-xl lg:w-[70%] min-h-96 shadow-2xl border border-white/20">
@@ -257,7 +289,7 @@ export default function LandingPage() {
                         <p className="text-xl text-white/90 font-medium">Buruan! Penawaran terbatas waktu dengan diskon fantastis</p>
                         <div className="flex justify-center mt-4">
                             <div className="stats shadow-lg bg-white/20 backdrop-blur-sm border border-white/30">
-                                <div className="stat place-items-center ">
+                                <div className="stat place-items-center">
                                     <div className="stat-title text-white/80">Berakhir dalam</div>
                                     <div className="stat-value text-white text-2xl w-30">{countdown}</div>
                                 </div>
@@ -266,56 +298,13 @@ export default function LandingPage() {
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-6 px-1 py-2">
                         {precomputedFlashSales.map((product) => (
-                            <div
+                            <FlashCard
                                 key={product.ID}
-                                className="card bg-white outline-1 hover:cursor-pointer outline-gray-200 hover:-translate-y-1 transition-transform duration-400"
-                            >
-                                <figure className="relative">
-                                    <img
-                                        src={`https://backend-go-gin-production.up.railway.app/uploads/products/${product.image}/1.jpg`}
-                                        alt={product.nama_produk}
-                                        className="w-full h-50 object-cover"
-                                    />
-                                    <div className="badge badge-primary absolute top-2 right-2">
-                                        -{product.discount}%
-                                    </div>
-                                </figure>
-
-                                <div className="card-body px-3">
-                                    <h2 className="card-title text-sm md:text-base">
-                                        {product.nama_produk}
-                                    </h2>
-
-                                    {/* Rating + reviews */}
-                                    <div className="flex items-center gap-2">
-                                        <div className="rating rating-sm">
-                                            {Array.from({ length: 5 }).map((_, i) => (
-                                                <input
-                                                    key={i}
-                                                    type="radio"
-                                                    name={`rating-${product.ID}`}
-                                                    className="mask mask-star-2 bg-orange-400"
-                                                    defaultChecked={i < product.rating}
-                                                />
-                                            ))}
-                                        </div>
-                                        <span className="text-xs text-gray-500">
-                                            ({product.reviews} reviews)
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-red-500 font-bold">
-                                            Rp {product.discountedPrice.toLocaleString("id-ID")}
-                                        </span>
-                                        <span className="text-gray-400 line-through text-sm">
-                                            Rp {product.harga.toLocaleString("id-ID")}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+                                product={product}
+                                onClick={handleProductClick}
+                            />
                         ))}
-                        <div className="card bg-gradient-to-br from-white to-[#FFE797]/30 border border-white/50 flex flex-col justify-center items-center space-y-4  transition-all duration-300 hover:-translate-y-1">
+                        <div className="card bg-gradient-to-br from-white to-[#FFE797]/30 border border-white/50 flex flex-col justify-center items-center space-y-4 transition-all duration-300 hover:-translate-y-1">
                             <div className="text-center">
                                 <div className="text-3xl mb-2">🛍️</div>
                                 <span className="text-[#ED775A] font-bold text-lg mx-8 text-center block mb-2">
@@ -323,14 +312,7 @@ export default function LandingPage() {
                                 </span>
                                 <p className="text-gray-600 text-sm">Jangan sampai terlewat!</p>
                             </div>
-                            <button
-                                className="btn btn-circle bg-[#ED775A] hover:bg-[#ED775A]/80 text-white border-none shadow-lg"
-                                onClick={() => window.location.href = '/flash-sale'}
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </button>
+                            <button className="btn btn-primary">Lihat Semua</button>
                         </div>
                     </div>
                 </div>
@@ -385,47 +367,11 @@ export default function LandingPage() {
                         </div>
                         <div className="grid grid-cols-2 grid-rows-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
                             {precomputedProducts.slice(0, 10).map((product) => (
-                                <div
+                                <RecsCard
                                     key={product.ID}
-                                    className="card bg-white outline-1 hover:cursor-pointer outline-gray-200 hover:-translate-y-1 transition-transform duration-400"
-                                >
-                                    <figure className="relative">
-                                        <img
-                                            src={`https://backend-go-gin-production.up.railway.app/uploads/products/${product.ID}/1.jpg`}
-                                            alt={product.nama_produk}
-                                            className="w-full h-50 object-cover"
-                                        />
-                                        <div className="badge badge-warning absolute top-2 right-2">💝 Rekomendasi</div>
-                                    </figure>
-
-                                    <div className="card-body px-3">
-                                        <h2 className="card-title text-sm md:text-base">
-                                            {product.nama_produk}
-                                        </h2>
-
-                                        {/* Rating + reviews */}
-                                        <div className="flex items-center gap-2">
-                                            <div className="rating rating-sm">
-                                                {Array.from({ length: 5 }).map((_, i) => (
-                                                    <input
-                                                        key={i}
-                                                        type="radio"
-                                                        name={`rating-rec-${product.ID}`}
-                                                        className="mask mask-star-2 bg-orange-400"
-                                                        defaultChecked={i < product.rating}
-                                                    />
-                                                ))}
-                                            </div>
-                                            <span className="text-xs text-gray-500">
-                                                ({product.reviews} reviews)
-                                            </span>
-                                        </div>
-
-                                        <p className="text-gray-600">
-                                            Rp {product.harga.toLocaleString("id-ID")}
-                                        </p>
-                                    </div>
-                                </div>
+                                    product={product}
+                                    onClick={handleProductClick}
+                                />
                             ))}
                         </div>
                     </div>

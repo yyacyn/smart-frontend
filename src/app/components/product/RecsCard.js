@@ -1,24 +1,23 @@
-import React from "react";
+import React from 'react';
 import Link from "next/link";
 
-export default function ProductCard() {
-    const products = [
+export default function RecsCard() {
+    const recommendedProducts = [
         {
             ID: 0,
-            nama_produk: "Dummy Product",
+            nama_produk: 'Dummy Product',
             harga: 10000,
             discount: 20,
             rating: 4,
             reviews: 34,
-            kategori: "Dummy",
-            image:
-                "https://soccerwearhouse.com/cdn/shop/files/Portugal_2025_Home_Jersey_by_PUMA_-_Cristiano_Ronaldo.jpg?v=1736466474",
+            kategori: 'Dummy',
+            image: 'https://soccerwearhouse.com/cdn/shop/files/Portugal_2025_Home_Jersey_by_PUMA_-_Cristiano_Ronaldo.jpg?v=1736466474',
         },
     ];
 
     return (
         <div className="">
-            {products.map((product) => (
+            {recommendedProducts.map((product) => (
                 <Link
                     key={product.ID}
                     href={{
@@ -26,15 +25,18 @@ export default function ProductCard() {
                         query: { id: product.ID }, // you can add more fields here if needed
                     }}
                 >
-                    <div className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300">
+                    <div
+                        key={product.ID}
+                        className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300"
+                    >
                         <figure className="relative w-full h-64 overflow-hidden rounded-t-lg">
                             <img
                                 src={product.image}
                                 alt={product.nama_produk}
                                 className="w-full h-full object-cover"
                             />
-                            <div className="badge badge-primary absolute top-2 right-2">
-                                {product.kategori}
+                            <div className="badge badge-warning absolute top-2 right-2">
+                                💖 Rekomendasi
                             </div>
                         </figure>
 
