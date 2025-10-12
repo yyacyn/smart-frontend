@@ -32,6 +32,11 @@ body {
   font-family: var(--font-primary); /* Updated to use the new font-primary variable */
 }
 
+.tab {
+  color: black !important;
+}
+
+
 /* Example usage */
 .green-custom {
   background-color: var(--color-green);
