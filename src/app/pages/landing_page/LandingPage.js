@@ -8,6 +8,7 @@ import { fetchProducts } from "../../api";
 import ProductCard from "../../components/product/Card";
 import RecsCard from "../../components/product/RecsCard";
 import FlashCard from '../../components/product/Flash';
+import { sampleProducts, flashSales, recommendedProducts } from "../../data/products";
 
 export default function LandingPage() {
     const router = useRouter();
@@ -15,77 +16,10 @@ export default function LandingPage() {
     const [countdown, setCountdown] = useState("23:59:45");
     const [precomputedFlashSales, setPrecomputedFlashSales] = useState([]);
     const [precomputedProducts, setPrecomputedProducts] = useState([]);
-
-    const flashSales = [
-        {
-            ID: 1,
-            nama_produk: "Flash Sale Product 1",
-            harga: 25000,
-            discount: 10, // 10% discount
-            image: "1",
-        },
-        {
-            ID: 2,
-            nama_produk: "Flash Sale Product 2",
-            harga: 30000,
-            discount: 15, // 15% discount
-            image: "2",
-        },
-        {
-            ID: 3,
-            nama_produk: "Flash Sale Product 3",
-            harga: 20000,
-            discount: 20, // 20% discount
-            image: "3",
-        },
-        {
-            ID: 4,
-            nama_produk: "Flash Sale Product 4",
-            harga: 15000,
-            discount: 5, // 5% discount
-            image: "4",
-        },
-    ];
+    const [recommendedProductsList, setRecommendedProductsList] = useState([]);
 
     useEffect(() => {
-        const loadProducts = async () => {
-            try {
-                const data = await fetchProducts();
-                if (data && Array.isArray(data.products)) {
-                    setProducts(data.products);
-                } else {
-                    console.error("Unexpected data format:", data);
-                    setProducts([
-                        {
-                            ID: 0,
-                            nama_produk: "Dummy Product",
-                            harga: 10000,
-                            discount: 20,
-                            rating: 4,
-                            reviews: 34,
-                            kategori: "Dummy",
-                            image: "https://soccerwearhouse.com/cdn/shop/files/Portugal_2025_Home_Jersey_by_PUMA_-_Cristiano_Ronaldo.jpg?v=1736466474", // Reverted to use the provided external link
-                        },
-                    ]);
-                }
-            } catch (error) {
-                console.error("Failed to fetch products:", error);
-                setProducts([
-                    {
-                        ID: 0,
-                        nama_produk: "Dummy Product",
-                        harga: 10000,
-                        discount: 20,
-                        rating: 4,
-                        reviews: 34,
-                        kategori: "Dummy",
-                        image: "https://soccerwearhouse.com/cdn/shop/files/Portugal_2025_Home_Jersey_by_PUMA_-_Cristiano_Ronaldo.jpg?v=1736466474", // Reverted to use the provided external link
-                    },
-                ]);
-            }
-        };
-
-        loadProducts();
+        setProducts(sampleProducts);
     }, []);
 
     useEffect(() => {
@@ -132,34 +66,16 @@ export default function LandingPage() {
     }, []);
 
     useEffect(() => {
-        const computedSales = flashSales.map((product) => {
-            const discountedPrice = product.harga - (product.harga * product.discount) / 100;
-            const rating = Math.floor(Math.random() * 3) + 3; // 3–5 stars
-            const reviews = Math.floor(Math.random() * 200) + 20;
-
-            return {
-                ...product,
-                discountedPrice,
-                rating,
-                reviews,
-            };
-        });
-        setPrecomputedFlashSales(computedSales);
+        setPrecomputedFlashSales(flashSales);
     }, []);
 
     useEffect(() => {
-        const precomputed = products.map((product) => {
-            const rating = Math.floor(Math.random() * 3) + 3; // 3–5 stars
-            const reviews = Math.floor(Math.random() * 200) + 20;
+        setPrecomputedProducts(sampleProducts);
+    }, []);
 
-            return {
-                ...product,
-                rating,
-                reviews,
-            };
-        });
-        setPrecomputedProducts(precomputed);
-    }, [products]);
+    useEffect(() => {
+        setRecommendedProductsList(recommendedProducts);
+    }, []);
 
     const handleProductClick = (productId) => {
         router.push(`/product_detail/${productId}`);
@@ -366,11 +282,10 @@ export default function LandingPage() {
                             <p className="text-xl text-gray-600">Dipilih khusus berdasarkan preferensi dan minat Anda</p>
                         </div>
                         <div className="grid grid-cols-2 grid-rows-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-                            {precomputedProducts.slice(0, 10).map((product) => (
+                            {recommendedProductsList.map((product) => (
                                 <RecsCard
                                     key={product.ID}
-                                    product={product}
-                                    onClick={handleProductClick}
+                                    recommendedProducts={[product]}
                                 />
                             ))}
                         </div>

@@ -1,29 +1,13 @@
 import React from 'react';
 import Link from "next/link";
 
-export default function RecsCard() {
-    const recommendedProducts = [
-        {
-            ID: 0,
-            nama_produk: 'Dummy Product',
-            harga: 10000,
-            discount: 20,
-            rating: 4,
-            reviews: 34,
-            kategori: 'Dummy',
-            image: 'https://soccerwearhouse.com/cdn/shop/files/Portugal_2025_Home_Jersey_by_PUMA_-_Cristiano_Ronaldo.jpg?v=1736466474',
-        },
-    ];
-
+export default function RecsCard({ recommendedProducts = [] }) {
     return (
         <div className="">
             {recommendedProducts.map((product) => (
                 <Link
                     key={product.ID}
-                    href={{
-                        pathname: "/pages/product_detail",
-                        query: { id: product.ID }, // you can add more fields here if needed
-                    }}
+                    href={`/pages/product_detail/${product.ID}`}
                 >
                     <div
                         key={product.ID}
@@ -35,13 +19,16 @@ export default function RecsCard() {
                                 alt={product.nama_produk}
                                 className="w-full h-full object-cover"
                             />
-                            <div className="badge badge-warning absolute top-2 right-2">
+                            {/* <div className="badge badge-warning absolute top-2 right-2">
                                 💖 Rekomendasi
+                            </div> */}
+                            <div className="badge badge-primary absolute top-2 right-2">
+                                {product.kategori}
                             </div>
                         </figure>
 
-                        <div className="card-body px-4 py-3">
-                            <h2 className="card-title text-sm md:text-base font-semibold text-gray-800">
+                        <div className="card-body px-3 py-3">
+                            <h2 className="card-title text-sm md:text-base font-semibold text-gray-800 truncate">
                                 {product.nama_produk}
                             </h2>
 

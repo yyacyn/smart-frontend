@@ -40,6 +40,7 @@ module.exports = {
             "luxury",
             "dracula",
         ],
+        defaultTheme: "light",
         
     },
 };

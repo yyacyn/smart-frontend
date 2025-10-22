@@ -1,21 +1,42 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import Navbar from "../../components/navbar/Navbar"
-import Footer from "../../components/footer/Footer"
-import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare, Fa } from "react-icons/fi"
-import { FaStar } from "react-icons/fa"
-import ProductCard from "../../components/product/Card"
+import { useMemo, useState, useEffect } from "react"
+import { useParams } from "next/navigation"
+import Navbar from "../../../components/navbar/Navbar"
+import Footer from "../../../components/footer/Footer"
+import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare } from "react-icons/fi"
+import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
+import ProductCard from "../../../components/product/Card"
+import { sampleProducts, flashSales, recommendedProducts } from "../../../data/products";
+import { stores } from "../../../data/store"; // Import store data
 
 export default function ProductPage() {
+    const params = useParams();
+    const productId = parseInt(params.id);
+    
     const [qty, setQty] = useState(2)
     const [activeTab, setActiveTab] = useState("Detail")
-    // const subtotal = useMemo(() => qty * (products[0].harga + 200000), [qty]) // matches wireframe Rp 400.000 at qty 2
-
+    const [products, setProducts] = useState([]); // Declare products state
+    const [currentProduct, setCurrentProduct] = useState(null);
+    const [currentStore, setCurrentStore] = useState(null);
     const [selectedRatings, setSelectedRatings] = useState([]);
     const colors = ["Merah", "Kuning", "Hitam", "Putih"];
     const [selectedColor, setSelectedColor] = useState(colors[0]);
     const [isWishlisted, setIsWishlisted] = useState(false);
+
+    useEffect(() => {
+        setProducts(sampleProducts); // Initialize products with sampleProducts
+        
+        // Find the current product based on the ID from the URL
+        const product = sampleProducts.find(p => p.ID === productId);
+        setCurrentProduct(product);
+        
+        // Find the store for this product
+        if (product) {
+            const store = stores.find(s => s.store_id === product.store_id);
+            setCurrentStore(store);
+        }
+    }, [productId]);
 
     const handleRatingChange = (r) => {
         setSelectedRatings((prev) =>
@@ -25,36 +46,32 @@ export default function ProductPage() {
         );
     };
 
-    const products = [
-        {
-            ID: 0,
-            nama_produk: "Dummy Product",
-            harga: 10000,
-            discount: 20,
-            rating: 4,
-            reviews: 34,
-            kategori: "Dummy",
-            image:
-                "https://soccerwearhouse.com/cdn/shop/files/Portugal_2025_Home_Jersey_by_PUMA_-_Cristiano_Ronaldo.jpg?v=1736466474",
-        },
-    ]
-
-
+    // Show loading if product data isn't loaded yet
+    if (!currentProduct || !currentStore) {
+        return (
+            <div className="min-h-dvh flex items-center justify-center">
+                <div className="text-center">
+                    <div className="loading loading-spinner loading-lg"></div>
+                    <p className="mt-4">Loading product...</p>
+                </div>
+            </div>
+        );
+    }
 
     // Tab content
     const tabContents = {
         Detail: (
             <div className="py-6">
-                <h4 className="font-semibold mb-2">Deskripsi Produk</h4>
-                <p className="text-sm opacity-80">
+                <h4 className="font-semibold mb-2 text-black">Deskripsi Produk</h4>
+                <p className="text-sm opacity-80 text-black">
                     Ini adalah produk dummy untuk keperluan demo. Deskripsi produk akan tampil di sini. Tambahkan detail produk, fitur, dan keunggulan produk Anda.
                 </p>
             </div>
         ),
         Spesifikasi: (
             <div className="py-6">
-                <h4 className="font-semibold mb-2">Spesifikasi</h4>
-                <ul className="text-sm opacity-80 list-disc ml-5">
+                <h4 className="font-semibold mb-2 text-black">Spesifikasi</h4>
+                <ul className="text-sm opacity-80 list-disc ml-5 text-black">
                     <li>Bahan: Katun Premium</li>
                     <li>Ukuran: Tersedia S, M, L, XL</li>
                     <li>Warna: Merah, Kuning, Hitam, Putih</li>
@@ -64,8 +81,8 @@ export default function ProductPage() {
         ),
         "Info Penting": (
             <div className="py-6">
-                <h4 className="font-semibold mb-2">Info Penting</h4>
-                <ul className="text-sm opacity-80 list-disc ml-5">
+                <h4 className="font-semibold mb-2 text-black">Info Penting</h4>
+                <ul className="text-sm opacity-80 list-disc ml-5 text-black">
                     <li>Barang yang sudah dibeli tidak dapat dikembalikan kecuali cacat.</li>
                     <li>Pastikan alamat pengiriman sudah benar.</li>
                     <li>Hubungi customer service untuk pertanyaan lebih lanjut.</li>
@@ -73,7 +90,7 @@ export default function ProductPage() {
             </div>
         ),
         Ulasan: (
-            <section className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">
+            <section className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr] text-black">
                 {/* Filter */}
                 <aside className="rounded-box border p-4 border-gray-100 shadow-2xs">
                     <h4 className="mb-4 text-sm font-semibold">Filter Ulasan</h4>
@@ -119,7 +136,7 @@ export default function ProductPage() {
                 </aside>
 
                 {/* Reviews List */}
-                <div className="space-y-4">
+                <div className="space-y-4 ">
                     {[1, 2, 3].map((i) => (
                         <article key={i} className="rounded-box border border-gray-100 shadow-2xs p-4">
                             <div className="flex items-center gap-3">
@@ -147,19 +164,19 @@ export default function ProductPage() {
     }
 
     return (
-        <div className="min-h-dvh btext-base-content mt-16 pt-10">
+        <div className="min-h-dvh text-base-content mt-16 pt-10">
             <Navbar />
             {/* Breadcrumbs */}
-            <div className="flex mx-auto max-w-7xl px-4">
+            <div className="flex mx-auto max-w-7xl px-4 text-black">
                 <div className="breadcrumbs py-4 text-sm">
                     <ul>
                         <li>
                             <a>Home</a>
                         </li>
                         <li>
-                            <a>{products[0].kategori}</a>
+                            <a>{currentProduct?.kategori}</a>
                         </li>
-                        <li className="font-medium">{products[0].nama_produk}</li>
+                        <li className="font-medium">{currentProduct?.nama_produk}</li>
                     </ul>
                 </div>
             </div>
@@ -173,7 +190,7 @@ export default function ProductPage() {
                             <img
                                 alt="Foto produk"
                                 className="h-full w-full object-cover"
-                                src={products[0].image}
+                                src={currentProduct?.image}
                             />
                         </div>
                         <div className="grid grid-cols-4 gap-3">
@@ -185,7 +202,7 @@ export default function ProductPage() {
                                     <img
                                         alt={"Thumbnail " + i}
                                         className="h-full w-full object-cover"
-                                        src={products[0].image}
+                                        src={currentProduct?.image}
                                     />
                                 </button>
                             ))}
@@ -193,9 +210,9 @@ export default function ProductPage() {
                     </section>
 
                     {/* Product info */}
-                    <section className="space-y-4">
+                    <section className="space-y-4 text-black">
                         <h1 className="text-pretty text-xl font-semibold leading-tight">
-                            {products[0].nama_produk}
+                            {currentProduct?.nama_produk}
                         </h1>
 
                         <div className="flex gap-2 text-sm text-base-content/70">
@@ -206,7 +223,7 @@ export default function ProductPage() {
 
                         <div className="divider my-2" />
 
-                        <p className="text-2xl font-bold tracking-tight">Rp {products[0].harga.toLocaleString("id-ID")}</p>
+                        <p className="text-2xl font-bold tracking-tight">Rp {currentProduct?.harga.toLocaleString("id-ID")}</p>
 
                         <div className="space-y-3">
                             <div className="space-y-3">
@@ -233,6 +250,28 @@ export default function ProductPage() {
 
                         </div>
 
+                        {/* Store Info */}
+                        <section className="mt-2 pt-2 border-gray-200">
+                            <h4 className="text-lg font-semibold">Info Toko</h4>
+                            <div className="flex items-center justify-between mt-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="avatar">
+                                        <div className="h-12 w-12 rounded-full overflow-hidden">
+                                            <img src={currentStore.image} alt={currentStore.name} className="h-full w-full object-cover" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium">{currentStore.name}</p>
+                                        <div className="flex items-center gap-1">
+                                            <FaStar className="text-yellow-500 inline" />
+                                            <p className="text-xs opacity-70 mt-0.5">{currentStore.rating} dari {currentStore.reviews} Ulasan</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow">Kunjungi Toko</button>
+                            </div>
+                        </section>
+
                         {/* shipping / guarantees */}
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="rounded-box border border-gray-300 p-3">
@@ -248,8 +287,8 @@ export default function ProductPage() {
                     </section>
 
                     {/* Quantity + Summary Card */}
-                    <aside className="lg:sticky lg:top-4">
-                        <div className="card border border-gray-300 bshadow-sm">
+                    <aside className="lg:sticky lg:top-4 text-black">
+                        <div className="card border border-gray-300 ">
                             <div className="card-body gap-4">
                                 <h3 className="card-title text-base">Atur Jumlah</h3>
 
@@ -257,7 +296,7 @@ export default function ProductPage() {
                                     <div className="avatar">
                                         <div className="h-12 w-12 rounded">
                                             <img
-                                                src={products[0].image}
+                                                src={currentProduct?.image}
                                                 alt="Selected product variant"
                                                 className="h-full w-full object-cover rounded"
                                             />
@@ -265,7 +304,7 @@ export default function ProductPage() {
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-sm font-medium">Varian Terpilih</p>
-                                        <p className="text-xs opacity-70">Merah • 42</p>
+                                        <p className="text-xs opacity-70">Merah • {currentProduct?.stok}</p>
                                     </div>
                                 </div>
 
@@ -290,7 +329,7 @@ export default function ProductPage() {
                                 <div className="rounded-box  p-3 text-sm">
                                     <div className="flex items-center justify-between">
                                         <span>Subtotal</span>
-                                        <span className="font-semibold">Rp {(qty * products[0].harga).toLocaleString("id-ID")}</span>
+                                        <span className="font-semibold">Rp {(qty * currentProduct?.harga).toLocaleString("id-ID")}</span>
                                     </div>
                                 </div>
 
@@ -300,25 +339,25 @@ export default function ProductPage() {
                                 </div>
 
                                 <div className="flex flex-row justify-between text-sm opacity-70">
-                                    <div className="rounded-box p-2 text-center flex flex-row items-center gap-1 cursor-pointer">
+                                    <div className="rounded-box p-2 text-center flex flex-row items-center gap-1 cursor-pointer hover:text-gray-500">
                                         <FiMessageSquare className="" />
                                         <span>Chat</span>
                                     </div>
-                                    <span className="flex my-2 w-0.5 rounded-2xl bg-gray-800"></span>
+                                    <span className="flex my-2 w-0.5 rounded-2xl bg-gray-800 "></span>
                                     <div
                                         onClick={() => setIsWishlisted(!isWishlisted)}
-                                        className={`rounded-box p-2 text-center flex flex-row items-center gap-1 cursor-pointer transition-colors ${isWishlisted ? "" : "text-gray-800"
+                                        className={`rounded-box p-2 text-center flex flex-row items-center gap-1 hover:text-gray-500 cursor-pointer transition-colors ${isWishlisted ? "" : "text-gray-800"
                                             }`}
                                     >
                                         {isWishlisted ? (
                                             <FaStar className="text-red-500" />
                                         ) : (
-                                            <FiStar className="text-gray-800" />
+                                            <FiStar className="text-gray-800 " />
                                         )}
                                         <span>Wishlist</span>
-                                    </div>;
-                                    <span class="flex my-2 w-0.5 rounded-2xl bg-gray-800"></span>
-                                    <div className="rounded-box p-2 text-center flex flex-row items-center gap-1 cursor-pointer">
+                                    </div>
+                                    <span className="flex my-2 w-0.5 rounded-2xl bg-gray-800"></span>
+                                    <div className="rounded-box p-2 text-center flex flex-row items-center gap-1 cursor-pointer hover:text-gray-500">
                                         <FiShare className="" />
                                         <span>Share</span>
                                     </div>
@@ -331,14 +370,14 @@ export default function ProductPage() {
                 {/* Tabs */}
                 <section className="mt-10">
                     <div role="tablist" className="tabs tabs-border text-black">
-                        {['Detail', 'Spesifikasi', 'Info Penting', 'Ulasan'].map((tab) => (
+                        {["Detail", "Spesifikasi", "Info Penting", "Ulasan"].map((tab) => (
                             <a
                                 key={tab}
                                 role="tab"
-                                className={`tab hover:bg-gray-100 hover:text-black text-black ${activeTab === tab ? 'tab-active text-black' : 'text-black'}`}
+                                className={`tab hover:bg-gray-100 hover:text-black text-black ${activeTab === tab ? "tab-active text-black" : "text-black"}`}
                                 onClick={() => setActiveTab(tab)}
                                 tabIndex={0}
-                                style={{ cursor: 'pointer' }}
+                                style={{ cursor: "pointer" }}
                             >
                                 {tab}
                             </a>
@@ -350,16 +389,41 @@ export default function ProductPage() {
 
                 {/* More products grid */}
                 <section className="mt-10">
-                    <h3 className="mb-4 text-base font-semibold">Produk Lainnya dari Toko ini</h3>
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <ProductCard key={i} />
-                        ))}
+                    <h3 className="mb-4 text-base font-semibold text-black">Produk Lainnya dari Toko ini</h3>
+                    <div className="relative">
+                        <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden">
+                            {products
+                                .filter((product) => product.store_id === currentStore.store_id && product.ID !== currentProduct.ID) // Filter products by the same store, exclude current product
+                                .slice(0, 10)
+                                .map((product) => (
+                                    <div key={product.ID} className="max-w-[240px] flex-shrink-0 mt-2">
+                                        <ProductCard product={product} />
+                                    </div>
+                                ))}
+                        </div>
+                        <button
+                            className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-[#ED775A] text-white p-2 rounded-full shadow hover:bg-[#e76b4c] ml-2"
+                            onClick={() => {
+                                const container = document.querySelector('.scroll-container');
+                                container.scrollBy({ left: -300, behavior: 'smooth' });
+                            }}
+                        >
+                            <FaChevronLeft aria-hidden="true" />
+                        </button>
+                        <button
+                            className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-[#ED775A] text-white p-2 rounded-full shadow hover:bg-[#e76b4c] mr-2"
+                            onClick={() => {
+                                const container = document.querySelector('.scroll-container');
+                                container.scrollBy({ left: 300, behavior: 'smooth' });
+                            }}
+                        >
+                            <FaChevronRight aria-hidden="true" />
+                        </button>
                     </div>
                 </section>
 
                 {/* CTA banner */}
-                <section className="mt-14 rounded-box border /60 p-6">
+                <section className="mt-14 rounded-box border p-6 text-black">
                     <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
                         <div>
                             <h3 className="text-pretty text-lg font-semibold">
