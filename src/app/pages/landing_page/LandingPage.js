@@ -213,7 +213,7 @@ export default function LandingPage() {
                         </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-6 px-1 py-2">
-                        {precomputedFlashSales.map((product) => (
+                        {precomputedFlashSales.slice(0,4).map((product) => (
                             <FlashCard
                                 key={product.ID}
                                 product={product}
@@ -282,9 +282,9 @@ export default function LandingPage() {
                             <p className="text-xl text-gray-600">Dipilih khusus berdasarkan preferensi dan minat Anda</p>
                         </div>
                         <div className="grid grid-cols-2 grid-rows-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-                            {recommendedProductsList.map((product) => (
+                            {(Array.isArray(recommendedProductsList) ? recommendedProductsList : []).map((product) => (
                                 <RecsCard
-                                    key={product.ID}
+                                    key={product?.ID ?? Math.random()}
                                     recommendedProducts={[product]}
                                 />
                             ))}

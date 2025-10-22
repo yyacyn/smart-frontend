@@ -12,7 +12,8 @@ export const sampleProducts = [
         kategori_display: "Makanan",
         image: "/images/categories/food.jpg",
         description: "Beras premium kualitas terbaik untuk keluarga",
-        store_id: 1
+        store_id: 1,
+        stok: 100
     },
     {
         ID: 2,
@@ -25,7 +26,8 @@ export const sampleProducts = [
         kategori_display: "Pakaian",
         image: "/images/categories/clothes.jpg",
         description: "Kaos cotton berkualitas tinggi dan nyaman",
-        store_id: 1
+        store_id: 1,
+        stok: 50
     },
     {
         ID: 3,
@@ -38,7 +40,8 @@ export const sampleProducts = [
         kategori_display: "Obat-obatan",
         image: "/images/categories/drugs.jpg",
         description: "Suplemen vitamin C untuk daya tahan tubuh",
-        store_id: 1
+        store_id: 1,
+        stok: 80
     },
     {
         ID: 4,
@@ -51,7 +54,8 @@ export const sampleProducts = [
         kategori_display: "Kebutuhan Harian",
         image: "/images/categories/dailies.jpg",
         description: "Sabun cuci piring anti bakteri",
-        store_id: 1
+        store_id: 1,
+        stok: 120
     },
     {
         ID: 5,
@@ -64,7 +68,8 @@ export const sampleProducts = [
         kategori_display: "Produk Lokal",
         image: "/images/categories/local.jpg",
         description: "Keripik singkong renyah khas daerah",
-        store_id: 1
+        store_id: 1,
+        stok: 60
     },
     {
         ID: 6,
@@ -77,7 +82,8 @@ export const sampleProducts = [
         kategori_display: "Makanan",
         image: "/images/categories/food.jpg",
         description: "Minyak goreng berkualitas untuk memasak",
-        store_id: 1
+        store_id: 1,
+        stok: 90
     },
     {
         ID: 7,
@@ -90,7 +96,8 @@ export const sampleProducts = [
         kategori_display: "Pakaian",
         image: "/images/categories/clothes.jpg",
         description: "Celana jeans premium dengan bahan berkualitas",
-        store_id: 1
+        store_id: 1,
+        stok: 40
     },
     {
         ID: 8,
@@ -103,7 +110,8 @@ export const sampleProducts = [
         kategori_display: "Obat-obatan",
         image: "/images/categories/drugs.jpg",
         description: "Obat pereda demam dan nyeri",
-        store_id: 1
+        store_id: 1,
+        stok: 200
     },
     // New products from the same store
     {
@@ -117,7 +125,8 @@ export const sampleProducts = [
         kategori_display: "Makanan",
         image: "/images/categories/food.jpg",
         description: "Teh celup dengan rasa khas Indonesia",
-        store_id: 1
+        store_id: 1,
+        stok: 70
     },
     {
         ID: 10,
@@ -130,7 +139,8 @@ export const sampleProducts = [
         kategori_display: "Makanan",
         image: "/images/categories/food.jpg",
         description: "Kopi instan praktis untuk dinikmati kapan saja",
-        store_id: 1
+        store_id: 1,
+        stok: 110
     },
     {
         ID: 11,
@@ -143,7 +153,8 @@ export const sampleProducts = [
         kategori_display: "Makanan",
         image: "/images/categories/food.jpg",
         description: "Susu kental manis untuk berbagai keperluan",
-        store_id: 1
+        store_id: 1,
+        stok: 130
     },
     {
         ID: 12,
@@ -156,7 +167,8 @@ export const sampleProducts = [
         kategori_display: "Makanan",
         image: "/images/categories/food.jpg",
         description: "Bumbu dapur praktis dan lengkap",
-        store_id: 1
+        store_id: 1,
+        stok: 60
     },
     {
         ID: 13,
@@ -169,7 +181,8 @@ export const sampleProducts = [
         kategori_display: "Kebutuhan Harian",
         image: "/images/categories/dailies.jpg",
         description: "Handuk mandi lembut dan menyerap air",
-        store_id: 1
+        store_id: 1,
+        stok: 30
     },
     {
         ID: 14,
@@ -182,7 +195,8 @@ export const sampleProducts = [
         kategori_display: "Kebutuhan Harian",
         image: "/images/categories/dailies.jpg",
         description: "Pembersih lantai dengan aroma segar",
-        store_id: 1
+        store_id: 1,
+        stok: 60
     },
     {
         ID: 15,
@@ -195,7 +209,8 @@ export const sampleProducts = [
         kategori_display: "Kebutuhan Harian",
         image: "/images/categories/dailies.jpg",
         description: "Paket sikat gigi untuk keluarga",
-        store_id: 1
+        store_id: 1,
+        stok: 80
     },
     {
         ID: 16,
@@ -208,7 +223,8 @@ export const sampleProducts = [
         kategori_display: "Kebutuhan Harian",
         image: "/images/categories/dailies.jpg",
         description: "Sabun mandi herbal dengan bahan alami",
-        store_id: 1
+        store_id: 1,
+        stok: 100
     }
 ];
 
@@ -223,7 +239,8 @@ export const flashSales = [
         kategori: "Makanan",
         kategori_display: "Makanan",
         image: "/images/categories/food.jpg",
-        description: "Gula pasir berkualitas dengan harga spesial"
+        description: "Gula pasir berkualitas dengan harga spesial",
+        stok: 200
     },
     {
         ID: 102,
@@ -235,7 +252,8 @@ export const flashSales = [
         kategori: "Pakaian",
         kategori_display: "Pakaian",
         image: "/images/categories/clothes.jpg",
-        description: "Kemeja katun nyaman untuk sehari-hari"
+        description: "Kemeja katun nyaman untuk sehari-hari",
+        stok: 80
     },
     {
         ID: 103,
@@ -247,7 +265,8 @@ export const flashSales = [
         kategori: "Kecantikan",
         kategori_display: "Kecantikan",
         image: "/images/categories/beauty.jpg",
-        description: "Masker wajah herbal untuk perawatan kulit"
+        description: "Masker wajah herbal untuk perawatan kulit",
+        stok: 60
     },
     {
         ID: 104,
@@ -259,7 +278,8 @@ export const flashSales = [
         kategori: "Kebutuhan Harian",
         kategori_display: "Kebutuhan Harian",
         image: "/images/categories/dailies.jpg",
-        description: "Detergen bubuk wangi untuk mencuci pakaian"
+        description: "Detergen bubuk wangi untuk mencuci pakaian",
+        stok: 100
     },
     {
         ID: 105,
@@ -271,7 +291,8 @@ export const flashSales = [
         kategori: "Obat-obatan",
         kategori_display: "Obat-obatan",
         image: "/images/categories/drugs.jpg",
-        description: "Minyak kayu putih untuk pereda sakit"
+        description: "Minyak kayu putih untuk pereda sakit",
+        stok: 150
     },
     {
         ID: 106,
@@ -283,7 +304,8 @@ export const flashSales = [
         kategori: "Kebutuhan Harian",
         kategori_display: "Kebutuhan Harian",
         image: "/images/categories/dailies.jpg",
-        description: "Kain lap serbaguna untuk berbagai keperluan"
+        description: "Kain lap serbaguna untuk berbagai keperluan",
+        stok: 90
     },
     {
         ID: 107,
@@ -295,7 +317,8 @@ export const flashSales = [
         kategori: "Kebutuhan Harian",
         kategori_display: "Kebutuhan Harian",
         image: "/images/categories/dailies.jpg",
-        description: "Pasta gigi herbal untuk menjaga kesehatan gigi"
+        description: "Pasta gigi herbal untuk menjaga kesehatan gigi",
+        stok: 110
     },
     {
         ID: 108,
@@ -307,6 +330,14 @@ export const flashSales = [
         kategori: "Kebutuhan Harian",
         kategori_display: "Kebutuhan Harian",
         image: "/images/categories/dailies.jpg",
-        description: "Sabun cuci tangan antiseptik dengan aroma segar"
+        description: "Sabun cuci tangan antiseptik dengan aroma segar",
+        stok: 180
     }
 ];
+
+// Recommended products (subset or transformation of sampleProducts)
+// Provide a default export to avoid undefined imports elsewhere
+export const recommendedProducts = sampleProducts.slice(0, 6).map(p => ({
+    ...p,
+    stok: p.stok ?? 50,
+}));

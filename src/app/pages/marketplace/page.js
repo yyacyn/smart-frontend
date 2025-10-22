@@ -213,11 +213,11 @@ export default function MarketplacePage() {
                     {/* Products Grid */}
                     <div className="lg:w-3/4">
                         {/* Results Header */}
-                        <div className="flex justify-between items-center mb-6">
+                        {/* <div className="flex justify-between items-center mb-6">
                             <p className="text-gray-600">
                                 Menampilkan {filteredProducts.length} dari {products.length} produk
                             </p>
-                        </div>
+                        </div> */}
 
                         {/* Products Grid */}
                         {filteredProducts.length > 0 ? (
@@ -236,7 +236,7 @@ export default function MarketplacePage() {
                             </div>
                         )}
 
-                        {/* Pagination */}
+                        {/* Pagination
                         <div className="flex justify-center mt-6 ">
                             <div className="join ">
                                 {Array.from({ length: totalPages }, (_, i) => (
@@ -249,7 +249,7 @@ export default function MarketplacePage() {
                                     </button>
                                 ))}
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </div>
