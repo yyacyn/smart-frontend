@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import Navbar from "../../components/navbar/Navbar"
 import Footer from "../../components/footer/Footer"
 import ProductCard from "../../components/product/Card"
@@ -10,11 +11,13 @@ import { AiOutlineFrown } from "react-icons/ai";
 import { sampleProducts, flashSales, recommendedProducts } from "../../data/products";
 
 export default function MarketplacePage() {
+    const searchParams = useSearchParams();
+    const initialCategory = searchParams.get('category') || 'all';
     const [products, setProducts] = useState([])
     const [filteredProducts, setFilteredProducts] = useState([])
     const [filters, setFilters] = useState({
         search: '',
-        category: 'all',
+        category: initialCategory,
         minPrice: 0,
         maxPrice: 1000000,
         rating: 0,
@@ -33,10 +36,44 @@ export default function MarketplacePage() {
         setFilteredProducts(sampleProducts)
     }, [])
 
+    // Sync category and discount filter with query param whenever it changes
+    useEffect(() => {
+        const categoryFromQuery = searchParams.get('category');
+        const discountFromQuery = searchParams.get('discount');
+        let updates = {};
+        if (categoryFromQuery && categoryFromQuery !== filters.category) {
+            updates.category = categoryFromQuery;
+        }
+        if (typeof discountFromQuery === 'string') {
+            updates.discount = discountFromQuery === 'true';
+        }
+        if (Object.keys(updates).length > 0) {
+            setFilters(prev => ({ ...prev, ...updates }));
+        }
+    }, [searchParams])
+
     useEffect(() => {
         let filtered = products.filter(product => {
+            // Category mapping for filtering
+            let categoryMatch = true;
+            if (filters.category !== 'all') {
+                switch (filters.category) {
+                    case 'Makanan & Minuman':
+                        categoryMatch = product.kategori === 'Makanan';
+                        break;
+                    case 'Kesehatan & Kecantikan':
+                        categoryMatch = product.kategori === 'Obat-obatan' || product.kategori === 'Kecantikan';
+                        break;
+                    case 'Kerajinan Lokal':
+                        categoryMatch = product.kategori === 'Produk Lokal';
+                        break;
+                    default:
+                        categoryMatch = product.kategori === filters.category;
+                }
+            }
+
             let match = product.nama_produk.toLowerCase().includes(filters.search.toLowerCase()) &&
-                (filters.category === 'all' || product.kategori === filters.category) &&
+                categoryMatch &&
                 product.harga >= filters.minPrice &&
                 product.harga <= filters.maxPrice &&
                 product.rating >= filters.rating;
@@ -87,7 +124,10 @@ export default function MarketplacePage() {
             minPrice: 0,
             maxPrice: 1000000,
             rating: 0,
-            sortBy: 'name'
+            sortBy: 'name',
+            cod: false,
+            discount: false,
+            gratisOngkir: false
         })
     }
 
@@ -97,11 +137,11 @@ export default function MarketplacePage() {
 
     const categories = [
         { value: 'all', label: 'Semua Kategori' },
-        { value: 'food', label: 'Makanan' },
-        { value: 'clothes', label: 'Pakaian' },
-        { value: 'drugs', label: 'Obat-obatan' },
-        { value: 'dailies', label: 'Kebutuhan Harian' },
-        { value: 'local', label: 'Produk Lokal' }
+        { value: 'Makanan & Minuman', label: 'Makanan & Minuman' },
+        { value: 'Pakaian', label: 'Pakaian' },
+        { value: 'Kesehatan & Kecantikan', label: 'Kesehatan & Kecantikan' },
+        { value: 'Kebutuhan Harian', label: 'Kebutuhan Harian' },
+        { value: 'Kerajinan Lokal', label: 'Kerajinan Lokal' }
     ]
 
     // Pagination logic
@@ -114,7 +154,7 @@ export default function MarketplacePage() {
         <div className="min-h-screen bg-gray-50">
             <Navbar />
 
-            <div className="container mx-auto px-4 py-8 mt-18">
+            <div className="container mx-auto px-4 py-8 mt-18 mb-20">
                 {/* Header */}
 
                 <div className="flex flex-col lg:flex-row gap-6 ">

@@ -1,12 +1,16 @@
 import React from 'react';
 import Link from "next/link";
 
-export default function FlashCard({ product }) {
+export default function ProductCard({ product }) {
+    // Calculate discounted price
+    const hasDiscount = product.discount != null && product.discount > 0;
+    const discountedPrice = hasDiscount
+        ? Math.round(product.harga * (1 - product.discount / 100))
+        : product.harga;
+
     return (
         <div className="">
-            <Link
-                href={`/pages/product_detail/${product.ID}`}
-            >
+            <Link href={`/pages/product_detail/${product.ID}`}>
                 <div
                     key={product.ID}
                     className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300"
@@ -20,7 +24,7 @@ export default function FlashCard({ product }) {
                         <div className="badge badge-primary absolute top-2 right-2">
                             {product.kategori}
                         </div>
-                        {product.discount != null && product.discount > 0 && (
+                        {hasDiscount && (
                             <div className="badge badge-warning absolute bottom-2 left-2">
                                 -{product.discount}%
                             </div>
@@ -49,9 +53,20 @@ export default function FlashCard({ product }) {
                             </span>
                         </div>
 
-                        <p className="text-gray-600 mt-2 font-medium">
-                            Rp {product.harga.toLocaleString("id-ID")}
-                        </p>
+                        {hasDiscount ? (
+                            <div className="mt-2">
+                                <span className="text-gray-400 line-through mr-2">
+                                    Rp {product.harga.toLocaleString("id-ID")}
+                                </span>
+                                <span className="text-gray-600 font-bold">
+                                    Rp {discountedPrice.toLocaleString("id-ID")}
+                                </span>
+                            </div>
+                        ) : (
+                            <p className="text-gray-600 mt-2 font-medium">
+                                Rp {product.harga.toLocaleString("id-ID")}
+                            </p>
+                        )}
                     </div>
                 </div>
             </Link>

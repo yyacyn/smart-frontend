@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Navbar from "../../../components/navbar/Navbar"
 import Footer from "../../../components/footer/Footer"
-import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare } from "react-icons/fi"
+import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare, FiShoppingCart,  } from "react-icons/fi"
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 import ProductCard from "../../../components/product/Card"
 import { sampleProducts, flashSales, recommendedProducts } from "../../../data/products";
@@ -164,7 +164,7 @@ export default function ProductPage() {
     }
 
     return (
-        <div className="min-h-dvh text-base-content mt-16 pt-10">
+        <div className="min-h-dvh text-base-content mt-16 pt-10 text-black">
             <Navbar />
             {/* Breadcrumbs */}
             <div className="flex mx-auto max-w-7xl px-4 text-black">
@@ -211,8 +211,14 @@ export default function ProductPage() {
 
                     {/* Product info */}
                     <section className="space-y-4 text-black">
-                        <h1 className="text-pretty text-xl font-semibold leading-tight">
+
+                        <h1 className="text-pretty text-xl font-semibold leading-tight flex items-center gap-2">
                             {currentProduct?.nama_produk}
+                            {currentProduct?.discount > 0 && (
+                                <span className="badge badge-accent text-xs font-semibold text-white bg-[#ED775A] border-none">
+                                    -{currentProduct.discount}%
+                                </span>
+                            )}
                         </h1>
 
                         <div className="flex gap-2 text-sm text-base-content/70">
@@ -221,9 +227,22 @@ export default function ProductPage() {
                             <span className="badge bg-[#ED775A] border-none">Gratis Ongkir</span>
                         </div>
 
+
                         <div className="divider my-2" />
 
-                        <p className="text-2xl font-bold tracking-tight">Rp {currentProduct?.harga.toLocaleString("id-ID")}</p>
+                        {/* Price display with discount */}
+                        {currentProduct?.discount > 0 ? (
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl font-bold tracking-tight text-[#ED775A]">
+                                    Rp {(currentProduct.harga * (1 - currentProduct.discount / 100)).toLocaleString("id-ID")}
+                                </span>
+                                <span className="text-base line-through opacity-60">
+                                    Rp {currentProduct.harga.toLocaleString("id-ID")}
+                                </span>
+                            </div>
+                        ) : (
+                            <p className="text-2xl font-bold tracking-tight">Rp {currentProduct?.harga.toLocaleString("id-ID")}</p>
+                        )}
 
                         <div className="space-y-3">
                             <div className="space-y-3">
@@ -329,13 +348,20 @@ export default function ProductPage() {
                                 <div className="rounded-box  p-3 text-sm">
                                     <div className="flex items-center justify-between">
                                         <span>Subtotal</span>
-                                        <span className="font-semibold">Rp {(qty * currentProduct?.harga).toLocaleString("id-ID")}</span>
+                                        <span className="font-semibold">
+                                            Rp {(
+                                                qty * (currentProduct?.discount > 0
+                                                    ? currentProduct.harga * (1 - currentProduct.discount / 100)
+                                                    : currentProduct.harga)
+                                            ).toLocaleString("id-ID")}
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button className="btn bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow">Checkout</button>
-                                    <button className="btn bg-white shadow-none text-[#ED775A] border border-[#ED775A] hover:border-[#eb6b4b] hover:text-[#ED775A]">Simpan</button>
+                                <div className="flex flex-row w-full gap-2">
+                                    <button className="btn w-3/4 bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow">Checkout</button>
+                                    <button className="btn bg-white w-1/4 shadow-none text-[#ED775A] border hover:bg-gray-100 border-[#ED775A] hover:border-[#eb6b4b] hover:text-[#ED775A]">
+                                        <FiShoppingCart className="w-5"/></button>
                                 </div>
 
                                 <div className="flex flex-row justify-between text-sm opacity-70">
