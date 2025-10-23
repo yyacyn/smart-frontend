@@ -235,8 +235,8 @@ export default function LandingPage() {
                                 </span>
                                 <p className="text-gray-600 text-sm">Jangan sampai terlewat!</p>
                             </div>
-                            <Link href={{ pathname: '/pages/marketplace', query: { discount: 'true' } }} passHref legacyBehavior>
-                                <a className="btn btn-primary">Lihat Semua</a>
+                            <Link href={{ pathname: '/pages/marketplace', query: { discount: 'true' } }} className="btn btn-primary">
+                                Lihat Semua
                             </Link>
                         </div>
                     </div>

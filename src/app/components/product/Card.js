@@ -63,7 +63,7 @@ export default function ProductCard({ product }) {
                                 </span>
                             </div>
                         ) : (
-                            <p className="text-gray-600 mt-2 font-medium">
+                            <p className="text-gray-600 mt-2 font-bold">
                                 Rp {product.harga.toLocaleString("id-ID")}
                             </p>
                         )}

@@ -164,7 +164,7 @@ export default function ProductPage() {
     }
 
     return (
-        <div className="min-h-dvh text-base-content mt-16 pt-10 text-black">
+        <div className="min-h-dvh mt-16 pt-10 text-black">
             <Navbar />
             {/* Breadcrumbs */}
             <div className="flex mx-auto max-w-7xl px-4 text-black">
