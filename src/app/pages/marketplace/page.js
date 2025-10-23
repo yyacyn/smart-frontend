@@ -18,13 +18,16 @@ export default function MarketplacePage() {
         minPrice: 0,
         maxPrice: 1000000,
         rating: 0,
-        sortBy: 'name'
+        sortBy: 'name',
+        cod: false,
+        discount: false,
+        gratisOngkir: false
     })
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [currentPage, setCurrentPage] = useState(1)
     const [productsPerPage] = useState(12)
 
-    
+
     useEffect(() => {
         setProducts(sampleProducts)
         setFilteredProducts(sampleProducts)
@@ -32,13 +35,23 @@ export default function MarketplacePage() {
 
     useEffect(() => {
         let filtered = products.filter(product => {
-            return (
-                product.nama_produk.toLowerCase().includes(filters.search.toLowerCase()) &&
+            let match = product.nama_produk.toLowerCase().includes(filters.search.toLowerCase()) &&
                 (filters.category === 'all' || product.kategori === filters.category) &&
                 product.harga >= filters.minPrice &&
                 product.harga <= filters.maxPrice &&
-                product.rating >= filters.rating
-            )
+                product.rating >= filters.rating;
+
+            // Penawaran filters
+            if (filters.cod) {
+                match = match && product.cod === true;
+            }
+            if (filters.discount) {
+                match = match && product.discount != null && product.discount > 0;
+            }
+            if (filters.gratisOngkir) {
+                match = match && product.gratisOngkir === true;
+            }
+            return match;
         })
 
         // Apply sorting
@@ -100,7 +113,7 @@ export default function MarketplacePage() {
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
-            
+
             <div className="container mx-auto px-4 py-8 mt-18">
                 {/* Header */}
 
@@ -128,9 +141,22 @@ export default function MarketplacePage() {
                                 </button>
                             </div>
 
+
+                            {/* Search */}
+                            <div className="mb-6">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Cari produk</label>
+                                <input
+                                    type="text"
+                                    placeholder="Cari disini"
+                                    id="search"
+                                    className="input input-bordered bg-white focus:outline-none border-gray-400 rounded-md"
+                                    value={filters.search}
+                                    onChange={e => handleFilterChange('search', e.target.value)} />
+                            </div>
+
                             {/* Category */}
                             <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
                                     Kategori
                                 </label>
                                 <select
@@ -148,7 +174,7 @@ export default function MarketplacePage() {
 
                             {/* Price Range */}
                             <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
                                     Rentang Harga
                                 </label>
                                 <div className="grid grid-cols-2 gap-2">
@@ -172,11 +198,11 @@ export default function MarketplacePage() {
 
                             {/* Rating Filter */}
                             <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
                                     Rating Minimum
                                 </label>
                                 <div className="rating">
-                                    {[ 1, 2, 3, 4, 5].map(rating => (
+                                    {[1, 2, 3, 4, 5].map(rating => (
                                         <input
                                             key={rating}
                                             type="radio"
@@ -190,10 +216,57 @@ export default function MarketplacePage() {
                                 </div>
                             </div>
 
+                            {/* Penawaran Filter */}
+                            <div className="">
+                                <label className="block text-sm text-gray-700 mb-2 font-semibold">
+                                    Penawaran
+                                </label>
+                                <div className="checkbox-group flex flex-col gap-2">
+                                    <label className="cursor-pointer flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            className="checkbox checkbox-sm border-gray-400 text-black"
+                                            checked={filters.cod}
+                                            onChange={e => handleFilterChange('cod', e.target.checked)}
+                                        />
+                                        <span className="text-sm">COD</span>
+                                    </label>
+                                    <label className="cursor-pointer flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            className="checkbox checkbox-sm border-gray-400 text-black"
+                                            checked={filters.discount}
+                                            onChange={e => handleFilterChange('discount', e.target.checked)}
+                                        />
+                                        <span className="text-sm">Diskon</span>
+                                    </label>
+                                    <label className="cursor-pointer flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            className="checkbox checkbox-sm border-gray-400 text-black"
+                                            checked={filters.gratisOngkir}
+                                            onChange={e => handleFilterChange('gratisOngkir', e.target.checked)}
+                                        />
+                                        <span className="text-sm">Gratis Ongkir</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Products Grid */}
+                    <div className="lg:w-3/4">
+                        <div className="flex justify-between mb-4">
+                            {/* Results Header */}
+                            <div className="flex justify-between items-center w-2/3">
+                                <p className="text-gray-600">
+                                    Menampilkan {filteredProducts.length} dari {products.length} produk
+                                </p>
+                            </div>
                             {/* Sort */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Urutkan
+                            <div className="flex w-1/3 items-center gap-3">
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Urutkan:
                                 </label>
                                 <select
                                     className="select select-bordered w-full bg-white border-gray-400 rounded-md focus:outline-none "
@@ -207,18 +280,8 @@ export default function MarketplacePage() {
                                     <option value="reviews">Paling Banyak Review</option>
                                 </select>
                             </div>
+
                         </div>
-                    </div>
-
-                    {/* Products Grid */}
-                    <div className="lg:w-3/4">
-                        {/* Results Header */}
-                        {/* <div className="flex justify-between items-center mb-6">
-                            <p className="text-gray-600">
-                                Menampilkan {filteredProducts.length} dari {products.length} produk
-                            </p>
-                        </div> */}
-
                         {/* Products Grid */}
                         {filteredProducts.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">

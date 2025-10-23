@@ -18,6 +18,9 @@ export default function FlashCard({ product }) {
                             className="w-full h-full object-cover"
                         />
                         <div className="badge badge-primary absolute top-2 right-2">
+                            {product.kategori}
+                        </div>
+                        <div className="badge badge-warning absolute bottom-2 left-2">
                             -{product.discount}%
                         </div>
                     </figure>

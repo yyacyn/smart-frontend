@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
@@ -213,11 +214,10 @@ export default function LandingPage() {
                         </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-6 px-1 py-2">
-                        {precomputedFlashSales.slice(0,4).map((product) => (
-                            <FlashCard
+                        {precomputedFlashSales.slice(0, 4).map((product) => (
+                            <ProductCard
                                 key={product.ID}
                                 product={product}
-                                onClick={handleProductClick}
                             />
                         ))}
                         <div className="card bg-gradient-to-br from-white to-[#FFE797]/30 border border-white/50 flex flex-col justify-center items-center space-y-4 transition-all duration-300 hover:-translate-y-1">
@@ -254,20 +254,22 @@ export default function LandingPage() {
                                     No products available
                                 </p>
                             )}
-                            <div className="card bg-gradient-to-br from-[#84994F] to-[#476EAE] text-white flex flex-col justify-center items-center space-y-4 transition-all duration-300 hover:-translate-y-1">
-                                <div className="text-center">
-                                    <div className="text-3xl mb-2">📈</div>
-                                    <span className="text-white font-bold text-lg mx-8 text-center block mb-2">
-                                        Lihat Semua Produk Terlaku
-                                    </span>
-                                    <p className="text-white/80 text-sm">Trending sekarang!</p>
-                                </div>
-                                <button className="btn btn-circle bg-white text-[#84994F] hover:bg-white/90 border-none shadow-lg">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                </button>
-                            </div>
+                            <Link href="/pages/marketplace" passHref legacyBehavior>
+                                <a className="card bg-gradient-to-br from-[#84994F] to-[#476EAE] text-white flex flex-col justify-center items-center space-y-4 transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+                                    <div className="text-center">
+                                        <div className="text-3xl mb-2">📈</div>
+                                        <span className="text-white font-bold text-lg mx-8 text-center block mb-2">
+                                            Lihat Semua Produk Terlaku
+                                        </span>
+                                        <p className="text-white/80 text-sm">Trending sekarang!</p>
+                                    </div>
+                                    <button className="btn btn-circle bg-white text-[#84994F] hover:bg-white/90 border-none shadow-lg">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </button>
+                                </a>
+                            </Link>
                         </div>
                     </div>
                 </section>
@@ -283,9 +285,9 @@ export default function LandingPage() {
                         </div>
                         <div className="grid grid-cols-2 grid-rows-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
                             {(Array.isArray(recommendedProductsList) ? recommendedProductsList : []).map((product) => (
-                                <RecsCard
+                                <ProductCard
                                     key={product?.ID ?? Math.random()}
-                                    recommendedProducts={[product]}
+                                    product={product}
                                 />
                             ))}
                         </div>

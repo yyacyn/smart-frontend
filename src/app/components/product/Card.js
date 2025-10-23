@@ -1,17 +1,16 @@
-import React from "react";
+import React from 'react';
 import Link from "next/link";
 
-export default function ProductCard({ product }) {
-    if (!product) {
-        return <div className="text-gray-500">Product data is unavailable</div>;
-    }
-
+export default function FlashCard({ product }) {
     return (
         <div className="">
             <Link
                 href={`/pages/product_detail/${product.ID}`}
             >
-                <div className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300">
+                <div
+                    key={product.ID}
+                    className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300"
+                >
                     <figure className="relative w-full h-64 overflow-hidden rounded-t-lg">
                         <img
                             src={product.image}
@@ -21,6 +20,11 @@ export default function ProductCard({ product }) {
                         <div className="badge badge-primary absolute top-2 right-2">
                             {product.kategori}
                         </div>
+                        {product.discount != null && product.discount > 0 && (
+                            <div className="badge badge-warning absolute bottom-2 left-2">
+                                -{product.discount}%
+                            </div>
+                        )}
                     </figure>
 
                     <div className="card-body px-3 py-3">
@@ -45,7 +49,7 @@ export default function ProductCard({ product }) {
                             </span>
                         </div>
 
-                        <p className="text-gray-600 mt-2 font-medium truncate">
+                        <p className="text-gray-600 mt-2 font-medium">
                             Rp {product.harga.toLocaleString("id-ID")}
                         </p>
                     </div>
