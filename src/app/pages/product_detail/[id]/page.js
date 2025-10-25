@@ -5,10 +5,11 @@ import { useParams } from "next/navigation"
 import Navbar from "../../../components/navbar/Navbar"
 import Footer from "../../../components/footer/Footer"
 import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare, FiShoppingCart,  } from "react-icons/fi"
+import CTA from '../../components/CTA';
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 import ProductCard from "../../../components/product/Card"
 import { sampleProducts, flashSales, recommendedProducts } from "../../../data/products";
-import { stores } from "../../../data/store"; // Import store data
+import { stores } from "../../../data/store";
 
 export default function ProductPage() {
     const params = useParams();
@@ -449,19 +450,7 @@ export default function ProductPage() {
                 </section>
 
                 {/* CTA banner */}
-                <section className="mt-14 rounded-box border p-6 text-black">
-                    <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-                        <div>
-                            <h3 className="text-pretty text-lg font-semibold">
-                                Punya Bisnis? Yuk Buka Lapak di SMART, Pasar Online Sukmajaya!
-                            </h3>
-                            <p className="mt-1 text-sm opacity-70">
-                                Mulai berjualan gratis. Jangkau lebih banyak pelanggan sekarang.
-                            </p>
-                        </div>
-                        <button className="btn btn-primary">Buka Toko GRATIS</button>
-                    </div>
-                </section>
+                <CTA />
 
                 {/* back to top */}
                 <div className="mt-8 flex items-center justify-end gap-1 text-sm">

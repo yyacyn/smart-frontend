@@ -341,3 +341,80 @@ export const recommendedProducts = sampleProducts.slice(0, 6).map(p => ({
     ...p,
     stok: p.stok ?? 50,
 }));
+
+// Cart items data
+export const cartItems = [
+    {
+        id: 1,
+        nama_produk: "Toko Batik Ibu Mamda",
+        harga: 85000,
+        originalPrice: 100000,
+        discount: 15,
+        quantity: 2,
+        variant: "Merah",
+        stok: 50,
+        image: "/images/categories/local.jpg",
+        kategori: "Produk Lokal",
+        store_id: 1,
+        cod: true,
+        gratisOngkir: true
+    },
+    {
+        id: 2,
+        nama_produk: "Roti Ibu Aril",
+        harga: 25000,
+        quantity: 1,
+        variant: "Original",
+        stok: 20,
+        image: "/images/categories/food.jpg",
+        kategori: "Makanan",
+        store_id: 1,
+        cod: true,
+        gratisOngkir: false
+    },
+    {
+        id: 3,
+        nama_produk: "Jersey Mas Ari",
+        harga: 120000,
+        originalPrice: 150000,
+        discount: 20,
+        quantity: 1,
+        variant: "L",
+        stok: 15,
+        image: "/images/categories/clothes.jpg",
+        kategori: "Pakaian",
+        store_id: 1,
+        cod: false,
+        gratisOngkir: true
+    },
+    {
+        id: 4,
+        nama_produk: "Vitamin C 1000mg",
+        harga: 110000,
+        originalPrice: 125000,
+        discount: 12,
+        quantity: 3,
+        variant: "Botol 60 tablet",
+        stok: 80,
+        image: "/images/categories/drugs.jpg",
+        kategori: "Obat-obatan",
+        store_id: 1,
+        cod: true,
+        gratisOngkir: true
+    },
+    {
+        id: 5,
+        nama_produk: "Handuk Mandi Premium",
+        harga: 42500,
+        originalPrice: 50000,
+        discount: 15,
+        quantity: 2,
+        variant: "Biru",
+        stok: 30,
+        image: "/images/categories/dailies.jpg",
+        kategori: "Kebutuhan Harian",
+        store_id: 1,
+        cod: true,
+        gratisOngkir: false
+    }
+];
