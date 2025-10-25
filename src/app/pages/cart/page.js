@@ -81,13 +81,13 @@ export default function CartPage() {
     const subtotal = selectedItemsData.reduce((sum, item) => sum + (calculatePrice(item) * item.quantity), 0);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen ">
             <Navbar />
 
             <div className="container mx-auto px-4 py-8 mt-15 mb-20 text-black">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
-                        <button onClick={() => router.back()} className="btn btn-sm btn-ghost shadow-none border-none text-gray-700 border border-gray-300 hover:bg-gray-50">
+                        <button onClick={() => router.back()} className="btn btn-sm btn-ghost shadow-none border-none text-gray-700 border border-gray-300 hover:bg-gray-100">
                             &larr;
                         </button>
                         <h1 className="text-2xl font-bold text-gray-900">Keranjang Belanja</h1>
@@ -115,7 +115,7 @@ export default function CartPage() {
                 ) : (
                     <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
                         {/* Cart Items */}
-                        <div className="bg-white rounded-lg shadow-sm">
+                        <div className="bg-white rounded-lg border-1 border-gray-200">
                             {/* Select All Header */}
                             <div className="p-4 border-b border-gray-200">
                                 <label className="flex items-center gap-3 cursor-pointer">
@@ -213,7 +213,7 @@ export default function CartPage() {
                         </div>
 
                         {/* Order Summary */}
-                        <div className="bg-white rounded-lg shadow-sm p-6 h-fit sticky top-20">
+                        <div className="bg-white rounded-lg border-1 border-gray-200 p-6 h-fit sticky top-20">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Ringkasan Pesanan</h2>
 
                             <div className="space-y-3 mb-4">
@@ -223,13 +223,13 @@ export default function CartPage() {
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Ongkos Kirim</span>
-                                    <span className="font-medium text-green-600">GRATIS</span>
+                                    <span className="font-medium">Rp {Number(12000).toLocaleString("id-ID")}</span>
                                 </div>
                                 <div className="border-t border-gray-200 pt-3">
                                     <div className="flex justify-between">
                                         <span className="font-semibold text-gray-900">Total</span>
                                         <span className="font-bold text-xl text-[#ED775A]">
-                                            Rp {subtotal.toLocaleString("id-ID")}
+                                            Rp {(subtotal + 12000).toLocaleString("id-ID")}
                                         </span>
                                     </div>
                                 </div>

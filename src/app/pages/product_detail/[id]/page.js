@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import Navbar from "../../../components/navbar/Navbar"
 import Footer from "../../../components/footer/Footer"
 import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare, FiShoppingCart,  } from "react-icons/fi"
-import CTA from '../../components/CTA';
+import CTA from "@/app/components/CTA"
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 import ProductCard from "../../../components/product/Card"
 import { sampleProducts, flashSales, recommendedProducts } from "../../../data/products";
@@ -168,7 +168,7 @@ export default function ProductPage() {
         <div className="min-h-dvh mt-16 pt-10 text-black">
             <Navbar />
             {/* Breadcrumbs */}
-            <div className="flex mx-auto max-w-7xl px-4 text-black">
+            <div className="flex mx-auto max-w-7xl px-4 text-black ">
                 <div className="breadcrumbs py-4 text-sm">
                     <ul>
                         <li>
@@ -213,7 +213,7 @@ export default function ProductPage() {
                     {/* Product info */}
                     <section className="space-y-4 text-black">
 
-                        <h1 className="text-pretty text-xl font-semibold leading-tight flex items-center gap-2">
+                        <h1 className="text-pretty text-3xl font-semibold leading-tight flex items-center gap-2">
                             {currentProduct?.nama_produk}
                             {currentProduct?.discount > 0 && (
                                 <span className="badge badge-accent text-xs font-semibold text-white bg-[#ED775A] border-none">
@@ -222,11 +222,11 @@ export default function ProductPage() {
                             )}
                         </h1>
 
-                        <div className="flex gap-2 text-sm text-base-content/70">
+                        {/* <div className="flex gap-2 text-sm text-base-content/70">
                             <span className="badge bg-[#ED775A] border-none">Official</span>
                             <span className="badge bg-[#ED775A] border-none">Terlaris</span>
                             <span className="badge bg-[#ED775A] border-none">Gratis Ongkir</span>
-                        </div>
+                        </div> */}
 
 
                         <div className="divider my-2" />
@@ -308,7 +308,7 @@ export default function ProductPage() {
 
                     {/* Quantity + Summary Card */}
                     <aside className="lg:sticky lg:top-4 text-black">
-                        <div className="card border border-gray-300 ">
+                        <div className="card border border-gray-200 ">
                             <div className="card-body gap-4">
                                 <h3 className="card-title text-base">Atur Jumlah</h3>
 

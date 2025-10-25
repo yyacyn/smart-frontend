@@ -10,7 +10,7 @@ export default function Navbar() {
     const [isActive, setIsActive] = useState(false);
 
     return (
-        <header className="bg-white shadow-md fixed top-0 left-0 w-full z-50">
+        <header className="bg-white border-1 border-gray-200 fixed top-0 left-0 w-full z-50">
             <div className="navbar max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
                 <div className="navbar-start">
                     <Link href="/" className="items-center">
@@ -21,7 +21,7 @@ export default function Navbar() {
 
                 <div className="navbar-center hidden lg:flex">
                     <div className="form-control">
-                        <div className="input-group border-gray-200 border-2 rounded-md text-gray-500 flex">
+                        <div className="input-group border-gray-200 border-1 rounded-md text-gray-500 flex">
                             <input
                                 type="text"
                                 placeholder="Cari disini..."
@@ -44,9 +44,9 @@ export default function Navbar() {
                     <button className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] hover:border-none">
                         <FiHeart size={20} />
                     </button>
-                    <button className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] hover:border-none">
+                    <Link href="/pages/cart" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] hover:border-none">
                         <FiShoppingCart size={20} />
-                    </button>
+                    </Link>
                     <div className="dropdown dropdown-end" onClick={() => setIsActive(!isActive)} onBlur={() => setIsActive(false)}>
                         <div tabIndex={0} role="button" className={`btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] focus:bg-[#ED775A] focus:text-white hover:border-none ${isActive ? 'bg-[#ED775A] text-white' : ''}`}>
                             <FiUser size={20} />
