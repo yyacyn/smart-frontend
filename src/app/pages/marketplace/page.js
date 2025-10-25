@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import Navbar from "../../components/navbar/Navbar"
@@ -10,7 +10,7 @@ import { FiFilter } from "react-icons/fi";
 import { AiOutlineFrown } from "react-icons/ai";
 import { sampleProducts, flashSales, recommendedProducts } from "../../data/products";
 
-export default function MarketplacePage() {
+function MarketplaceContent() {
     const searchParams = useSearchParams();
     const initialCategory = searchParams.get('category') || 'all';
     const [products, setProducts] = useState([])
@@ -360,4 +360,12 @@ export default function MarketplacePage() {
             <Footer />
         </div>
     )
+}
+
+export default function MarketplacePage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="loading loading-spinner loading-lg text-[#ED775A]"></div></div>}>
+            <MarketplaceContent />
+        </Suspense>
+    );
 }
