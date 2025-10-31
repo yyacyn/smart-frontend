@@ -38,29 +38,18 @@ export default function Navbar() {
                 </div>
 
                 <div className="navbar-end space-x-2">
-                    <button className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] hover:border-none">
-                        <FiBell size={20}/>
+                    <button className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none shadow-none hover:bg-[#ED775A] hover:border-none">
+                        <FiBell size={20} />
                     </button>
-                    <button className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] hover:border-none">
+                    <button className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none shadow-none hover:bg-[#ED775A] hover:border-none">
                         <FiHeart size={20} />
                     </button>
-                    <Link href="/pages/cart" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] hover:border-none">
+                    <Link href="/pages/cart" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white shadow-none border-none hover:bg-[#ED775A] hover:border-none">
                         <FiShoppingCart size={20} />
                     </Link>
-                    <div className="dropdown dropdown-end" onClick={() => setIsActive(!isActive)} onBlur={() => setIsActive(false)}>
-                        <div tabIndex={0} role="button" className={`btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none hover:bg-[#ED775A] focus:bg-[#ED775A] focus:text-white hover:border-none ${isActive ? 'bg-[#ED775A] text-white' : ''}`}>
-                            <FiUser size={20} />
-                        </div>
-                        <ul
-                            tabIndex={0}
-                            className="menu menu-sm dropdown-content rounded-box z-1 mt-3 w-52 p-2 shadow bg-white">
-                            <li className="flex items-center space-x-2">
-                                <a href="/auth/login" className="hover:bg-gray-200 w-full py-2">
-                                    <FcGoogle className="w-4 h-4 text-black" />Login with Google
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    <button className="btn btn-ghost hover:bg-orange-custom hover:text-white px-5 border-none shadow-none rounded-4xl hover:bg-[#ED775A] hover:border-none">
+                        <div className="">Login</div>
+                    </button>
                 </div>
             </div>
         </header>
