@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
-import ProductCard from "../../components/product/Card";
+import ProductCard from "@/app/components/product/Card2";
 import { sampleProducts, flashSales, recommendedProducts } from "../../data/products";
+import BestSelling from "@/app/components/landing_page/BestSelling";
 
 export default function LandingPage() {
     const router = useRouter();
@@ -242,7 +243,7 @@ export default function LandingPage() {
 
             <div className="bg-gradient-to-b from-gray-50 to-white">
                 {/* Products Section */}
-                <section className="py-20">
+                {/* <section className="py-20">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
                             <div className="flex items-center justify-center gap-3 mb-4">
@@ -278,7 +279,8 @@ export default function LandingPage() {
                             </Link>
                         </div>
                     </div>
-                </section>
+                </section> */}
+                <BestSelling />
 
                 {/* Recommendations Section */}
                 <section className="py-20 bg-gradient-to-b from-white to-[#FFE797]/10">
