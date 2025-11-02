@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.34.1",
     "autoprefixer": "^10.4.21",
     "daisyui": "^5.1.13",
+    "lucide-react": "^0.552.0",
     "next": "15.5.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",

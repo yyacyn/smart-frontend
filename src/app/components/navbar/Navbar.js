@@ -1,13 +1,18 @@
 "use client";
-
+import { PackageIcon } from "lucide-react";
 import Link from "next/link";
-import { FiSearch, FiShoppingCart, FiUser, FiHeart, FiBell } from "react-icons/fi";
+import { FiSearch, FiShoppingCart, FiHeart, FiBell } from "react-icons/fi";
 import { useState } from "react";
-import { FcGoogle } from "react-icons/fc";
+import { useUser, useClerk, UserButton } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+
+    const {user} = useUser();
+    const { openSignIn } = useClerk();
+    const router = useRouter();
+
     const [searchQuery, setSearchQuery] = useState("");
-    const [isActive, setIsActive] = useState(false);
 
     return (
         <header className="bg-white border-1 border-gray-200 fixed top-0 left-0 w-full z-50">
@@ -47,9 +52,19 @@ export default function Navbar() {
                     <Link href="/pages/cart" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white shadow-none border-none hover:bg-[#ED775A] hover:border-none">
                         <FiShoppingCart size={20} />
                     </Link>
-                    <button className="btn btn-ghost hover:bg-orange-custom hover:text-white px-5 border-none shadow-none rounded-4xl hover:bg-[#ED775A] hover:border-none">
-                        <div className="">Login</div>
-                    </button>
+                    {!user ? (
+                        <button onClick={openSignIn} className="btn btn-ghost hover:bg-orange-custom hover:text-white px-5 border-none shadow-none rounded-4xl hover:bg-[#ED775A] hover:border-none">
+                            <div className="">Login</div>
+                        </button>
+
+                    ) : (
+                        <UserButton>
+                            <UserButton.MenuItems>
+                                <UserButton.Action labelIcon={<PackageIcon size={16}/>} label="My Orders" onClick={() => router.push('/')}/>
+                            </UserButton.MenuItems>
+                        </UserButton>
+                    )
+                    }
                 </div>
             </div>
         </header>

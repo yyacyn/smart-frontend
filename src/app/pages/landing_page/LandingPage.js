@@ -5,10 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
-import { fetchProducts } from "../../api";
 import ProductCard from "../../components/product/Card";
-import RecsCard from "../../components/product/RecsCard";
-import FlashCard from '../../components/product/Flash';
 import { sampleProducts, flashSales, recommendedProducts } from "../../data/products";
 
 export default function LandingPage() {
