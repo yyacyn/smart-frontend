@@ -4,17 +4,20 @@ import { useMemo, useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Navbar from "../../../components/navbar/Navbar"
 import Footer from "../../../components/footer/Footer"
-import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare, FiShoppingCart,  } from "react-icons/fi"
+import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare, FiShoppingCart, } from "react-icons/fi"
 import CTA from "@/app/components/CTA"
+import { useRouter } from "next/navigation";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
-import ProductCard from "../../../components/product/Card"
+// import ProductCard from "../../../components/product/Card"
+import ProductCard from "../../../components/product/Card2"
 import { sampleProducts, flashSales, recommendedProducts } from "../../../data/products";
 import { stores } from "../../../data/store";
 
 export default function ProductPage() {
+    const router = useRouter();
     const params = useParams();
     const productId = parseInt(params.id);
-    
+
     const [qty, setQty] = useState(2)
     const [activeTab, setActiveTab] = useState("Detail")
     const [products, setProducts] = useState([]); // Declare products state
@@ -27,11 +30,11 @@ export default function ProductPage() {
 
     useEffect(() => {
         setProducts(sampleProducts); // Initialize products with sampleProducts
-        
+
         // Find the current product based on the ID from the URL
         const product = sampleProducts.find(p => p.ID === productId);
         setCurrentProduct(product);
-        
+
         // Find the store for this product
         if (product) {
             const store = stores.find(s => s.store_id === product.store_id);
@@ -213,13 +216,18 @@ export default function ProductPage() {
                     {/* Product info */}
                     <section className="space-y-4 text-black">
 
-                        <h1 className="text-pretty text-3xl font-semibold leading-tight flex items-center gap-2">
-                            {currentProduct?.nama_produk}
-                            {currentProduct?.discount > 0 && (
-                                <span className="badge badge-accent text-xs font-semibold text-white bg-[#ED775A] border-none">
-                                    -{currentProduct.discount}%
-                                </span>
-                            )}
+                        <h1 className="text-pretty text-3xl font-semibold leading-tight flex items-center gap-2 justify-between">
+                            <div className="flex items-center gap-4">
+                                {currentProduct?.nama_produk}
+                                {currentProduct?.discount > 0 && (
+                                    <span className="badge badge-accent text-xs font-semibold text-white bg-[#ED775A] border-none">
+                                        -{currentProduct.discount}%
+                                    </span>
+                                )}
+                            </div>
+                            <button className="ml-3 px-3 py-1 rounded border border-red-500 text-red-500 bg-white hover:bg-red-50 text-xs font-semibold" onClick={() => alert('Laporkan produk ini!')}>
+                                Report
+                            </button>
                         </h1>
 
                         {/* <div className="flex gap-2 text-sm text-base-content/70">
@@ -360,9 +368,18 @@ export default function ProductPage() {
                                 </div>
 
                                 <div className="flex flex-row w-full gap-2">
-                                    <button className="btn w-3/4 bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow">Checkout</button>
+                                    <button
+                                        className="btn w-3/4 bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow"
+                                        onClick={() => {
+                                            // Open checkout page in a new tab with product ID and quantity
+                                            window.open(`/pages/checkout/?productId=${currentProduct.ID}&qty=${qty}`, '_blank');
+                                        }}
+                                    >
+                                        Checkout
+                                    </button>
                                     <button className="btn bg-white w-1/4 shadow-none text-[#ED775A] border hover:bg-gray-100 border-[#ED775A] hover:border-[#eb6b4b] hover:text-[#ED775A]">
-                                        <FiShoppingCart className="w-5"/></button>
+                                        <FiShoppingCart className="w-5" />
+                                    </button>
                                 </div>
 
                                 <div className="flex flex-row justify-between text-sm opacity-70">

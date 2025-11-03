@@ -239,6 +239,13 @@ export default function CartPage() {
                             <button
                                 className={`w-full btn mb-3 ${selectedItems.length === 0 ? 'bg-gray-400 text-white border-none cursor-not-allowed' : 'bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow-none text-white'}`}
                                 hidden={selectedItems.length === 0}
+                                onClick={() => {
+                                    if (selectedItems.length > 0) {
+                                        // Create cart items string for checkout
+                                        const cartItemsParam = selectedItems.join(',');
+                                        router.push(`/pages/checkout/?cartItems=${cartItemsParam}`);
+                                    }
+                                }}
                             >
                                 Checkout ({selectedItems.length})
                             </button>

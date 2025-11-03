@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
-import { cartItems as initialCartItems } from "../../data/products";
+import { cartItems as initialCartItems, sampleProducts } from "../../data/products";
 import { stores } from "../../data/store";
 import { FiMapPin, FiCreditCard, FiTruck, FiCheck, FiEdit3 } from "react-icons/fi";
 
@@ -30,7 +30,44 @@ export default function CheckoutPage() {
     const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
-        // For demo purposes, use first 2 items from cart
+        // Get parameters from query params
+        const searchParams = new URLSearchParams(window.location.search);
+        const productId = searchParams.get('productId');
+        const qty = parseInt(searchParams.get('qty')) || 1;
+        const cartItems = searchParams.get('cartItems');
+
+        // Handle single product checkout (from product detail page)
+        if (productId) {
+            // Find the product in sampleProducts first, then initialCartItems
+            const allProducts = [...sampleProducts, ...initialCartItems];
+            const item = allProducts.find(p => p.ID == productId || p.id == productId);
+            if (item) {
+                // Normalize the item structure to match checkout expectations
+                const normalizedItem = {
+                    id: item.ID || item.id,
+                    ID: item.ID || item.id,
+                    nama_produk: item.nama_produk,
+                    image: item.image,
+                    harga: item.harga,
+                    store_id: item.store_id,
+                    quantity: qty
+                };
+                setSelectedItems([normalizedItem]);
+                return;
+            }
+        }
+
+        // Handle multiple items checkout (from cart page)
+        if (cartItems) {
+            const itemIds = cartItems.split(',').map(id => parseInt(id));
+            const selectedCartItems = initialCartItems.filter(item => itemIds.includes(item.id));
+            if (selectedCartItems.length > 0) {
+                setSelectedItems(selectedCartItems);
+                return;
+            }
+        }
+
+        // Fallback: use first 2 items from cart
         setSelectedItems(initialCartItems.slice(0, 2));
     }, []);
 

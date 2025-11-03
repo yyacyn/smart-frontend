@@ -10,7 +10,10 @@ export default function ProductCard({ product }) {
     //     ? Math.round(product.harga * (1 - product.discount / 100))
     //     : product.harga;
 
-    const rating = Math.round(product.rating.reduce((acc, curr) => acc + curr.rating, 0) / product.rating.length);
+    const ratingArr = Array.isArray(product.rating) ? product.rating : [];
+    const rating = ratingArr.length > 0
+        ? Math.round(ratingArr.reduce((acc, curr) => acc + curr.rating, 0) / ratingArr.length)
+        : 0;
 
     return (
         <div className="">
@@ -19,9 +22,11 @@ export default function ProductCard({ product }) {
                     className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300"
                 >
                     <figure className="relative w-full h-64 overflow-hidden rounded-t-lg">
-                        <Image width={500} height={500}
-                            src={product.images[0]}
-                            alt={product.name}
+                        <Image
+                            width={500}
+                            height={500}
+                            src={Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : "/images/default.png"}
+                            alt={product.name ? product.name : "Product image"}
                             className="w-full h-full object-cover"
                         />
                         {/* <div className="badge badge-primary absolute top-2 right-2">
@@ -61,15 +66,15 @@ export default function ProductCard({ product }) {
                         {product.price !== product.mrp ? (
                             <div className="mt-2">
                                 <span className="text-gray-400 line-through mr-2">
-                                    Rp {product.mrp.toLocaleString("id-ID")}
+                                    Rp {(typeof product.mrp === "number" ? product.mrp : 0).toLocaleString("id-ID")}
                                 </span>
                                 <span className="text-gray-600 font-bold">
-                                    Rp {product.price.toLocaleString("id-ID")}
+                                    Rp {(typeof product.price === "number" ? product.price : 0).toLocaleString("id-ID")}
                                 </span>
                             </div>
                         ) : (
                             <p className="text-gray-600 mt-2 font-bold">
-                                Rp {product.price.toLocaleString("id-ID")}
+                                Rp {(typeof product.price === "number" ? product.price : 0).toLocaleString("id-ID")}
                             </p>
                         )}
                     </div>

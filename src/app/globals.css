@@ -1,10 +1,12 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 @import "tailwindcss";
 @plugin "daisyui";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-primary: 'Poppins', Arial, Helvetica, sans-serif; /* Added Poppins as the primary font */
+  --font-primary: 'Outfit', Arial, Helvetica, sans-serif; /* Changed to Outfit font */
   --color-green: #84994F;
   --color-yellow: #FFE797;
   --color-blue: #476EAE;
