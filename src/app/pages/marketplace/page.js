@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import Navbar from "../../components/navbar/Navbar"
 import Footer from "../../components/footer/Footer"
-import ProductCard from "../../components/product/Card"
+import ProductCard from "../../components/product/Card2"
 import { FiFilter } from "react-icons/fi";
 import { AiOutlineFrown } from "react-icons/ai";
 import { sampleProducts, flashSales, recommendedProducts } from "../../data/products";
