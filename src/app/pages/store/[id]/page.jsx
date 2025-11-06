@@ -115,7 +115,7 @@ export default function StorePage() {
     }
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-gray-50">
             <Navbar />
             
             <div className="container mx-auto px-4 py-8 mt-16 mb-20 text-black">

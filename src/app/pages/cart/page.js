@@ -81,7 +81,7 @@ export default function CartPage() {
     const subtotal = selectedItemsData.reduce((sum, item) => sum + (calculatePrice(item) * item.quantity), 0);
 
     return (
-        <div className="min-h-screen ">
+        <div className="min-h-screen bg-gray-50">
             <Navbar />
 
             <div className="container mx-auto px-4 py-8 mt-15 mb-20 text-black">

@@ -12,6 +12,7 @@ import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 import ProductCard from "../../../components/product/Card2"
 import { sampleProducts, flashSales, recommendedProducts } from "../../../data/products";
 import { stores } from "../../../data/store";
+import Link from "next/link";
 
 export default function ProductPage() {
     const router = useRouter();
@@ -168,7 +169,7 @@ export default function ProductPage() {
     }
 
     return (
-        <div className="min-h-dvh mt-16 pt-10 text-black">
+        <div className="min-h-dvh mt-16 pt-10 text-black ">
             <Navbar />
             {/* Breadcrumbs */}
             <div className="flex mx-auto max-w-7xl px-4 text-black ">
@@ -296,7 +297,7 @@ export default function ProductPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <button className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow">Kunjungi Toko</button>
+                                <Link href={`/pages/store/${currentStore.store_id}`} className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow">Kunjungi Toko</Link>
                             </div>
                         </section>
 

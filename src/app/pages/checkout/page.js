@@ -98,7 +98,7 @@ export default function CheckoutPage() {
     const isFormValid = shippingAddress.name && shippingAddress.phone && shippingAddress.address && shippingAddress.city && shippingAddress.postalCode;
 
     return (
-        <div className="min-h-screen ">
+        <div className="min-h-screen bg-gray-50">
             <Navbar />
             
             <div className="container mx-auto px-4 py-8 mt-15 mb-20">
