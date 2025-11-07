@@ -1,13 +1,9 @@
+
 // api.js
-
-const BASE_URL = 'https://backend-go-gin-production.up.railway.app';
-
-// Example API endpoints
+import axios from "axios";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://besukma.vercel.app';
 
 export const fetchProducts = async () => {
-    const response = await fetch(`${BASE_URL}/products`);
-    if (!response.ok) {
-        throw new Error('Failed to fetch products');
-    }
-    return response.json();
+    const response = await axios.get(`${BASE_URL}/api/products`);
+    return response.data;
 };

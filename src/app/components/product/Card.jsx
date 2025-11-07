@@ -2,25 +2,17 @@ import React from 'react';
 import Image from 'next/image'
 import Link from "next/link";
 
-
 export default function ProductCard({ product }) {
-    // Calculate discounted price
-    // const hasDiscount = product.discount != null && product.discount > 0;
-    // const discountedPrice = hasDiscount
-    //     ? Math.round(product.harga * (1 - product.discount / 100))
-    //     : product.harga;
-
+    // Calculate average rating (API: product.rating is array of numbers)
     const ratingArr = Array.isArray(product.rating) ? product.rating : [];
     const rating = ratingArr.length > 0
-        ? Math.round(ratingArr.reduce((acc, curr) => acc + curr.rating, 0) / ratingArr.length)
+        ? Math.round(ratingArr.reduce((acc, curr) => acc + (typeof curr === 'number' ? curr : 0), 0) / ratingArr.length)
         : 0;
 
     return (
-        <div className="">
+        <div>
             <Link href={`/pages/product_detail/${product.id}`}>
-                <div
-                    className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300"
-                >
+                <div className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300">
                     <figure className="relative w-full h-64 overflow-hidden rounded-t-lg">
                         <Image
                             width={500}
@@ -29,14 +21,6 @@ export default function ProductCard({ product }) {
                             alt={product.name ? product.name : "Product image"}
                             className="w-full h-full object-cover"
                         />
-                        {/* <div className="badge badge-primary absolute top-2 right-2">
-                            {product.kategori}
-                        </div> */}
-                        {/* {hasDiscount && (
-                            <div className="badge badge-warning absolute bottom-2 left-2">
-                                -{product.discount}%
-                            </div>
-                        )} */}
                     </figure>
 
                     <div className="card-body px-3 py-3">
@@ -52,14 +36,12 @@ export default function ProductCard({ product }) {
                                         type="radio"
                                         name={`rating-${product.id}`}
                                         className="mask mask-star-2 bg-orange-400"
-                                        defaultChecked={index + 1 < rating}
+                                        defaultChecked={index + 1 === rating}
                                     />
-
-
                                 ))}
                             </div>
                             <span className="text-xs text-gray-500">
-                                ({product.rating.length} reviews)
+                                ({ratingArr.length} reviews)
                             </span>
                         </div>
 

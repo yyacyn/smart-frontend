@@ -5,10 +5,11 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import Navbar from "../../components/navbar/Navbar"
 import Footer from "../../components/footer/Footer"
-import ProductCard from "../../components/product/Card2"
+import ProductCard from "../../components/product/Card"
 import { FiFilter } from "react-icons/fi";
 import { AiOutlineFrown } from "react-icons/ai";
-import { sampleProducts, flashSales, recommendedProducts } from "../../data/products";
+import { flashSales, recommendedProducts } from "../../data/products";
+import { fetchProducts } from "../../api";
 
 function MarketplaceContent() {
     const searchParams = useSearchParams();
@@ -32,9 +33,23 @@ function MarketplaceContent() {
 
 
     useEffect(() => {
-        setProducts(sampleProducts)
-        setFilteredProducts(sampleProducts)
-    }, [])
+        async function getProducts() {
+            try {
+                const data = await fetchProducts();
+                if (data && data.products) {
+                    setProducts(data.products);
+                    setFilteredProducts(data.products);
+                } else {
+                    setProducts([]);
+                    setFilteredProducts([]);
+                }
+            } catch (error) {
+                setProducts([]);
+                setFilteredProducts([]);
+            }
+        }
+        getProducts();
+    }, []);
 
     // Sync category and discount filter with query param whenever it changes
     useEffect(() => {
@@ -54,30 +69,36 @@ function MarketplaceContent() {
 
     useEffect(() => {
         let filtered = products.filter(product => {
+            // Match API attributes
+            const name = product.name || "";
+            const price = typeof product.price === "number" ? product.price : 0;
+            const mrp = typeof product.mrp === "number" ? product.mrp : price;
+            const category = product.category || "";
+            const rating = Array.isArray(product.rating) ? (
+                product.rating.length > 0 ? Math.round(product.rating.reduce((acc, curr) => acc + (typeof curr === 'number' ? curr : 0), 0) / product.rating.length) : 0
+            ) : 0;
             // Category mapping for filtering
             let categoryMatch = true;
             if (filters.category !== 'all') {
                 switch (filters.category) {
                     case 'Makanan & Minuman':
-                        categoryMatch = product.kategori === 'Makanan';
+                        categoryMatch = category === 'Makanan';
                         break;
                     case 'Kesehatan & Kecantikan':
-                        categoryMatch = product.kategori === 'Obat-obatan' || product.kategori === 'Kecantikan';
+                        categoryMatch = category === 'Obat-obatan' || category === 'Kecantikan';
                         break;
                     case 'Kerajinan Lokal':
-                        categoryMatch = product.kategori === 'Produk Lokal';
+                        categoryMatch = category === 'Produk Lokal';
                         break;
                     default:
-                        categoryMatch = product.kategori === filters.category;
+                        categoryMatch = category === filters.category;
                 }
             }
-
-            let match = product.nama_produk.toLowerCase().includes(filters.search.toLowerCase()) &&
+            let match = name.toLowerCase().includes(filters.search.toLowerCase()) &&
                 categoryMatch &&
-                product.harga >= filters.minPrice &&
-                product.harga <= filters.maxPrice &&
-                product.rating >= filters.rating;
-
+                price >= filters.minPrice &&
+                price <= filters.maxPrice &&
+                rating >= filters.rating;
             // Penawaran filters
             if (filters.cod) {
                 match = match && product.cod === true;
@@ -95,15 +116,18 @@ function MarketplaceContent() {
         filtered.sort((a, b) => {
             switch (filters.sortBy) {
                 case 'price-low':
-                    return a.harga - b.harga
+                    return (a.price || 0) - (b.price || 0);
                 case 'price-high':
-                    return b.harga - a.harga
-                case 'rating':
-                    return b.rating - a.rating
+                    return (b.price || 0) - (a.price || 0);
+                case 'rating': {
+                    const aRating = Array.isArray(a.rating) ? (a.rating.length > 0 ? Math.round(a.rating.reduce((acc, curr) => acc + (typeof curr === 'number' ? curr : 0), 0) / a.rating.length) : 0) : 0;
+                    const bRating = Array.isArray(b.rating) ? (b.rating.length > 0 ? Math.round(b.rating.reduce((acc, curr) => acc + (typeof curr === 'number' ? curr : 0), 0) / b.rating.length) : 0) : 0;
+                    return bRating - aRating;
+                }
                 case 'reviews':
-                    return b.reviews - a.reviews
+                    return (Array.isArray(b.rating) ? b.rating.length : 0) - (Array.isArray(a.rating) ? a.rating.length : 0);
                 default:
-                    return a.nama_produk.localeCompare(b.nama_produk)
+                    return (a.name || "").localeCompare(b.name || "");
             }
         })
 
@@ -326,7 +350,7 @@ function MarketplaceContent() {
                         {filteredProducts.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                                 {currentProducts.map((product) => (
-                                    <ProductCard key={product.ID} product={product} />
+                                    <ProductCard key={product.id || product.ID} product={product} />
                                 ))}
                             </div>
                         ) : (

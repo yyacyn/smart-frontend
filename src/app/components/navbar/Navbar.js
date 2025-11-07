@@ -176,7 +176,7 @@ export default function Navbar() {
                             {/* User Menu */}
                             <UserButton>
                                 <UserButton.MenuItems>
-                                    <UserButton.Action labelIcon={<PackageIcon size={16}/>} label="My Orders" onClick={() => router.push('/')}/>
+                                    <UserButton.Action labelIcon={<PackageIcon size={16}/>} label="My Orders" onClick={() => router.push('/pages/order')}/>
                                 </UserButton.MenuItems>
                             </UserButton>
                         </>

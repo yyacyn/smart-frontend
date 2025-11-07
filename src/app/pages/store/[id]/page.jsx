@@ -5,16 +5,16 @@ import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../../components/navbar/Navbar";
 import Footer from "../../../components/footer/Footer";
 import ProductCard from "../../../components/product/Card2";
-import { sampleProducts } from "../../../data/products";
-import { stores } from "../../../data/store";
+import { fetchProducts } from "../../../api";
+import axios from "axios";
 import { FiStar, FiMessageCircle, FiFlag, FiMapPin, FiPhone, FiMail, FiClock, FiUsers, FiShoppingBag, FiHeart, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 
 export default function StorePage() {
     const params = useParams();
     const router = useRouter();
-    const storeId = parseInt(params.id);
-    
+    const storeId = params.id;
+
     const [currentStore, setCurrentStore] = useState(null);
     const [storeProducts, setStoreProducts] = useState([]);
     const [popularProducts, setPopularProducts] = useState([]);
@@ -25,36 +25,47 @@ export default function StorePage() {
     const productsPerLoad = 12;
 
     useEffect(() => {
-        // Find the store by ID
-        const store = stores.find(s => s.store_id === storeId);
-        setCurrentStore(store);
+        async function fetchStoreAndProducts() {
+            try {
+                // Fetch stores
+                const storeRes = await axios.get("https://besukma.vercel.app/api/admin/stores");
+                const stores = storeRes.data.stores || [];
+                const store = stores.find(s => s.id === storeId);
+                setCurrentStore(store);
 
-        // Get products for this store
-        const products = sampleProducts.filter(p => p.store_id === storeId);
-        setStoreProducts(products);
-
-        // Get popular products (first 4 products)
-        setPopularProducts(products.slice(0, 4));
+                // Fetch products
+                const prodRes = await fetchProducts();
+                const products = prodRes.products || [];
+                const storeProds = products.filter(p => p.store?.id === storeId);
+                setStoreProducts(storeProds);
+                setPopularProducts(storeProds.slice(0, 4));
+            } catch (err) {
+                setCurrentStore(null);
+                setStoreProducts([]);
+                setPopularProducts([]);
+            }
+        }
+        fetchStoreAndProducts();
     }, [storeId]);
 
     // Get unique categories for filter
-    const categories = ["all", ...new Set(storeProducts.map(p => p.kategori))];
+    const categories = ["all", ...new Set(storeProducts.map(p => p.category))];
 
     // Filter and sort products
     const filteredProducts = storeProducts.filter(product => {
-        return selectedCategory === "all" || product.kategori === selectedCategory;
+        return selectedCategory === "all" || product.category === selectedCategory;
     });
 
     const sortedProducts = [...filteredProducts].sort((a, b) => {
         switch (sortBy) {
             case "name":
-                return a.nama_produk.localeCompare(b.nama_produk);
+                return (a.name || "").localeCompare(b.name || "");
             case "price_low":
-                return a.harga - b.harga;
+                return (a.price || 0) - (b.price || 0);
             case "price_high":
-                return b.harga - a.harga;
+                return (b.price || 0) - (a.price || 0);
             case "newest":
-                return b.ID - a.ID;
+                return (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0);
             default:
                 return 0;
         }
@@ -137,7 +148,7 @@ export default function StorePage() {
                         <div className="flex-shrink-0">
                             <div className="w-32 h-32 rounded-lg overflow-hidden bg-gray-200">
                                 <img 
-                                    src={currentStore.image} 
+                                    src={currentStore.logo} 
                                     alt={currentStore.name}
                                     className="w-full h-full object-cover"
                                 />

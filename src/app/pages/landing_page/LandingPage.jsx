@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
-import ProductCard from "@/app/components/product/Card2";
-import { sampleProducts, flashSales, recommendedProducts } from "../../data/products";
+import ProductCard from "@/app/components/product/Card";
+import { flashSales, recommendedProducts } from "../../data/products";
+import { fetchProducts } from "../../api";
 import BestSelling from "@/app/components/landing_page/BestSelling";
 import CTA from "@/app/components/CTA";
 
@@ -19,7 +20,19 @@ export default function LandingPage() {
     const [recommendedProductsList, setRecommendedProductsList] = useState([]);
 
     useEffect(() => {
-        setProducts(sampleProducts);
+        async function getProducts() {
+            try {
+                const data = await fetchProducts();
+                if (data && data.products) {
+                    setProducts(data.products);
+                } else {
+                    setProducts([]);
+                }
+            } catch (error) {
+                setProducts([]);
+            }
+        }
+        getProducts();
     }, []);
 
     useEffect(() => {
@@ -76,9 +89,9 @@ export default function LandingPage() {
         setPrecomputedFlashSales(flashSales);
     }, []);
 
-    useEffect(() => {
-        setPrecomputedProducts(sampleProducts);
-    }, []);
+    // useEffect(() => {
+    //     setPrecomputedProducts(sampleProducts);
+    // }, []);
 
     useEffect(() => {
         setRecommendedProductsList(recommendedProducts);
