@@ -9,18 +9,18 @@ import CTA from "@/app/components/CTA"
 import { useRouter } from "next/navigation";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 // import ProductCard from "../../../components/product/Card"
-import ProductCard from "../../../components/product/Card2"
-import { sampleProducts, flashSales, recommendedProducts } from "../../../data/products";
-import { stores } from "../../../data/store";
+import ProductCard from "../../../components/product/Card"
+import { fetchProducts } from "../../../api";
+import Link from "next/link";
 
 export default function ProductPage() {
     const router = useRouter();
     const params = useParams();
-    const productId = parseInt(params.id);
+    const productId = params.id;
 
-    const [qty, setQty] = useState(2)
-    const [activeTab, setActiveTab] = useState("Detail")
-    const [products, setProducts] = useState([]); // Declare products state
+    const [qty, setQty] = useState(1);
+    const [activeTab, setActiveTab] = useState("Detail");
+    const [products, setProducts] = useState([]);
     const [currentProduct, setCurrentProduct] = useState(null);
     const [currentStore, setCurrentStore] = useState(null);
     const [selectedRatings, setSelectedRatings] = useState([]);
@@ -29,17 +29,24 @@ export default function ProductPage() {
     const [isWishlisted, setIsWishlisted] = useState(false);
 
     useEffect(() => {
-        setProducts(sampleProducts); // Initialize products with sampleProducts
-
-        // Find the current product based on the ID from the URL
-        const product = sampleProducts.find(p => p.ID === productId);
-        setCurrentProduct(product);
-
-        // Find the store for this product
-        if (product) {
-            const store = stores.find(s => s.store_id === product.store_id);
-            setCurrentStore(store);
+        async function getProducts() {
+            try {
+                const data = await fetchProducts();
+                if (data && data.products) {
+                    setProducts(data.products);
+                    const product = data.products.find(p => p.id === productId);
+                    setCurrentProduct(product);
+                    if (product && product.store) {
+                        setCurrentStore(product.store);
+                    }
+                }
+            } catch (error) {
+                setProducts([]);
+                setCurrentProduct(null);
+                setCurrentStore(null);
+            }
         }
+        getProducts();
     }, [productId]);
 
     const handleRatingChange = (r) => {
@@ -49,6 +56,15 @@ export default function ProductPage() {
                 : [...prev, r]
         );
     };
+
+    // Gallery image selection
+    const [selectedImageIdx, setSelectedImageIdx] = useState(0);
+
+    // Calculate discount percentage
+    let discountPercent = 0;
+    if (currentProduct && currentProduct.mrp > currentProduct.price) {
+        discountPercent = Math.round(((currentProduct.mrp - currentProduct.price) / currentProduct.mrp) * 100);
+    }
 
     // Show loading if product data isn't loaded yet
     if (!currentProduct || !currentStore) {
@@ -168,7 +184,7 @@ export default function ProductPage() {
     }
 
     return (
-        <div className="min-h-dvh mt-16 pt-10 text-black">
+        <div className="min-h-dvh mt-16 pt-10 text-black ">
             <Navbar />
             {/* Breadcrumbs */}
             <div className="flex mx-auto max-w-7xl px-4 text-black ">
@@ -178,9 +194,9 @@ export default function ProductPage() {
                             <a>Home</a>
                         </li>
                         <li>
-                            <a>{currentProduct?.kategori}</a>
+                            <a>{currentProduct?.category}</a>
                         </li>
-                        <li className="font-medium">{currentProduct?.nama_produk}</li>
+                        <li className="font-medium">{currentProduct?.name}</li>
                     </ul>
                 </div>
             </div>
@@ -192,21 +208,22 @@ export default function ProductPage() {
                     <section aria-labelledby="gallery" className="space-y-4">
                         <div className="aspect-[4/3] w-full overflow-hidden rounded-box ">
                             <img
-                                alt="Foto produk"
+                                alt={currentProduct?.name}
                                 className="h-full w-full object-cover"
-                                src={currentProduct?.image}
+                                src={Array.isArray(currentProduct?.images) && currentProduct.images.length > 0 ? currentProduct.images[selectedImageIdx] : "/images/default.png"}
                             />
                         </div>
                         <div className="grid grid-cols-4 gap-3">
-                            {[1, 2, 3, 4].map((i) => (
+                            {Array.isArray(currentProduct?.images) && currentProduct.images.slice(0, 4).map((img, i) => (
                                 <button
                                     key={i}
-                                    className="aspect-square overflow-hidden rounded-box hover:ring-1 hover:ring-[#ED775A] hover:ring-offset-2"
+                                    className={`aspect-square overflow-hidden rounded-box hover:ring-1 hover:ring-[#ED775A] hover:ring-offset-2 ${selectedImageIdx === i ? "ring-2 ring-[#ED775A]" : ""}`}
+                                    onClick={() => setSelectedImageIdx(i)}
                                 >
                                     <img
-                                        alt={"Thumbnail " + i}
+                                        alt={`Thumbnail ${i + 1}`}
                                         className="h-full w-full object-cover"
-                                        src={currentProduct?.image}
+                                        src={img}
                                     />
                                 </button>
                             ))}
@@ -218,10 +235,10 @@ export default function ProductPage() {
 
                         <h1 className="text-pretty text-3xl font-semibold leading-tight flex items-center gap-2 justify-between">
                             <div className="flex items-center gap-4">
-                                {currentProduct?.nama_produk}
-                                {currentProduct?.discount > 0 && (
+                                {currentProduct?.name}
+                                {discountPercent > 0 && (
                                     <span className="badge badge-accent text-xs font-semibold text-white bg-[#ED775A] border-none">
-                                        -{currentProduct.discount}%
+                                        Diskon {discountPercent}%
                                     </span>
                                 )}
                             </div>
@@ -240,17 +257,17 @@ export default function ProductPage() {
                         <div className="divider my-2" />
 
                         {/* Price display with discount */}
-                        {currentProduct?.discount > 0 ? (
+                        {currentProduct?.mrp > currentProduct?.price ? (
                             <div className="flex items-center gap-2">
                                 <span className="text-2xl font-bold tracking-tight text-[#ED775A]">
-                                    Rp {(currentProduct.harga * (1 - currentProduct.discount / 100)).toLocaleString("id-ID")}
+                                    Rp {currentProduct.price.toLocaleString("id-ID")}
                                 </span>
                                 <span className="text-base line-through opacity-60">
-                                    Rp {currentProduct.harga.toLocaleString("id-ID")}
+                                    Rp {currentProduct.mrp.toLocaleString("id-ID")}
                                 </span>
                             </div>
                         ) : (
-                            <p className="text-2xl font-bold tracking-tight">Rp {currentProduct?.harga.toLocaleString("id-ID")}</p>
+                            <p className="text-2xl font-bold tracking-tight">Rp {currentProduct?.price.toLocaleString("id-ID")}</p>
                         )}
 
                         <div className="space-y-3">
@@ -296,7 +313,7 @@ export default function ProductPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <button className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow">Kunjungi Toko</button>
+                                <Link href={`/pages/store/${currentStore.id}`} className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow">Kunjungi Toko</Link>
                             </div>
                         </section>
 
@@ -332,7 +349,7 @@ export default function ProductPage() {
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-sm font-medium">Varian Terpilih</p>
-                                        <p className="text-xs opacity-70">Merah • {currentProduct?.stok}</p>
+                                        <p className="text-xs opacity-70">{selectedColor}</p>
                                     </div>
                                 </div>
 
@@ -358,11 +375,7 @@ export default function ProductPage() {
                                     <div className="flex items-center justify-between">
                                         <span>Subtotal</span>
                                         <span className="font-semibold">
-                                            Rp {(
-                                                qty * (currentProduct?.discount > 0
-                                                    ? currentProduct.harga * (1 - currentProduct.discount / 100)
-                                                    : currentProduct.harga)
-                                            ).toLocaleString("id-ID")}
+                                            Rp {(qty * (currentProduct?.price || 0)).toLocaleString("id-ID")}
                                         </span>
                                     </div>
                                 </div>
@@ -372,7 +385,7 @@ export default function ProductPage() {
                                         className="btn w-3/4 bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow"
                                         onClick={() => {
                                             // Open checkout page in a new tab with product ID and quantity
-                                            window.open(`/pages/checkout/?productId=${currentProduct.ID}&qty=${qty}`, '_blank');
+                                            window.open(`/pages/checkout/?productId=${currentProduct.id}&qty=${qty}`, '_blank');
                                         }}
                                     >
                                         Checkout
@@ -437,10 +450,10 @@ export default function ProductPage() {
                     <div className="relative">
                         <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden">
                             {products
-                                .filter((product) => product.store_id === currentStore.store_id && product.ID !== currentProduct.ID) // Filter products by the same store, exclude current product
+                                .filter((product) => product.store?.id === currentStore.id && product.id !== currentProduct.id)
                                 .slice(0, 10)
                                 .map((product) => (
-                                    <div key={product.ID} className="max-w-[240px] flex-shrink-0 mt-2">
+                                    <div key={product.id} className="max-w-[240px] flex-shrink-0 mt-2">
                                         <ProductCard product={product} />
                                     </div>
                                 ))}

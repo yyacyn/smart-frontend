@@ -5,19 +5,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
-import { cartItems as initialCartItems, sampleProducts } from "../../data/products";
-import { stores } from "../../data/store";
+import { fetchProducts } from "../../api";
 import { FiMapPin, FiCreditCard, FiTruck, FiCheck, FiEdit3 } from "react-icons/fi";
 
 // Helper to get store name by id
-function getStoreName(store_id) {
-    const store = stores.find(s => s.store_id === store_id);
-    return store ? store.name : `Toko #${store_id}`;
+function getStoreName(storeId, products) {
+    const product = products.find(p => p.store?.id === storeId);
+    return product && product.store ? product.store.name : `Toko #${storeId}`;
 }
 
 export default function CheckoutPage() {
     const router = useRouter();
     const [selectedItems, setSelectedItems] = useState([]);
+    const [products, setProducts] = useState([]);
     const [shippingAddress, setShippingAddress] = useState({
         name: "",
         phone: "",
@@ -30,49 +30,71 @@ export default function CheckoutPage() {
     const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
-        // Get parameters from query params
-        const searchParams = new URLSearchParams(window.location.search);
-        const productId = searchParams.get('productId');
-        const qty = parseInt(searchParams.get('qty')) || 1;
-        const cartItems = searchParams.get('cartItems');
+        async function getProductsForCheckout() {
+            try {
+                const data = await fetchProducts();
+                const productsData = data && data.products ? data.products : [];
+                setProducts(productsData);
 
-        // Handle single product checkout (from product detail page)
-        if (productId) {
-            // Find the product in sampleProducts first, then initialCartItems
-            const allProducts = [...sampleProducts, ...initialCartItems];
-            const item = allProducts.find(p => p.ID == productId || p.id == productId);
-            if (item) {
-                // Normalize the item structure to match checkout expectations
-                const normalizedItem = {
-                    id: item.ID || item.id,
-                    ID: item.ID || item.id,
-                    nama_produk: item.nama_produk,
-                    image: item.image,
-                    harga: item.harga,
-                    store_id: item.store_id,
-                    quantity: qty
-                };
-                setSelectedItems([normalizedItem]);
-                return;
+                // Get parameters from query params
+                const searchParams = new URLSearchParams(window.location.search);
+                const productId = searchParams.get('productId');
+                const qty = parseInt(searchParams.get('qty')) || 1;
+                const cartItems = searchParams.get('cartItems');
+
+                // Handle single product checkout (from product detail page)
+                if (productId) {
+                    const item = productsData.find(p => p.id == productId);
+                    if (item) {
+                        const normalizedItem = {
+                            id: item.id,
+                            name: item.name,
+                            image: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : "/images/default.png",
+                            price: item.price,
+                            store_id: item.store?.id,
+                            quantity: qty
+                        };
+                        setSelectedItems([normalizedItem]);
+                        return;
+                    }
+                }
+
+                // Handle multiple items checkout (from cart page)
+                if (cartItems) {
+                    const itemIds = cartItems.split(',').map(id => id);
+                    const selectedCartItems = productsData.filter(item => itemIds.includes(item.id));
+                    if (selectedCartItems.length > 0) {
+                        setSelectedItems(selectedCartItems.map(item => ({
+                            id: item.id,
+                            name: item.name,
+                            image: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : "/images/default.png",
+                            price: item.price,
+                            store_id: item.store?.id,
+                            quantity: 1
+                        })));
+                        return;
+                    }
+                }
+
+                // Fallback: use first 2 items from products
+                setSelectedItems(productsData.slice(0, 2).map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    image: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : "/images/default.png",
+                    price: item.price,
+                    store_id: item.store?.id,
+                    quantity: 1
+                })));
+            } catch (error) {
+                setProducts([]);
+                setSelectedItems([]);
             }
         }
-
-        // Handle multiple items checkout (from cart page)
-        if (cartItems) {
-            const itemIds = cartItems.split(',').map(id => parseInt(id));
-            const selectedCartItems = initialCartItems.filter(item => itemIds.includes(item.id));
-            if (selectedCartItems.length > 0) {
-                setSelectedItems(selectedCartItems);
-                return;
-            }
-        }
-
-        // Fallback: use first 2 items from cart
-        setSelectedItems(initialCartItems.slice(0, 2));
+        getProductsForCheckout();
     }, []);
 
     const calculatePrice = (item) => {
-        return item.harga;
+        return item.price || 0;
     };
 
     const totalItems = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -98,7 +120,7 @@ export default function CheckoutPage() {
     const isFormValid = shippingAddress.name && shippingAddress.phone && shippingAddress.address && shippingAddress.city && shippingAddress.postalCode;
 
     return (
-        <div className="min-h-screen ">
+        <div className="min-h-screen bg-gray-50">
             <Navbar />
             
             <div className="container mx-auto px-4 py-8 mt-15 mb-20">
@@ -281,13 +303,13 @@ export default function CheckoutPage() {
                                     <div className="w-12 h-12 bg-gray-200 rounded overflow-hidden flex-shrink-0">
                                         <img
                                             src={item.image}
-                                            alt={item.nama_produk}
+                                            alt={item.name}
                                             className="w-full h-full object-cover"
                                         />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm text-gray-900 truncate">{item.nama_produk}</p>
-                                        <p className="text-xs text-gray-500">{getStoreName(item.store_id)}</p>
+                                        <p className="font-medium text-sm text-gray-900 truncate">{item.name}</p>
+                                        <p className="text-xs text-gray-500">{getStoreName(item.store_id, products)}</p>
                                         <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                                     </div>
                                     <div className="text-right">

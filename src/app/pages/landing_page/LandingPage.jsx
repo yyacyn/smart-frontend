@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
-import ProductCard from "@/app/components/product/Card2";
-import { sampleProducts, flashSales, recommendedProducts } from "../../data/products";
+import ProductCard from "@/app/components/product/Card";
+import { flashSales, recommendedProducts } from "../../data/products";
+import { fetchProducts } from "../../api";
 import BestSelling from "@/app/components/landing_page/BestSelling";
+import CTA from "@/app/components/CTA";
 
 export default function LandingPage() {
     const router = useRouter();
@@ -18,7 +20,19 @@ export default function LandingPage() {
     const [recommendedProductsList, setRecommendedProductsList] = useState([]);
 
     useEffect(() => {
-        setProducts(sampleProducts);
+        async function getProducts() {
+            try {
+                const data = await fetchProducts();
+                if (data && data.products) {
+                    setProducts(data.products);
+                } else {
+                    setProducts([]);
+                }
+            } catch (error) {
+                setProducts([]);
+            }
+        }
+        getProducts();
     }, []);
 
     useEffect(() => {
@@ -75,9 +89,9 @@ export default function LandingPage() {
         setPrecomputedFlashSales(flashSales);
     }, []);
 
-    useEffect(() => {
-        setPrecomputedProducts(sampleProducts);
-    }, []);
+    // useEffect(() => {
+    //     setPrecomputedProducts(sampleProducts);
+    // }, []);
 
     useEffect(() => {
         setRecommendedProductsList(recommendedProducts);
@@ -271,6 +285,7 @@ export default function LandingPage() {
             <section className="py-24 bg-gradient-to-br from-white via-[#FFE797]/5 to-[#84994F]/5">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-left mb-12">
+                        {/* ...existing information content... */}
                         <h2 className="text-2xl font-bold text-gray-900 mb-6">Nikmati Mudah dan Nyaman Berjualan Online di SMART</h2>
                         <p className="text-md text-gray-700 leading-relaxed mb-8">
                             SMART adalah platform jual beli online khusus untuk wilayah Sukmajaya. Tujuan kami adalah memudahkan masyarakat Sukmajaya dalam melakukan transaksi jual beli secara digital, sekaligus mendukung pertumbuhan ekonomi lokal dengan mempertemukan penjual dan pembeli dalam satu ekosistem online yang terintegrasi.
@@ -320,10 +335,15 @@ export default function LandingPage() {
                         <p className="text-md text-gray-700 leading-relaxed">
                             Dukung pelaku usaha lokal dan nikmati pengalaman berbelanja yang lebih personal dengan menggunakan aplikasi SMART Pasar Online Sukmajaya.
                         </p>
+                        {/* Buka Toko Button */}
+                        <div className="flex justify-center mt-10">
+                            <Link href="/pages/addstore" className="btn btn-lg bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none shadow-none rounded-full px-8 py-3 text-xl font-bold transition-all duration-300">
+                                Buka Toko di SMART
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
-
             <Footer />
         </div>
 

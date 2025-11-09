@@ -2,7 +2,6 @@ import React from 'react';
 import Image from 'next/image'
 import Link from "next/link";
 
-
 export default function ProductCard({ product }) {
     // Calculate discounted price
     const hasDiscount = product.mrp != null && product.mrp > 0;
@@ -12,15 +11,13 @@ export default function ProductCard({ product }) {
 
     const ratingArr = Array.isArray(product.rating) ? product.rating : [];
     const rating = ratingArr.length > 0
-        ? Math.round(ratingArr.reduce((acc, curr) => acc + curr.rating, 0) / ratingArr.length)
+        ? Math.round(ratingArr.reduce((acc, curr) => acc + (typeof curr === 'number' ? curr : 0), 0) / ratingArr.length)
         : 0;
 
     return (
-        <div className="">
+        <div>
             <Link href={`/pages/product_detail/${product.id}`}>
-                <div
-                    className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300"
-                >
+                <div className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300">
                     <figure className="relative w-full h-64 overflow-hidden rounded-t-lg">
                         <Image
                             width={500}
@@ -58,14 +55,12 @@ export default function ProductCard({ product }) {
                                         type="radio"
                                         name={`rating-${product.id}`}
                                         className="mask mask-star-2 bg-orange-400"
-                                        defaultChecked={index + 1 < rating}
+                                        defaultChecked={index + 1 === rating}
                                     />
-
-
                                 ))}
                             </div>
                             <span className="text-xs text-gray-500">
-                                ({product.rating?.length || 0} reviews)
+                                ({ratingArr.length} reviews)
                             </span>
                         </div>
 

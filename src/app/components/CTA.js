@@ -1,3 +1,5 @@
+import { Link } from "lucide-react";
+
 export default function CTA() {
     return (
         <section className="mt-14 rounded-box border p-6 text-black">
@@ -10,7 +12,7 @@ export default function CTA() {
                         Mulai berjualan gratis. Jangkau lebih banyak pelanggan sekarang.
                     </p>
                 </div>
-                <button className="btn btn-primary">Buka Toko GRATIS</button>
+                <Link href="/pages/addstore" className="btn btn-primary">Buka Toko GRATIS</Link>
             </div>
         </section>
     );
