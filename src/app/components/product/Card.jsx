@@ -27,8 +27,14 @@ export default function ProductCard({ product }) {
                         <h2 className="card-title text-sm md:text-base font-semibold text-gray-800 truncate">
                             {product.name}
                         </h2>
+                        {product.store && product.store.name && (
+                            <h3 className="text-sm text-gray-500 truncate mb-1">
+                                {product.store.name}
+                            </h3>
+                        )}
+                        
 
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2 ">
                             <div className="rating rating-sm">
                                 {Array(5).fill('').map((_, index) => (
                                     <input
@@ -46,7 +52,7 @@ export default function ProductCard({ product }) {
                         </div>
 
                         {product.price !== product.mrp ? (
-                            <div className="mt-2">
+                            <div className="">
                                 <span className="text-gray-400 line-through mr-2">
                                     Rp {(typeof product.mrp === "number" ? product.mrp : 0).toLocaleString("id-ID")}
                                 </span>

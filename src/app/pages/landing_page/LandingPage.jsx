@@ -7,7 +7,7 @@ import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 import ProductCard from "@/app/components/product/Card";
 import { flashSales, recommendedProducts } from "../../data/products";
-import { fetchProducts } from "../../api";
+import { fetchProducts, fetchCategories } from "../../api";
 import BestSelling from "@/app/components/landing_page/BestSelling";
 import CTA from "@/app/components/CTA";
 
@@ -18,6 +18,8 @@ export default function LandingPage() {
     const [precomputedFlashSales, setPrecomputedFlashSales] = useState([]);
     const [precomputedProducts, setPrecomputedProducts] = useState([]);
     const [recommendedProductsList, setRecommendedProductsList] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
     useEffect(() => {
         async function getProducts() {
@@ -33,6 +35,26 @@ export default function LandingPage() {
             }
         }
         getProducts();
+    }, []);
+
+    useEffect(() => {
+        async function getCategories() {
+            setCategoriesLoading(true);
+            try {
+                const data = await fetchCategories();
+                if (data && data.success && Array.isArray(data.data)) {
+                    setCategories(data.data);
+                } else {
+                    setCategories([]);
+                }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+                setCategories([]);
+            } finally {
+                setCategoriesLoading(false);
+            }
+        }
+        getCategories();
     }, []);
 
     useEffect(() => {
@@ -146,12 +168,12 @@ export default function LandingPage() {
                         <h2 className="text-4xl font-bold text-gray-900 mb-4">Cari berdasarkan Kategori</h2>
                         <p className="text-xl text-gray-600">Temukan produk lokal berkualitas dari berbagai kategori</p>
                         <div className="flex justify-center mt-6 space-x-2">
-                            <button className="btn btn-circle bg-[#ED775A] hover:bg-[#ED775A]/80 text-white border-none shadow-lg scroll-left">
+                            <button className="btn btn-circle bg-[#ED775A] hover:bg-[#ED775A]/80 text-white border-none shadow-none scroll-left">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
                                 </svg>
                             </button>
-                            <button className="btn btn-circle bg-[#ED775A] hover:bg-[#ED775A]/80 text-white border-none shadow-lg scroll-right">
+                            <button className="btn btn-circle bg-[#ED775A] hover:bg-[#ED775A]/80 text-white border-none shadow-none scroll-right">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
@@ -160,56 +182,36 @@ export default function LandingPage() {
                     </div>
                     <div className="relative">
                         <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden">
-                            <Link href={`/pages/marketplace?category=${encodeURIComponent('Kerajinan Lokal')}`} target="_blank" className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#FFE797]/30">
-                                <figure className="relative overflow-hidden h-full w-full">
-                                    <img
-                                        src="/images/categories/local.jpg"
-                                        alt="Kerajinan Lokal"
-                                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                </figure>
-                                <div className="card-body text-center py-2">
-                                    <h3 className="card-title justify-center text-lg font-bold text-[#84994F]">Kerajinan Lokal</h3>
+                            {categoriesLoading ? (
+                                <div className="text-center text-gray-500 w-full py-8">
+                                    <p>Loading categories...</p>
                                 </div>
-                            </Link>
-                            <Link href={`/pages/marketplace?category=${encodeURIComponent('Makanan & Minuman')}`} target="_blank" className="card bg-white mx-1 h-[400px] my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#476EAE]/30">
-                                <figure className="relative overflow-hidden h-full w-full">
-                                    <img src="/images/categories/food.jpg" alt="Makanan & Minuman" className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                </figure>
-                                <div className="card-body text-center py-2">
-                                    <h3 className="card-title justify-center text-lg font-bold text-[#476EAE]">Makanan & Minuman</h3>
+                            ) : categories.length > 0 ? (
+                                categories.map((category, index) => (
+                                    <Link 
+                                        key={category.id || index} 
+                                        href={`/pages/marketplace?category=${encodeURIComponent(category.name)}`} 
+                                        target="_blank" 
+                                        className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#FFE797]/30"
+                                    >
+                                        <figure className="relative overflow-hidden h-full w-full">
+                                            <img
+                                                src={category.image || "/images/categories/default.jpg"}
+                                                alt={category.name}
+                                                className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                                        </figure>
+                                        <div className="card-body text-center py-2">
+                                            <h3 className="card-title justify-center text-lg font-bold text-[#84994F]">{category.name}</h3>
+                                        </div>
+                                    </Link>
+                                ))
+                            ) : (
+                                <div className="text-center text-gray-500 w-full py-8">
+                                    <p>No categories found.</p>
                                 </div>
-                            </Link>
-                            <Link href={`/pages/marketplace?category=${encodeURIComponent('Pakaian')}`} target="_blank" className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#ED775A]/30">
-                                <figure className="relative overflow-hidden h-full w-full">
-                                    <img src="/images/categories/clothes.jpg" alt="Pakaian" className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                </figure>
-                                <div className="card-body text-center py-2">
-                                    <h3 className="card-title justify-center text-lg font-bold text-[#ED775A]">Pakaian</h3>
-                                </div>
-                            </Link>
-                            <Link href={`/pages/marketplace?category=${encodeURIComponent('Kebutuhan Harian')}`} target="_blank" className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#84994F]/30">
-                                <figure className="relative overflow-hidden h-full w-full">
-                                    <img src="/images/categories/dailies.jpg" alt="Kebutuhan Harian" className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                </figure>
-                                <div className="card-body text-center py-2">
-                                    <h3 className="card-title justify-center text-lg font-bold text-[#84994F]">Kebutuhan Harian</h3>
-                                </div>
-                            </Link>
-
-                            <Link href={`/pages/marketplace?category=${encodeURIComponent('Kesehatan & Kecantikan')}`} target="_blank" className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#476EAE]/30">
-                                <figure className="relative overflow-hidden h-full w-full">
-                                    <img src="/images/categories/drugs.jpg" alt="Kesehatan & Kecantikan" className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                </figure>
-                                <div className="card-body text-center py-2">
-                                    <h3 className="card-title justify-center text-lg font-bold text-[#476EAE]">Kesehatan & Kecantikan</h3>
-                                </div>
-                            </Link>
+                            )}
                         </div>
                     </div>
                 </div>

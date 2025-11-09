@@ -3,10 +3,12 @@ import Link from "next/link";
 
 export default function ProductCard({ product }) {
     // Calculate discounted price
+    // Support both old (harga) and new (price) API fields
+    const harga = typeof product.harga === 'number' ? product.harga : (typeof product.price === 'number' ? product.price : 0);
     const hasDiscount = product.discount != null && product.discount > 0;
     const discountedPrice = hasDiscount
-        ? Math.round(product.harga * (1 - product.discount / 100))
-        : product.harga;
+        ? Math.round(harga * (1 - product.discount / 100))
+        : harga;
 
     return (
         <div className="">
@@ -56,7 +58,7 @@ export default function ProductCard({ product }) {
                         {hasDiscount ? (
                             <div className="mt-2">
                                 <span className="text-gray-400 line-through mr-2">
-                                    Rp {product.harga.toLocaleString("id-ID")}
+                                    Rp {harga.toLocaleString("id-ID")}
                                 </span>
                                 <span className="text-gray-600 font-bold">
                                     Rp {discountedPrice.toLocaleString("id-ID")}
@@ -64,7 +66,7 @@ export default function ProductCard({ product }) {
                             </div>
                         ) : (
                             <p className="text-gray-600 mt-2 font-bold">
-                                Rp {product.harga.toLocaleString("id-ID")}
+                                Rp {harga.toLocaleString("id-ID")}
                             </p>
                         )}
                     </div>

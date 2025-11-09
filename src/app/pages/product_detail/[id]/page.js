@@ -84,7 +84,7 @@ export default function ProductPage() {
             <div className="py-6">
                 <h4 className="font-semibold mb-2 text-black">Deskripsi Produk</h4>
                 <p className="text-sm opacity-80 text-black">
-                    Ini adalah produk dummy untuk keperluan demo. Deskripsi produk akan tampil di sini. Tambahkan detail produk, fitur, dan keunggulan produk Anda.
+                    {currentProduct?.description}
                 </p>
             </div>
         ),
@@ -141,7 +141,7 @@ export default function ProductPage() {
                                     />
                                     <span className="flex items-center">
                                         {Array.from({ length: 5 }).map((_, i) => (
-                                            <FiStar
+                                            <FaStar
                                                 key={i}
                                                 className={i < r ? 'text-yellow-500' : 'opacity-30'}
                                                 aria-hidden="true"
@@ -167,7 +167,7 @@ export default function ProductPage() {
                                     <p className="text-sm font-medium">Pengguna {i}</p>
                                     <div className="flex items-center text-warning">
                                         {Array.from({ length: 5 }).map((_, idx) => (
-                                            <FiStar key={idx} />
+                                            <FaStar key={idx} />
                                         ))}
                                     </div>
                                 </div>
@@ -302,7 +302,7 @@ export default function ProductPage() {
                                 <div className="flex items-center gap-3">
                                     <div className="avatar">
                                         <div className="h-12 w-12 rounded-full overflow-hidden">
-                                            <img src={currentStore.image} alt={currentStore.name} className="h-full w-full object-cover" />
+                                            <img src={currentStore.logo} alt={currentStore.name} className="h-full w-full object-cover" />
                                         </div>
                                     </div>
                                     <div>
@@ -313,7 +313,23 @@ export default function ProductPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Link href={`/pages/store/${currentStore.id}`} className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow">Kunjungi Toko</Link>
+                                <Link 
+                                    href={{
+                                        pathname: `/pages/store/${currentStore.id}`,
+                                        query: {},
+                                    }}
+                                    className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow text-sm"
+                                    scroll={false}
+                                    // Pass store info in state for the store page
+                                    as={`/pages/store/${currentStore.id}`}
+                                    onClick={() => {
+                                        if (typeof window !== 'undefined') {
+                                            window.sessionStorage.setItem('storeInfo', JSON.stringify(currentStore));
+                                        }
+                                    }}
+                                >
+                                    Kunjungi Toko
+                                </Link>
                             </div>
                         </section>
 
@@ -382,7 +398,7 @@ export default function ProductPage() {
 
                                 <div className="flex flex-row w-full gap-2">
                                     <button
-                                        className="btn w-3/4 bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow"
+                                        className="btn w-3/4 bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow-none text-sm"
                                         onClick={() => {
                                             // Open checkout page in a new tab with product ID and quantity
                                             window.open(`/pages/checkout/?productId=${currentProduct.id}&qty=${qty}`, '_blank');
@@ -448,34 +464,40 @@ export default function ProductPage() {
                 <section className="mt-10">
                     <h3 className="mb-4 text-base font-semibold text-black">Produk Lainnya dari Toko ini</h3>
                     <div className="relative">
-                        <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden">
-                            {products
-                                .filter((product) => product.store?.id === currentStore.id && product.id !== currentProduct.id)
-                                .slice(0, 10)
-                                .map((product) => (
-                                    <div key={product.id} className="max-w-[240px] flex-shrink-0 mt-2">
-                                        <ProductCard product={product} />
-                                    </div>
-                                ))}
-                        </div>
-                        <button
-                            className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-[#ED775A] text-white p-2 rounded-full shadow hover:bg-[#e76b4c] ml-2"
-                            onClick={() => {
-                                const container = document.querySelector('.scroll-container');
-                                container.scrollBy({ left: -300, behavior: 'smooth' });
-                            }}
-                        >
-                            <FaChevronLeft aria-hidden="true" />
-                        </button>
-                        <button
-                            className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-[#ED775A] text-white p-2 rounded-full shadow hover:bg-[#e76b4c] mr-2"
-                            onClick={() => {
-                                const container = document.querySelector('.scroll-container');
-                                container.scrollBy({ left: 300, behavior: 'smooth' });
-                            }}
-                        >
-                            <FaChevronRight aria-hidden="true" />
-                        </button>
+                        {products.filter((product) => product.store?.id === currentStore.id && product.id !== currentProduct.id).length === 0 ? (
+                            <div className="text-gray-500 text-center py-8">This store has no more product.</div>
+                        ) : (
+                            <>
+                                <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden">
+                                    {products
+                                        .filter((product) => product.store?.id === currentStore.id && product.id !== currentProduct.id)
+                                        .slice(0, 10)
+                                        .map((product) => (
+                                            <div key={product.id} className="max-w-[240px] flex-shrink-0 mt-2">
+                                                <ProductCard product={product} />
+                                            </div>
+                                        ))}
+                                </div>
+                                <button
+                                    className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-[#ED775A] text-white p-2 rounded-full shadow hover:bg-[#e76b4c] ml-2"
+                                    onClick={() => {
+                                        const container = document.querySelector('.scroll-container');
+                                        container.scrollBy({ left: -300, behavior: 'smooth' });
+                                    }}
+                                >
+                                    <FaChevronLeft aria-hidden="true" />
+                                </button>
+                                <button
+                                    className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-[#ED775A] text-white p-2 rounded-full shadow hover:bg-[#e76b4c] mr-2"
+                                    onClick={() => {
+                                        const container = document.querySelector('.scroll-container');
+                                        container.scrollBy({ left: 300, behavior: 'smooth' });
+                                    }}
+                                >
+                                    <FaChevronRight aria-hidden="true" />
+                                </button>
+                            </>
+                        )}
                     </div>
                 </section>
 

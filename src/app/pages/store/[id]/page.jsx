@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../../components/navbar/Navbar";
 import Footer from "../../../components/footer/Footer";
-import ProductCard from "../../../components/product/Card2";
-import { fetchProducts } from "../../../api";
-import axios from "axios";
+import ProductCard from "../../../components/product/Card";
+import { fetchProducts, fetchStores } from "../../../api";
 import { FiStar, FiMessageCircle, FiFlag, FiMapPin, FiPhone, FiMail, FiClock, FiUsers, FiShoppingBag, FiHeart, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 
@@ -27,10 +26,23 @@ export default function StorePage() {
     useEffect(() => {
         async function fetchStoreAndProducts() {
             try {
-                // Fetch stores
-                const storeRes = await axios.get("https://besukma.vercel.app/api/admin/stores");
-                const stores = storeRes.data.stores || [];
-                const store = stores.find(s => s.id === storeId);
+                // Try to get store info from sessionStorage (set by product detail page)
+                let store = null;
+                if (typeof window !== 'undefined') {
+                    const storeInfoStr = window.sessionStorage.getItem('storeInfo');
+                    if (storeInfoStr) {
+                        const parsed = JSON.parse(storeInfoStr);
+                        if (parsed && parsed.id === storeId) {
+                            store = parsed;
+                        }
+                    }
+                }
+                if (!store) {
+                    // fallback: fetch from API if not found in sessionStorage
+                    const storeRes = await fetchStores();
+                    const stores = storeRes.stores || [];
+                    store = stores.find(s => s.id === storeId);
+                }
                 setCurrentStore(store);
 
                 // Fetch products
@@ -82,11 +94,11 @@ export default function StorePage() {
 
             const scrollPosition = window.innerHeight + window.scrollY;
             const documentHeight = document.documentElement.offsetHeight;
-            
+
             // Load more when user is within 500px of bottom
             if (scrollPosition >= documentHeight - 500) {
                 setIsLoading(true);
-                
+
                 // Simulate loading delay
                 setTimeout(() => {
                     setDisplayedProductsCount(prev => prev + productsPerLoad);
@@ -128,12 +140,12 @@ export default function StorePage() {
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
-            
+
             <div className="container mx-auto px-4 py-8 mt-16 mb-20 text-black">
                 {/* Header */}
                 <div className="flex items-center gap-2 mb-6">
-                    <button 
-                        onClick={() => router.back()} 
+                    <button
+                        onClick={() => router.back()}
                         className="btn btn-sm btn-ghost shadow-none border-none text-gray-700 hover:bg-gray-100"
                     >
                         &larr;
@@ -147,8 +159,8 @@ export default function StorePage() {
                         {/* Store Image */}
                         <div className="flex-shrink-0">
                             <div className="w-32 h-32 rounded-lg overflow-hidden bg-gray-200">
-                                <img 
-                                    src={currentStore.logo} 
+                                <img
+                                    src={currentStore.logo}
                                     alt={currentStore.name}
                                     className="w-full h-full object-cover"
                                 />
@@ -157,36 +169,58 @@ export default function StorePage() {
 
                         {/* Store Details */}
                         <div className="flex-1">
-                            <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-start mb-3">
                                 <div>
                                     <h2 className="text-3xl font-bold text-gray-900 mb-2">{currentStore.name}</h2>
                                     <div className="flex items-center gap-2 mb-2">
-                                        <FaStar className="text-yellow-500" />
-                                        <span className="font-semibold text-lg">{currentStore.rating}</span>
-                                        <span className="text-gray-500">({currentStore.reviews} ulasan)</span>
+                                        <span className="font-semibold text-base text-gray-700">@{currentStore.username}</span>
+                                        {currentStore.status && (
+                                            <span className={`badge text-xs ml-2 ${currentStore.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{currentStore.status}</span>
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                                        <div className="flex items-center gap-1">
-                                            <FiMapPin className="w-4 h-4" />
-                                            <span>Jakarta, Indonesia</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <FiClock className="w-4 h-4" />
-                                            <span>Bergabung sejak 2020</span>
-                                        </div>
+                                    <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-2">
+                                        {currentStore.email && (
+                                            <div className="flex items-center gap-1">
+                                                <FiMail className="w-4 h-4" />
+                                                <span>{currentStore.email}</span>
+                                            </div>
+                                        )}
+                                        {currentStore.contact && (
+                                            <div className="flex items-center gap-1">
+                                                <FiPhone className="w-4 h-4" />
+                                                <span>{currentStore.contact}</span>
+                                            </div>
+                                        )}
+                                        {currentStore.address && (
+                                            <div className="flex items-center gap-1">
+                                                <FiMapPin className="w-4 h-4" />
+                                                <span>{currentStore.address}</span>
+                                            </div>
+                                        )}
+                                        {currentStore.createdAt && (
+                                            <div className="flex items-center gap-1">
+                                                <FiClock className="w-4 h-4" />
+                                                <span>Bergabung {new Date(currentStore.createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })}</span>
+                                            </div>
+                                        )}
                                     </div>
+                                    {currentStore.website && (
+                                        <div className="flex items-center gap-1 text-blue-600">
+                                            <span>Website:</span>
+                                            <a href={currentStore.website} target="_blank" rel="noopener noreferrer" className="underline">{currentStore.website}</a>
+                                        </div>
+                                    )}
                                 </div>
-
                                 {/* Action Buttons */}
                                 <div className="flex flex-col sm:flex-row gap-2">
-                                    <button 
+                                    <button
                                         onClick={handleChatStore}
                                         className="btn bg-[#ED775A] border-none hover:bg-[#eb6b4b] text-white shadow-none"
                                     >
                                         <FiMessageCircle className="w-4 h-4" />
                                         Chat Toko
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={handleReportStore}
                                         className="btn btn-outline border-red-500 text-red-500 hover:bg-red-500 hover:text-white shadow-none"
                                     >
@@ -195,8 +229,12 @@ export default function StorePage() {
                                     </button>
                                 </div>
                             </div>
-
-
+                            {/* Store status, description, etc. */}
+                            {currentStore.isActive !== undefined && (
+                                <div className="text-xs text-gray-500 mb-2">
+                                    Status: {currentStore.isActive ? 'Aktif' : 'Tidak Aktif'}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -204,9 +242,7 @@ export default function StorePage() {
                     <div className="mt-6 pt-6 border-t border-gray-200">
                         <h3 className="font-semibold text-gray-900 mb-2">Tentang Toko</h3>
                         <p className="text-gray-600 text-sm leading-relaxed">
-                            Toko {currentStore.name} adalah toko terpercaya yang telah melayani pelanggan selama bertahun-tahun. 
-                            Kami menyediakan produk berkualitas tinggi dengan harga terjangkau dan layanan pelanggan yang excellent. 
-                            Kepuasan pelanggan adalah prioritas utama kami.
+                            {currentStore.description}
                         </p>
                     </div>
                 </div>
@@ -219,7 +255,7 @@ export default function StorePage() {
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                             {popularProducts.map((product) => (
-                                <ProductCard key={product.ID} product={product} />
+                                <ProductCard key={product.id} product={product} />
                             ))}
                         </div>
                     </div>
@@ -229,11 +265,11 @@ export default function StorePage() {
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
                         <h2 className="text-xl font-bold text-gray-900 mb-4 lg:mb-0">Semua Produk ({storeProducts.length})</h2>
-                        
+
                         {/* Filters and Sort */}
                         <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-[35%]">
                             {/* Category Filter */}
-                            <select 
+                            <select
                                 className="select select-bordered bg-white border-gray-200 focus:outline-none"
                                 value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
@@ -246,7 +282,7 @@ export default function StorePage() {
                             </select>
 
                             {/* Sort By */}
-                            <select 
+                            <select
                                 className="select select-bordered bg-white border-gray-200 focus:outline-none w-full"
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
@@ -264,17 +300,17 @@ export default function StorePage() {
                         <>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                 {displayedProducts.map((product) => (
-                                    <ProductCard key={product.ID} product={product} />
+                                    <ProductCard key={product.id} product={product} />
                                 ))}
                             </div>
-                            
+
                             {/* Loading indicator */}
                             {isLoading && (
                                 <div className="flex justify-center mt-8">
                                     <div className="loading loading-spinner loading-md text-[#ED775A]"></div>
                                 </div>
                             )}
-                            
+
                             {/* Load more message */}
                             {!hasMoreProducts && displayedProducts.length > productsPerLoad && (
                                 <div className="text-center mt-8 text-gray-500">
@@ -287,7 +323,7 @@ export default function StorePage() {
                             <FiShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                             <h3 className="text-xl font-semibold text-gray-600 mb-2">Tidak Ada Produk</h3>
                             <p className="text-gray-500">
-                                {selectedCategory === "all" 
+                                {selectedCategory === "all"
                                     ? "Toko ini belum memiliki produk"
                                     : `Tidak ada produk dalam kategori "${selectedCategory}"`
                                 }
