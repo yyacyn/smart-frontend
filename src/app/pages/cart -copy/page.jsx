@@ -10,6 +10,8 @@ import CTA from "../../components/CTA";
 import { sampleProducts, cartItems as initialCartItems } from "../../data/products";
 import { stores } from "../../data/store";
 import { FiTrash2, FiMinus, FiPlus, FiShoppingBag } from "react-icons/fi";
+import { useUser, useAuth } from "@clerk/nextjs";
+import axios from "axios";
 
 
 // Helper to get store name by id
@@ -149,15 +151,15 @@ export default function CartPage() {
                                                 <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                                                     <img
                                                         src={item.image}
-                                                        alt={item.nama_produk}
+                                                        alt={item.name}
                                                         className="w-full h-full object-cover"
                                                     />
                                                 </div>
 
                                                 {/* Product Details */}
                                                 <div className="flex-1 min-w-0">
-                                                    <h3 className="font-semibold text-gray-900 mb-1 truncate">{item.nama_produk}</h3>
-                                                    <p className="text-xs text-gray-500 mb-1">{getStoreName(item.store_id)}</p>
+                                                    <h3 className="font-semibold text-gray-900 mb-1 truncate">{item.name}</h3>
+                                                    <p className="text-xs text-gray-500 mb-1">{getStoreName(item.store.id)}</p>
                                                     <p className="text-sm text-gray-500 mb-2">Varian: {item.variant}</p>
                                                     {/* Price */}
                                                     <div className="flex items-center gap-2 mb-3">

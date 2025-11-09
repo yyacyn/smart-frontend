@@ -5,10 +5,10 @@ import Link from "next/link";
 
 export default function ProductCard({ product }) {
     // Calculate discounted price
-    // const hasDiscount = product.discount != null && product.discount > 0;
-    // const discountedPrice = hasDiscount
-    //     ? Math.round(product.harga * (1 - product.discount / 100))
-    //     : product.harga;
+    const hasDiscount = product.mrp != null && product.mrp > 0;
+    const discountedPrice = hasDiscount
+        ? Math.round((product.mrp - product.price) / (product.mrp) * 100)
+        : product.price;
 
     const ratingArr = Array.isArray(product.rating) ? product.rating : [];
     const rating = ratingArr.length > 0
@@ -25,18 +25,24 @@ export default function ProductCard({ product }) {
                         <Image
                             width={500}
                             height={500}
-                            src={Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : "/images/default.png"}
-                            alt={product.name ? product.name : "Product image"}
+                            src={
+                                Array.isArray(product.images) && product.images.length > 0
+                                    ? product.images[0].startsWith("http")
+                                        ? product.images[0]
+                                        : `/article/${product.images[0]}`
+                                    : "/images/default.png"
+                            }
+                            alt={product.name || "Product image"}
                             className="w-full h-full object-cover"
                         />
-                        {/* <div className="badge badge-primary absolute top-2 right-2">
-                            {product.kategori}
-                        </div> */}
-                        {/* {hasDiscount && (
+                        <div className="badge badge-primary absolute top-2 right-2">
+                            {product.category}
+                        </div>
+                        {hasDiscount && (
                             <div className="badge badge-warning absolute bottom-2 left-2">
-                                -{product.discount}%
+                                -{discountedPrice}%
                             </div>
-                        )} */}
+                        )}
                     </figure>
 
                     <div className="card-body px-3 py-3">
@@ -59,7 +65,7 @@ export default function ProductCard({ product }) {
                                 ))}
                             </div>
                             <span className="text-xs text-gray-500">
-                                ({product.rating.length} reviews)
+                                ({product.rating?.length || 0} reviews)
                             </span>
                         </div>
 

@@ -5,174 +5,57 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
-import ProductCard from "../../components/product/Card";
+import ProductCard from "../../components/product/Card2";
 import { sampleProducts } from "../../data/products";
 import { FiHeart, FiTrash2, FiShoppingCart, FiGrid, FiList } from "react-icons/fi";
-import { useAuth } from "@clerk/nextjs";
-import axios from "axios"
 
 export default function WishlistPage() {
     const router = useRouter();
     const [wishlistItems, setWishlistItems] = useState([]);
     const [viewMode, setViewMode] = useState("grid"); // grid or list
     const [searchTerm, setSearchTerm] = useState("");
-    const [currentCart, setCurrentCart] = useState({});
-
-    const { getToken } = useAuth();
 
     useEffect(() => {
-        const fetchWishlist = async () => {
-            try {
-                const token = await getToken(); // ambil token user aktif
-                const res = await axios.get("https://besukma.vercel.app/api/wishlist", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+        // For demo purposes, use first 6 products as wishlist items
+        setWishlistItems(sampleProducts.slice(0, 6));
+    }, []);
 
-
-                const data = await res.data;
-                console.log("Wishlist data:", data);
-                const normalizedData = data.map(item => ({
-                    ...item.product, // ambil data produk utama
-                    wishlistId: item.id, // simpan ID wishlist kalau nanti mau hapus
-                }));
-
-                setWishlistItems(normalizedData);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        fetchWishlist();
-    }, [getToken]);
-
-    // const removeFromWishlist = (productId) => {
-    //     setWishlistItems(items => items.filter(item => item.ID !== productId));
-    // };
-
-    const removeFromWishlist = async (productId) => {
-        try {
-            const token = await getToken();
-            await axios.delete("https://besukma.vercel.app/api/wishlist", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                data: { productId }, // ⬅️ gunakan 'data', bukan 'body'
-            });
-
-            setWishlistItems(items => items.filter(item => item.id !== productId));
-        } catch (err) {
-            console.error("Gagal menghapus:", err.response?.data || err.message);
-        }
+    const removeFromWishlist = (productId) => {
+        setWishlistItems(items => items.filter(item => item.ID !== productId));
     };
 
-    const addToCart = async (product) => {
-        try {
-            const token = await getToken();
-
-            // 1️⃣ Ambil cart lama
-            const res = await axios.get("https://besukma.vercel.app/api/cart", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const currentCart = res.data.cart || {};
-            console.log("Current cart:", currentCart);
-
-            // 2️⃣ Update cart di memory
-            const updatedCart = {
-                ...currentCart,
-                [product.id]: (currentCart[product.id] || 0) + 1, // tambah quantity jika sudah ada
-            };
-
-            // 3️⃣ Simpan ke backend
-            await axios.post(
-                "https://besukma.vercel.app/api/cart",
-                { cart: updatedCart },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            setCurrentCart(updatedCart); // update state lokal
-            alert(`${product.name} berhasil ditambahkan ke keranjang!`);
-        } catch (err) {
-            console.error("Gagal menambah ke cart:", err.response?.data || err.message);
-            alert("Terjadi kesalahan saat menambahkan ke keranjang.");
-        }
+    const addToCart = (product) => {
+        // Add to cart logic here
+        alert(`${product.nama_produk} ditambahkan ke keranjang!`);
     };
 
-    const moveAllToCart = async () => {
+    const moveAllToCart = () => {
         if (wishlistItems.length === 0) return;
-
-        try {
-            const token = await getToken();
-
-            // 1️⃣ Ambil cart lama
-            const res = await axios.get("https://besukma.vercel.app/api/cart", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const currentCart = res.data.cart || {};
-            console.log("Current cart:", currentCart);
-
-            // 2️⃣ Buat salinan object cart baru
-            const updatedCart = { ...currentCart };
-
-            // 3️⃣ Tambahkan semua produk wishlist ke cart
-            wishlistItems.forEach(item => {
-                if (updatedCart[item.id]) {
-                    updatedCart[item.id] += 1; // tambah quantity kalau sudah ada
-                } else {
-                    updatedCart[item.id] = 1; // tambahkan produk baru
-                }
-            });
-
-            // 4️⃣ Simpan cart baru ke backend
-            await axios.post(
-                "https://besukma.vercel.app/api/cart",
-                { cart: updatedCart },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            // 5️⃣ Hapus semua item wishlist di backend
-            for (const item of wishlistItems) {
-                await axios.delete("https://besukma.vercel.app/api/wishlist", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                    data: { productId: item.id },
-                });
-            }
-
-            // 6️⃣ Kosongkan wishlist di frontend
-            setWishlistItems([]);
-            setCurrentCart(updatedCart);
-
-            alert(`${wishlistItems.length} produk berhasil dipindahkan ke keranjang!`);
-        } catch (err) {
-            console.error("Gagal memindahkan semua:", err.response?.data || err.message);
-            alert("Terjadi kesalahan saat memindahkan produk ke keranjang.");
-        }
+        
+        wishlistItems.forEach(item => {
+            // Add each item to cart logic here
+        });
+        alert(`${wishlistItems.length} produk dipindahkan ke keranjang!`);
+        setWishlistItems([]);
     };
-
-
 
     // Filtered wishlist items based on search
     const filteredItems = wishlistItems.filter(item => {
         const term = searchTerm.trim().toLowerCase();
         if (!term) return true;
-        return item.name.toLowerCase().includes(term);
+        return item.nama_produk.toLowerCase().includes(term);
     });
 
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
-
+            
             <div className="container mx-auto px-4 py-8 mt-16 mb-20 text-black">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => router.back()}
+                        <button 
+                            onClick={() => router.back()} 
                             className="btn btn-sm btn-ghost shadow-none border-none text-gray-700 hover:bg-gray-100"
                         >
                             &larr;
@@ -182,7 +65,7 @@ export default function WishlistPage() {
                             <p className="text-sm text-gray-600">{wishlistItems.length} produk</p>
                         </div>
                     </div>
-
+                    
                     {/* View Mode Toggle */}
                     <div className="flex items-center gap-4">
                         <div className="flex border border-gray-200 rounded-lg overflow-hidden">
@@ -233,14 +116,14 @@ export default function WishlistPage() {
                                 {wishlistItems.length === 0 ? "Wishlist Kosong" : "Tidak ada hasil pencarian"}
                             </h3>
                             <p className="text-gray-500 mb-6">
-                                {wishlistItems.length === 0
+                                {wishlistItems.length === 0 
                                     ? "Mulai tambahkan produk favorit Anda ke wishlist untuk melihatnya di sini"
                                     : "Coba kata kunci yang berbeda"
                                 }
                             </p>
                             {wishlistItems.length === 0 && (
-                                <Link
-                                    href="/pages/marketplace"
+                                <Link 
+                                    href="/pages/marketplace" 
                                     className="btn bg-[#ED775A] border-none hover:bg-[#eb6b4b] text-white shadow-none"
                                 >
                                     Mulai Belanja
@@ -249,18 +132,18 @@ export default function WishlistPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className={viewMode === "grid"
-                        ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+                    <div className={viewMode === "grid" 
+                        ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" 
                         : "space-y-4"
                     }>
                         {filteredItems.map((product) => (
                             viewMode === "grid" ? (
-                                <div key={product.id} className="relative group">
+                                <div key={product.ID} className="relative group">
                                     <ProductCard product={product} />
                                     {/* Wishlist Actions Overlay */}
                                     <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
-                                            onClick={() => removeFromWishlist(product.id)}
+                                            onClick={() => removeFromWishlist(product.ID)}
                                             className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 text-red-500"
                                             title="Hapus dari wishlist"
                                         >
@@ -276,33 +159,33 @@ export default function WishlistPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <div key={product.id} className="bg-white rounded-lg border border-gray-200 p-4 flex gap-4 hover:shadow-md transition-shadow">
+                                <div key={product.ID} className="bg-white rounded-lg border border-gray-200 p-4 flex gap-4 hover:shadow-md transition-shadow">
                                     {/* Product Image */}
-                                    <Link href={`/pages/product_detail/${product.id}`} className="flex-shrink-0">
+                                    <Link href={`/pages/product_detail/${product.ID}`} className="flex-shrink-0">
                                         <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
                                             <img
                                                 src={product.image}
-                                                alt={product.name}
+                                                alt={product.nama_produk}
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
                                     </Link>
-
+                                    
                                     {/* Product Details */}
                                     <div className="flex-1 min-w-0">
-                                        <Link href={`/pages/product_detail/${product.id}`}>
+                                        <Link href={`/pages/product_detail/${product.ID}`}>
                                             <h3 className="font-semibold text-gray-900 mb-1 hover:text-[#ED775A] transition-colors">
-                                                {product.name}
+                                                {product.nama_produk}
                                             </h3>
                                         </Link>
-                                        <p className="text-sm text-gray-500 mb-2">{product.category}</p>
+                                        <p className="text-sm text-gray-500 mb-2">{product.kategori}</p>
                                         <div className="flex items-center gap-2">
                                             <span className="text-lg font-bold text-[#ED775A]">
-                                                Rp {product.price.toLocaleString("id-ID")}
+                                                Rp {product.harga.toLocaleString("id-ID")}
                                             </span>
                                         </div>
                                     </div>
-
+                                    
                                     {/* Action Buttons */}
                                     <div className="flex flex-col gap-2">
                                         <button
@@ -313,7 +196,7 @@ export default function WishlistPage() {
                                             Tambah ke Keranjang
                                         </button>
                                         <button
-                                            onClick={() => removeFromWishlist(product.id)}
+                                            onClick={() => removeFromWishlist(product.ID)}
                                             className="btn btn-sm btn-outline border-red-500 text-red-500 hover:bg-red-500 hover:text-white shadow-none"
                                         >
                                             <FiTrash2 className="w-4 h-4" />

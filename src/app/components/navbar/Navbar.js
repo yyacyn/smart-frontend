@@ -46,9 +46,9 @@ export default function Navbar() {
                     <button className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none shadow-none hover:bg-[#ED775A] hover:border-none">
                         <FiBell size={20} />
                     </button>
-                    <button className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none shadow-none hover:bg-[#ED775A] hover:border-none">
+                    <Link href="/pages/wishlist" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none shadow-none hover:bg-[#ED775A] hover:border-none">
                         <FiHeart size={20} />
-                    </button>
+                    </Link>
                     <Link href="/pages/cart" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white shadow-none border-none hover:bg-[#ED775A] hover:border-none">
                         <FiShoppingCart size={20} />
                     </Link>
