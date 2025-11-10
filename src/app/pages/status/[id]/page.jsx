@@ -3,18 +3,22 @@
 import { useState, useRef, useEffect } from "react";
 import Navbar from "../../../components/navbar/Navbar";
 import Footer from "../../../components/footer/Footer";
-import { FiSend, FiCheckCircle, FiMessageSquare, FiStar, FiImage, FiFileText } from "react-icons/fi";
+import { FiSend, FiCheckCircle, FiMessageSquare, FiStar, FiImage, FiFileText, FiClock, FiXCircle } from "react-icons/fi";
 import { useRouter, useParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { fetchOrderById } from "../../../api";
 import Link from "next/link";
 
 export default function StatusPage() {
     const router = useRouter();
     const params = useParams();
-    const transactionId = params.id;
+    const { user } = useUser();
+    const orderId = params.id;
 
-    // Dummy delivery status and store info
-    const [deliveryStatus, setDeliveryStatus] = useState("Sedang dikirim");
-    const [storeName] = useState("Toko Elektronik Jaya");
+    // Order data state
+    const [order, setOrder] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
     const [messages, setMessages] = useState([
         { id: 1, sender: "store", message: "Pesanan Anda sedang diproses." },
         { id: 2, sender: "user", message: "Terima kasih, mohon info pengiriman." },
@@ -28,6 +32,95 @@ export default function StatusPage() {
     const [reviewing, setReviewing] = useState(false);
     const [review, setReview] = useState("");
     const [rating, setRating] = useState(0);
+
+    // Fetch order data
+    useEffect(() => {
+        async function getOrderData() {
+            if (!orderId || !user) return;
+            
+            setLoading(true);
+            setError("");
+            
+            try {
+                // Get user token if available
+                const token = await user.getToken();
+                const orderData = await fetchOrderById(orderId, token);
+                setOrder(orderData.order || orderData);
+            } catch (err) {
+                console.error("Error fetching order:", err);
+                setError("Gagal mengambil data pesanan. Periksa koneksi atau coba lagi.");
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        getOrderData();
+    }, [orderId, user]);
+
+    // Helper functions
+    const getStatusDisplay = (status) => {
+        switch (status?.toLowerCase()) {
+            case "pending":
+                return { 
+                    icon: <FiClock className="w-6 h-6 text-yellow-500" />, 
+                    text: "Menunggu Konfirmasi",
+                    color: "text-yellow-600"
+                };
+            case "processing":
+                return { 
+                    icon: <FiClock className="w-6 h-6 text-blue-500" />, 
+                    text: "Sedang Diproses",
+                    color: "text-blue-600"
+                };
+            case "shipped":
+                return { 
+                    icon: <FiCheckCircle className="w-6 h-6 text-green-500" />, 
+                    text: "Sedang Dikirim",
+                    color: "text-green-600"
+                };
+            case "delivered":
+                return { 
+                    icon: <FiCheckCircle className="w-6 h-6 text-green-500" />, 
+                    text: "Telah Sampai",
+                    color: "text-green-600"
+                };
+            case "completed":
+                return { 
+                    icon: <FiCheckCircle className="w-6 h-6 text-green-500" />, 
+                    text: "Pesanan Selesai",
+                    color: "text-green-600"
+                };
+            case "cancelled":
+                return { 
+                    icon: <FiXCircle className="w-6 h-6 text-red-500" />, 
+                    text: "Pesanan Dibatalkan",
+                    color: "text-red-600"
+                };
+            default:
+                return { 
+                    icon: <FiClock className="w-6 h-6 text-yellow-500" />, 
+                    text: "Status Tidak Diketahui",
+                    color: "text-gray-600"
+                };
+        }
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return "-";
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString("id-ID", {
+                day: "2-digit",
+                month: "long", 
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: "Asia/Jakarta"
+            }) + " WIB";
+        } catch {
+            return "-";
+        }
+    };
 
     const sendMessage = () => {
         if (messageInput.trim() || imageFile) {
@@ -47,8 +140,70 @@ export default function StatusPage() {
                     messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
                 }
             }, 100);
-        }
+        };
     };
+
+    // Show loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <Navbar />
+                <div className="w-full px-10 py-8 mt-16">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex items-center gap-2 mb-6">
+                            <button
+                                onClick={() => router.back()}
+                                className="btn btn-sm btn-ghost shadow-none border-none text-gray-700 hover:bg-gray-100"
+                            >
+                                &larr;
+                            </button>
+                            <h2 className="text-2xl font-bold text-gray-900">Detail Pesanan</h2>
+                        </div>
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <span className="loading loading-spinner loading-lg"></span>
+                            <p className="mt-4 text-gray-500">Memuat detail pesanan...</p>
+                        </div>
+                    </div>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    // Show error state
+    if (error || !order) {
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <Navbar />
+                <div className="w-full px-10 py-8 mt-16">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex items-center gap-2 mb-6">
+                            <button
+                                onClick={() => router.back()}
+                                className="btn btn-sm btn-ghost shadow-none border-none text-gray-700 hover:bg-gray-100"
+                            >
+                                &larr;
+                            </button>
+                            <h2 className="text-2xl font-bold text-gray-900">Detail Pesanan</h2>
+                        </div>
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <FiXCircle className="w-16 h-16 text-red-500" />
+                            <p className="mt-4 text-red-500 text-center">{error || "Pesanan tidak ditemukan"}</p>
+                            <button 
+                                onClick={() => router.push("/pages/marketplace")}
+                                className="mt-4 btn bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none"
+                            >
+                                Kembali ke Marketplace
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    const statusDisplay = getStatusDisplay(order.status);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -71,21 +226,21 @@ export default function StatusPage() {
                             {/* Order Status */}
                             <div className="bg-white rounded-lg shadow p-6">
                                 <div className="flex items-center gap-3 mb-4">
-                                    <FiCheckCircle className="w-6 h-6 text-green-500" />
-                                    <span className="text-lg font-semibold text-gray-800">{deliveryStatus}</span>
+                                    {statusDisplay.icon}
+                                    <span className={`text-lg font-semibold ${statusDisplay.color}`}>{statusDisplay.text}</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <p className="text-gray-600">No. Pesanan</p>
-                                        <p className="font-mono font-semibold">{transactionId}</p>
+                                        <p className="font-mono font-semibold">{order.id}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600">Tanggal Pembelian</p>
-                                        <p className="font-semibold">06 Juli 2025, 20:44 WIB</p>
+                                        <p className="font-semibold">{formatDate(order.createdAt || order.created_at)}</p>
                                     </div>
                                 </div>
                                 <div className="mt-4">
-                                    <Link href={`/pages/receipt/${transactionId}`} className="inline-flex items-center gap-2 text-[#ED775A] hover:text-[#d86a4a] font-semibold">
+                                    <Link href={`/pages/receipt/${order.id}`} className="inline-flex items-center gap-2 text-[#ED775A] hover:text-[#d86a4a] font-semibold">
                                         <FiFileText className="w-4 h-4" />
                                         Lihat Invoice
                                     </Link>
@@ -96,16 +251,37 @@ export default function StatusPage() {
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                                     <span className="w-4 h-4 bg-purple-500 rounded"></span>
-                                    {storeName}
+                                    {order.store?.name || "Toko"}
                                 </h3>
-                                <div className="flex gap-4">
-                                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0">
-                                        <img src="/api/placeholder/64/64" alt="Product" className="w-full h-full object-cover rounded-lg" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="font-medium">Rexus Xierra S5 Aviator - Mouse Wireless - Design Keren Dan Stylish - Black, Standar</h4>
-                                        <p className="text-sm font-semibold mt-1">1 x Rp149.000</p>
-                                    </div>
+                                <div className="space-y-4">
+                                    {order.items && order.items.length > 0 ? (
+                                        order.items.map((item, index) => (
+                                            <div key={item.id || index} className="flex gap-4">
+                                                <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0">
+                                                    <img 
+                                                        src={item.image || item.product?.images?.[0] || "/images/default.png"} 
+                                                        alt={item.name || item.product?.name || "Product"} 
+                                                        className="w-full h-full object-cover rounded-lg" 
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-medium">
+                                                        {item.name || item.product?.name || `Produk #${item.id}`}
+                                                    </h4>
+                                                    <p className="text-sm font-semibold mt-1">
+                                                        {item.quantity || 1} x Rp{(item.price || item.product?.price || 0).toLocaleString("id-ID")}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="flex gap-4">
+                                            <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0"></div>
+                                            <div className="flex-1">
+                                                <h4 className="font-medium text-gray-500">Tidak ada produk ditemukan</h4>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -113,16 +289,24 @@ export default function StatusPage() {
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h3 className="font-semibold text-lg mb-4">Info Pengiriman</h3>
                                 <div className="space-y-3 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">No Resi</span>
-                                        <span className="font-mono">JX5334622923</span>
-                                    </div>
+                                    {order.trackingNumber && (
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">No Resi</span>
+                                            <span className="font-mono">{order.trackingNumber}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-start">
                                         <span className="text-gray-600">Alamat</span>
-                                        <div className="text-right">
-                                            <p className="font-semibold">Yashin Al Fauzy</p>
-                                            <p className="text-gray-600">(+62)812/56611640</p>
-                                            <p className="text-gray-600">Jl.Lodaya II Cilibende RT 02/05 no 05 kost teh Reni Bogor Tengah Kota Bogor Jawa Barat 16128</p>
+                                        <div className="text-right max-w-xs">
+                                            <p className="font-semibold">{order.shippingAddress?.name || user?.fullName || "-"}</p>
+                                            {order.shippingAddress?.phone && (
+                                                <p className="text-gray-600">(+62){order.shippingAddress.phone}</p>
+                                            )}
+                                            <p className="text-gray-600 text-xs leading-relaxed">
+                                                {order.shippingAddress?.address || order.address || "Alamat tidak tersedia"}
+                                                {order.shippingAddress?.city && `, ${order.shippingAddress.city}`}
+                                                {order.shippingAddress?.postalCode && ` ${order.shippingAddress.postalCode}`}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -134,61 +318,67 @@ export default function StatusPage() {
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between">
                                         <span>Metode Pembayaran</span>
-                                        <span className="font-semibold">GoPay</span>
+                                        <span className="font-semibold capitalize">
+                                            {order.paymentMethod || "Belum ditentukan"}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Subtotal Harga Barang</span>
-                                        <span>Rp149.000</span>
+                                        <span>Rp{(order.subtotal || order.total || 0).toLocaleString("id-ID")}</span>
                                     </div>
+                                    {order.discount > 0 && (
+                                        <div className="flex justify-between">
+                                            <span>Diskon</span>
+                                            <span className="text-red-600">-Rp{order.discount.toLocaleString("id-ID")}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between">
-                                        <span>Diskon Barang dari Penjual</span>
-                                        <span className="text-red-600">-Rp42.000</span>
+                                        <span>Ongkos Kirim</span>
+                                        <span>{order.shippingCost > 0 ? `Rp${order.shippingCost.toLocaleString("id-ID")}` : "GRATIS"}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span>Total Ongkos Kirim</span>
-                                        <span>Rp11.500</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Kupon Diskon Ongkos Kirim dari Platform</span>
-                                        <span className="text-red-600">-Rp11.500</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Total Proteksi Produk</span>
-                                        <span>Rp8.500</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Asuransi Pengiriman</span>
-                                        <span>Rp800</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Biaya Jasa Aplikasi</span>
-                                        <span>Rp1.000</span>
-                                    </div>
+                                    {order.tax > 0 && (
+                                        <div className="flex justify-between">
+                                            <span>Pajak</span>
+                                            <span>Rp{order.tax.toLocaleString("id-ID")}</span>
+                                        </div>
+                                    )}
                                     <hr className="my-2" />
                                     <div className="flex justify-between font-bold text-lg">
                                         <span>Total Belanja</span>
-                                        <span>Rp117.300</span>
+                                        <span>Rp{(order.total || 0).toLocaleString("id-ID")}</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Action Buttons */}
                             <div className="flex flex-col gap-3">
-                                {!accepted ? (
+                                {order.status === "delivered" && !accepted ? (
                                     <button
                                         className="btn btn-lg bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none shadow-lg rounded-lg px-8 py-3 text-lg font-bold transition-all duration-300"
                                         onClick={() => setAccepted(true)}
                                     >
                                         Terima Barang
                                     </button>
-                                ) : (
+                                ) : order.status === "completed" || accepted ? (
                                     <button
                                         className="btn btn-lg bg-[#476EAE] text-white hover:bg-[#3a5c8e] border-none shadow-lg rounded-lg px-8 py-3 text-lg font-bold transition-all duration-300"
                                         onClick={() => setReviewing(true)}
                                     >
                                         Review Barang
                                     </button>
-                                )}
+                                ) : order.status === "pending" ? (
+                                    <button
+                                        className="btn btn-lg bg-red-500 text-white hover:bg-red-600 border-none shadow-lg rounded-lg px-8 py-3 text-lg font-bold transition-all duration-300"
+                                        onClick={() => {
+                                            if (confirm("Apakah Anda yakin ingin membatalkan pesanan ini?")) {
+                                                // TODO: Add cancel order API call
+                                                alert("Fitur pembatalan pesanan akan segera tersedia.");
+                                            }
+                                        }}
+                                    >
+                                        Batalkan Pesanan
+                                    </button>
+                                ) : null}
                                 {reviewing && (
                                     <div className="p-4 border rounded-lg bg-gray-50">
                                         <h3 className="font-semibold mb-2">Beri Ulasan</h3>
@@ -211,13 +401,22 @@ export default function StatusPage() {
                                         />
                                         <button
                                             className="mt-3 btn btn-sm bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none rounded-lg px-6 py-2 font-bold"
-                                            onClick={() => {
-                                                setReviewing(false);
-                                                setReview("");
-                                                setRating(0);
-                                                setDeliveryStatus("Pesanan Selesai");
-                                                const completedTransactionId = `TXN-${Date.now()}-COMPLETED`;
-                                                console.log(`New completed transaction ID: ${completedTransactionId}`);
+                                            onClick={async () => {
+                                                try {
+                                                    // TODO: Add review submission API call
+                                                    // const reviewData = { rating, review, orderId: order.id };
+                                                    // await submitReview(reviewData, token);
+                                                    
+                                                    alert("Terima kasih atas ulasan Anda!");
+                                                    setReviewing(false);
+                                                    setReview("");
+                                                    setRating(0);
+                                                    
+                                                    // Update order status in state
+                                                    setOrder(prev => ({ ...prev, status: "completed" }));
+                                                } catch (error) {
+                                                    alert("Gagal mengirim ulasan. Silakan coba lagi.");
+                                                }
                                             }}
                                         >
                                             Kirim Ulasan
@@ -240,7 +439,7 @@ export default function StatusPage() {
                                 </div> */}
                                 <div className="flex items-center gap-2 mb-4">
                                     <FiMessageSquare className="w-5 h-5 text-[#ED775A]" />
-                                    <span className="font-semibold text-gray-800">Chat dengan {storeName}</span>
+                                    <span className="font-semibold text-gray-800">Chat dengan {order.store?.name || "Toko"}</span>
                                 </div>
                                 <div ref={messagesContainerRef} className="border rounded-lg border-gray-200 bg-gray-50 p-3 h-64 overflow-y-auto mb-2">
                                     {messages.map((msg) => (

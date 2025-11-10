@@ -11,10 +11,15 @@ import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 // import ProductCard from "../../../components/product/Card"
 import ProductCard from "../../../components/product/Card"
 import { fetchProducts } from "../../../api";
+import { useDispatch, useSelector } from "react-redux";
+import { addToCart, increaseQuantity } from "@/lib/features/cart/cartSlice";
+import Swal from 'sweetalert2';
 import Link from "next/link";
 
 export default function ProductPage() {
     const router = useRouter();
+    const dispatch = useDispatch();
+    const cartItems = useSelector((state) => state.cart.cartItems);
     const params = useParams();
     const productId = params.id;
 
@@ -27,6 +32,7 @@ export default function ProductPage() {
     const colors = ["Merah", "Kuning", "Hitam", "Putih"];
     const [selectedColor, setSelectedColor] = useState(colors[0]);
     const [isWishlisted, setIsWishlisted] = useState(false);
+    const [reviews, setReviews] = useState([]); // Add reviews state
 
     useEffect(() => {
         async function getProducts() {
@@ -157,27 +163,40 @@ export default function ProductPage() {
 
                 {/* Reviews List */}
                 <div className="space-y-4 ">
-                    {[1, 2, 3].map((i) => (
-                        <article key={i} className="rounded-box border border-gray-100 shadow-2xs p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="avatar placeholder">
-                                    <div className="h-10 w-10 rounded-full " />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium">Pengguna {i}</p>
-                                    <div className="flex items-center text-warning">
-                                        {Array.from({ length: 5 }).map((_, idx) => (
-                                            <FaStar key={idx} />
-                                        ))}
+                    {reviews.length === 0 ? (
+                        <div className="text-center py-8">
+                            <FiMessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                            <p className="text-gray-500 text-sm">No review yet</p>
+                            <p className="text-gray-400 text-xs mt-1">Be the first to review this product</p>
+                        </div>
+                    ) : (
+                        reviews.map((review) => (
+                            <article key={review.id} className="rounded-box border border-gray-100 shadow-2xs p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="avatar placeholder">
+                                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <span className="text-xs text-gray-600">{review.user?.name?.[0] || 'U'}</span>
+                                        </div>
                                     </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium">{review.user?.name || 'Anonymous User'}</p>
+                                        <div className="flex items-center text-warning">
+                                            {Array.from({ length: 5 }).map((_, idx) => (
+                                                <FaStar 
+                                                    key={idx} 
+                                                    className={idx < review.rating ? 'text-yellow-500' : 'text-gray-300'} 
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <span className="text-xs opacity-60">{review.createdAt ? new Date(review.createdAt).toLocaleDateString('id-ID') : 'Recently'}</span>
                                 </div>
-                                <span className="text-xs opacity-60">2 hari lalu</span>
-                            </div>
-                            <p className="mt-3 text-sm">
-                                Kualitas bagus, nyaman dipakai lari. Pengiriman cepat dan packing aman. Recommended!
-                            </p>
-                        </article>
-                    ))}
+                                <p className="mt-3 text-sm">
+                                    {review.comment || 'No comment provided.'}
+                                </p>
+                            </article>
+                        ))
+                    )}
                 </div>
             </section>
         ),
@@ -194,7 +213,7 @@ export default function ProductPage() {
                             <a>Home</a>
                         </li>
                         <li>
-                            <a>{currentProduct?.category}</a>
+                            <a>{typeof currentProduct?.category === 'object' && currentProduct?.category !== null ? currentProduct.category.name : currentProduct?.category}</a>
                         </li>
                         <li className="font-medium">{currentProduct?.name}</li>
                     </ul>
@@ -357,7 +376,7 @@ export default function ProductPage() {
                                     <div className="avatar">
                                         <div className="h-12 w-12 rounded">
                                             <img
-                                                src={currentProduct?.image}
+                                                src={Array.isArray(currentProduct?.images) && currentProduct.images.length > 0 ? currentProduct.images[0] : "/images/default.png"}
                                                 alt="Selected product variant"
                                                 className="h-full w-full object-cover rounded"
                                             />
@@ -406,7 +425,47 @@ export default function ProductPage() {
                                     >
                                         Checkout
                                     </button>
-                                    <button className="btn bg-white w-1/4 shadow-none text-[#ED775A] border hover:bg-gray-100 border-[#ED775A] hover:border-[#eb6b4b] hover:text-[#ED775A]">
+                                    <button className="btn bg-white w-1/4 shadow-none text-[#ED775A] border hover:bg-gray-100 border-[#ED775A] hover:border-[#eb6b4b] hover:text-[#ED775A]"
+                                        onClick={async () => {
+                                            try {
+                                                // Check if product already exists in cart
+                                                const productExistsInCart = cartItems && cartItems[currentProduct.id];
+                                                
+                                                if (productExistsInCart) {
+                                                    // Product exists, increase quantity by qty amount
+                                                    for (let i = 0; i < qty; i++) {
+                                                        dispatch(increaseQuantity({ productId: currentProduct.id }));
+                                                    }
+                                                    await Swal.fire({
+                                                        icon: 'success',
+                                                        title: 'Berhasil',
+                                                        text: `${currentProduct.name} (${qty} pcs) berhasil ditambahkan ke keranjang!`,
+                                                        timer: 2000,
+                                                        showConfirmButton: false
+                                                    });
+                                                } else {
+                                                    // Product doesn't exist, add new item
+                                                    dispatch(addToCart({ 
+                                                        productId: currentProduct.id, 
+                                                        quantity: qty 
+                                                    }));
+                                                    await Swal.fire({
+                                                        icon: 'success',
+                                                        title: 'Berhasil',
+                                                        text: `${currentProduct.name} (${qty} pcs) berhasil ditambahkan ke keranjang!`,
+                                                        timer: 2000,
+                                                        showConfirmButton: false
+                                                    });
+                                                }
+                                            } catch (error) {
+                                                await Swal.fire({
+                                                    icon: 'error',
+                                                    title: 'Gagal',
+                                                    text: 'Gagal menambahkan ke keranjang.',
+                                                });
+                                            }
+                                        }}
+                                    >
                                         <FiShoppingCart className="w-5" />
                                     </button>
                                 </div>

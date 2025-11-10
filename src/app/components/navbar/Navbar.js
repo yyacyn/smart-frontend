@@ -1,21 +1,26 @@
 "use client";
 import { PackageIcon } from "lucide-react";
 import Link from "next/link";
-import { FiSearch, FiShoppingCart, FiHeart, FiBell } from "react-icons/fi";
+import { FiSearch, FiShoppingCart, FiHeart, FiBell, FiMenu, FiX, FiShoppingBag } from "react-icons/fi";
 import { FiMessageSquare } from "react-icons/fi";
-import { useState } from "react";
+import { HiOutlineShoppingBag } from "react-icons/hi";
+import { useState, useEffect } from "react";
 import { useUser, useClerk, UserButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { fetchStores } from "../../api";
 
 export default function Navbar() {
 
-    const {user} = useUser();
+    const { user } = useUser();
     const { openSignIn } = useClerk();
     const router = useRouter();
 
     const [searchQuery, setSearchQuery] = useState("");
     const [showNotifications, setShowNotifications] = useState(false);
     const [showChats, setShowChats] = useState(false);
+    const [showBurger, setShowBurger] = useState(false);
+    const [userStore, setUserStore] = useState(null);
+    const [isLoadingStore, setIsLoadingStore] = useState(false);
     const notifications = [
         { id: 1, text: "Pesanan #1234 telah dikirim." },
         { id: 2, text: "Produk baru tersedia di toko favorit Anda." },
@@ -46,6 +51,37 @@ export default function Navbar() {
     const [chatLimit, setChatLimit] = useState(4);
     const visibleChats = chats.slice(0, chatLimit);
 
+    // Check if user has a store
+    useEffect(() => {
+        async function checkUserStore() {
+            if (user?.id) {
+                setIsLoadingStore(true);
+                try {
+                    const storeResponse = await fetchStores();
+                    if (storeResponse?.stores) {
+                        const currentUserStore = storeResponse.stores.find(store => store.userId === user.id);
+                        setUserStore(currentUserStore || null);
+                    }
+                } catch (error) {
+                    console.error('Error fetching stores:', error);
+                    setUserStore(null);
+                } finally {
+                    setIsLoadingStore(false);
+                }
+            }
+        }
+        checkUserStore();
+    }, [user?.id]);
+
+
+    // Search submit handler
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            router.push(`/pages/marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+        }
+    };
+
     return (
         <header className="bg-white border-1 border-gray-200 fixed top-0 left-0 w-full z-50">
             <div className="navbar max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
@@ -57,7 +93,7 @@ export default function Navbar() {
                 </div>
 
                 <div className="navbar-center hidden lg:flex">
-                    <div className="form-control">
+                    <form className="form-control" onSubmit={handleSearchSubmit}>
                         <div className="input-group border-gray-200 border-1 rounded-md text-gray-500 flex">
                             <input
                                 type="text"
@@ -67,11 +103,11 @@ export default function Navbar() {
                                 className="input w-64 bg-white focus:ring-0 focus:border-transparent focus:outline-none"
                             />
                             <span className=" my-2 w-[1.6px] bg-gray-200"></span>
-                            <button className="btn btn-square bg-white focus:outline-none border-none shadow-none">
+                            <button type="submit" className="btn btn-square bg-white focus:outline-none border-none shadow-none">
                                 <FiSearch className="text-gray-400" />
                             </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
 
 
@@ -171,13 +207,16 @@ export default function Navbar() {
                                 <FiHeart size={20} />
                             </Link>
                             {/* Cart Button */}
-                            <Link href="/pages/cart" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white shadow-none border-none hover:bg-[#ED775A] hover:border-none mr-5">
+                            <Link href="/pages/cart" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white shadow-none border-none hover:bg-[#ED775A] hover:border-none">
                                 <FiShoppingCart size={20} />
+                            </Link>
+                            <Link href="/pages/addstore" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none shadow-none hover:bg-[#ED775A] hover:border-none  mr-5">
+                                <FiShoppingBag size={20} />
                             </Link>
                             {/* User Menu */}
                             <UserButton>
                                 <UserButton.MenuItems>
-                                    <UserButton.Action labelIcon={<PackageIcon size={16}/>} label="My Orders" onClick={() => router.push('/pages/order')}/>
+                                    <UserButton.Action labelIcon={<PackageIcon size={16} />} label="My Orders" onClick={() => user && router.push(`/pages/order/${user.id}`)} />
                                 </UserButton.MenuItems>
                             </UserButton>
                         </>

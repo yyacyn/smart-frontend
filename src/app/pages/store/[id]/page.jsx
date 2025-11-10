@@ -21,10 +21,12 @@ export default function StorePage() {
     const [sortBy, setSortBy] = useState("name");
     const [displayedProductsCount, setDisplayedProductsCount] = useState(12);
     const [isLoading, setIsLoading] = useState(false);
+    const [isProductsLoading, setIsProductsLoading] = useState(true);
     const productsPerLoad = 12;
 
     useEffect(() => {
         async function fetchStoreAndProducts() {
+            setIsProductsLoading(true);
             try {
                 // Try to get store info from sessionStorage (set by product detail page)
                 let store = null;
@@ -55,17 +57,34 @@ export default function StorePage() {
                 setCurrentStore(null);
                 setStoreProducts([]);
                 setPopularProducts([]);
+            } finally {
+                setIsProductsLoading(false);
             }
         }
         fetchStoreAndProducts();
     }, [storeId]);
 
     // Get unique categories for filter
-    const categories = ["all", ...new Set(storeProducts.map(p => p.category))];
+    // Extract category names for filter dropdown
+    const categories = [
+        "all",
+        ...Array.from(
+            new Set(
+                storeProducts.map(p =>
+                    typeof p.category === "object" && p.category !== null
+                        ? p.category.name
+                        : p.category
+                )
+            )
+        ).filter(Boolean)
+    ];
 
     // Filter and sort products
     const filteredProducts = storeProducts.filter(product => {
-        return selectedCategory === "all" || product.category === selectedCategory;
+        const catName = typeof product.category === "object" && product.category !== null
+            ? product.category.name
+            : product.category;
+        return selectedCategory === "all" || catName === selectedCategory;
     });
 
     const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -175,7 +194,7 @@ export default function StorePage() {
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className="font-semibold text-base text-gray-700">@{currentStore.username}</span>
                                         {currentStore.status && (
-                                            <span className={`badge text-xs ml-2 ${currentStore.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{currentStore.status}</span>
+                                            <span className={`badge text-xs ml-2 ${currentStore.status === 'approved' ? 'bg-green-100 text-green-700 border-none' : 'bg-yellow-100 text-yellow-700'}`}>{currentStore.status}</span>
                                         )}
                                     </div>
                                     <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-2">
@@ -295,8 +314,12 @@ export default function StorePage() {
                         </div>
                     </div>
 
-                    {/* Products Grid */}
-                    {sortedProducts.length > 0 ? (
+                    {/* Products Grid with loading */}
+                    {isProductsLoading ? (
+                        <div className="flex justify-center py-20">
+                            <div className="loading loading-spinner loading-lg text-[#ED775A]"></div>
+                        </div>
+                    ) : sortedProducts.length > 0 ? (
                         <>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                 {displayedProducts.map((product) => (
@@ -304,7 +327,7 @@ export default function StorePage() {
                                 ))}
                             </div>
 
-                            {/* Loading indicator */}
+                            {/* Loading indicator for infinite scroll */}
                             {isLoading && (
                                 <div className="flex justify-center mt-8">
                                     <div className="loading loading-spinner loading-md text-[#ED775A]"></div>
@@ -325,8 +348,7 @@ export default function StorePage() {
                             <p className="text-gray-500">
                                 {selectedCategory === "all"
                                     ? "Toko ini belum memiliki produk"
-                                    : `Tidak ada produk dalam kategori "${selectedCategory}"`
-                                }
+                                    : `Tidak ada produk dalam kategori \"${selectedCategory}\"`}
                             </p>
                         </div>
                     )}
