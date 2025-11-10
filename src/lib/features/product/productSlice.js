@@ -6,6 +6,7 @@ export const fetchProducts = createAsyncThunk('product/fetchProducts', async ({ 
         const baseurl = process.env.NEXT_PUBLIC_API_URL
         console.log(baseurl)
         const { data } = await axios.get(`${baseurl}/api/products` + (storeId ? `?storeId=${storeId}` : ''))
+        console.log('API Response status:', data.status);
         console.log('Fetched products:', data.products)
         return data.products
     } catch (error) {

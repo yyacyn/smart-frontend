@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.34.1",
-    "@reduxjs/toolkit": "^2.9.2",
+    "@reduxjs/toolkit": "^2.10.1",
     "autoprefixer": "^10.4.21",
     "axios": "^1.13.2",
     "daisyui": "^5.1.13",

@@ -81,8 +81,8 @@ function MarketplaceContent() {
             let categoryMatch = true;
             if (filters.category !== 'all') {
                 switch (filters.category) {
-                    case 'Makanan & Minuman':
-                        categoryMatch = category === 'Makanan';
+                    case 'Elektronik':
+                        categoryMatch = category === 'Electronics';
                         break;
                     case 'Kesehatan & Kecantikan':
                         categoryMatch = category === 'Obat-obatan' || category === 'Kecantikan';

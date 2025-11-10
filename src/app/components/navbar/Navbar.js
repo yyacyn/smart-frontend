@@ -74,6 +74,7 @@ export default function Navbar() {
                     </div>
                 </div>
 
+
                 <div className="navbar-end space-x-2 relative">
                     {user ? (
                         <>
