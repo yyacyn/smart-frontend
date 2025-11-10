@@ -1,37 +1,61 @@
 "use client";
-
 import { useState } from "react";
-import { FiUpload } from "react-icons/fi";
+import { useAuth } from "@clerk/nextjs";
+import { createStore } from "../../api";
+import Swal from "sweetalert2";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 
 export default function AddStorePage() {
-    const [logo, setLogo] = useState(null);
-    const [username, setUsername] = useState("");
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [email, setEmail] = useState("");
-    const [contact, setContact] = useState("");
-    const [address, setAddress] = useState("");
+    const [storeInfo, setStoreInfo] = useState({
+        name: "",
+        username: "",
+        description: "",
+        email: "",
+        contact: "",
+        address: "",
+        image: null
+    });
 
-    const handleLogoChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            setLogo(URL.createObjectURL(e.target.files[0]));
-        }
+    const { getToken } = useAuth();
+
+    const onChangeHandler = (e) => {
+        const { name, value, type, files } = e.target;
+        setStoreInfo((prev) => ({
+            ...prev,
+            [name]: type === "file" ? files[0] : value
+        }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle form submission
-        console.log({
-            logo,
-            username,
-            name,
-            description,
-            email,
-            contact,
-            address
+        const formData = new FormData();
+        Object.entries(storeInfo).forEach(([key, value]) => {
+            if (value) formData.append(key, value);
         });
+        // Debug: log form data
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ':', pair[1]);
+        }
+        try {
+            // get Clerk token and pass it to the API so backend can identify the user
+            const token = await getToken();
+            // debug: log formData entries (optional)
+            for (let pair of formData.entries()) console.log(pair[0], pair[1]);
+            await createStore(formData, token);
+            Swal.fire({
+                icon: "success",
+                title: "Store created successfully! Please wait for admin approval.",
+                showConfirmButton: false,
+                timer: 1800
+            });
+        } catch (err) {
+            Swal.fire({
+                icon: "error",
+                title: "Failed to create store",
+                text: err?.response?.data?.message || err.message,
+            });
+        }
     };
 
     return (
@@ -40,13 +64,9 @@ export default function AddStorePage() {
             <div className="pt-10 pb-12">
                 <div className="max-w-2xl mx-auto px-4">
                     <div className="mt-10 flex py-5">
-                        <button onClick={() => router.back()} className="btn btn-sm btn-ghost shadow-none border-none text-gray-700 border border-gray-300 hover:bg-gray-100">
-                            &larr;
-                        </button>
-                        <h1 className="text-2xl font-bold text-gray-900">Keranjang Belanja</h1>
+                        {/* ...existing code... */}
                     </div>
                     <div className="bg-white rounded-lg shadow-lg p-8">
-
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Store Logo */}
                             <div>
@@ -58,119 +78,120 @@ export default function AddStorePage() {
                                         htmlFor="logo-upload"
                                         className="w-32 h-32 bg-gray-100 rounded-lg flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-gray-300 hover:border-[#ED775A] transition-colors"
                                     >
-                                        {logo ? (
+                                        {storeInfo.image ? (
                                             <img
-                                                src={logo}
+                                                src={URL.createObjectURL(storeInfo.image)}
                                                 alt="Store Logo"
                                                 className="w-full h-full object-cover rounded-lg"
                                             />
                                         ) : (
                                             <>
-                                                <FiUpload className="w-8 h-8 text-gray-400 mb-2" />
+                                                {/* ...icon... */}
                                                 <span className="text-sm text-gray-500">Upload Logo</span>
                                             </>
                                         )}
                                         <input
                                             id="logo-upload"
+                                            name="image"
                                             type="file"
                                             accept="image/*"
                                             className="hidden"
-                                            onChange={handleLogoChange}
+                                            onChange={onChangeHandler}
                                         />
                                     </label>
                                 </div>
                             </div>
-
                             {/* Username */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Username
                                 </label>
                                 <input
+                                    name="username"
                                     type="text"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent"
                                     placeholder="Enter your store username"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
+                                    value={storeInfo.username}
+                                    onChange={onChangeHandler}
                                     required
                                 />
                             </div>
-
+                            {/* ...repeat for other fields, using name and value from storeInfo... */}
                             {/* Name */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Name
                                 </label>
                                 <input
+                                    name="name"
                                     type="text"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent"
                                     placeholder="Enter your store name"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    value={storeInfo.name}
+                                    onChange={onChangeHandler}
                                     required
                                 />
                             </div>
-
                             {/* Description */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Description
                                 </label>
                                 <textarea
+                                    name="description"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent resize-none"
                                     rows={4}
                                     placeholder="Enter your store description"
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
+                                    value={storeInfo.description}
+                                    onChange={onChangeHandler}
                                     required
                                 />
                             </div>
-
                             {/* Email */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Email
                                 </label>
                                 <input
+                                    name="email"
                                     type="email"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent"
                                     placeholder="Enter your store email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    value={storeInfo.email}
+                                    onChange={onChangeHandler}
                                     required
                                 />
                             </div>
-
                             {/* Contact Number */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Contact Number
                                 </label>
                                 <input
+                                    name="contact"
                                     type="tel"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent"
                                     placeholder="Enter your store contact number"
-                                    value={contact}
-                                    onChange={(e) => setContact(e.target.value)}
+                                    value={storeInfo.contact}
+                                    onChange={onChangeHandler}
                                     required
                                 />
                             </div>
-
                             {/* Address */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Address
                                 </label>
                                 <textarea
+                                    name="address"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent resize-none"
                                     rows={3}
                                     placeholder="Enter your store address"
-                                    value={address}
-                                    onChange={(e) => setAddress(e.target.value)}
+                                    value={storeInfo.address}
+                                    onChange={onChangeHandler}
                                     required
                                 />
                             </div>
-
                             {/* Submit Button */}
                             <div className="pt-4">
                                 <button
@@ -184,7 +205,6 @@ export default function AddStorePage() {
                     </div>
                 </div>
             </div>
-
             <Footer />
         </div>
     );

@@ -9,7 +9,7 @@ import ProductCard from "../../components/product/Card"
 import { FiFilter } from "react-icons/fi";
 import { AiOutlineFrown } from "react-icons/ai";
 import { flashSales, recommendedProducts } from "../../data/products";
-import { fetchProducts } from "../../api";
+import { fetchProducts, fetchCategories } from "../../api";
 
 function MarketplaceContent() {
     const searchParams = useSearchParams();
@@ -159,14 +159,33 @@ function MarketplaceContent() {
         setCurrentPage(page)
     }
 
-    const categories = [
-        { value: 'all', label: 'Semua Kategori' },
-        { value: 'Makanan & Minuman', label: 'Makanan & Minuman' },
-        { value: 'Pakaian', label: 'Pakaian' },
-        { value: 'Kesehatan & Kecantikan', label: 'Kesehatan & Kecantikan' },
-        { value: 'Kebutuhan Harian', label: 'Kebutuhan Harian' },
-        { value: 'Kerajinan Lokal', label: 'Kerajinan Lokal' }
-    ]
+    const [categories, setCategories] = useState([
+        { value: 'all', label: 'Semua Kategori' }
+    ]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+    useEffect(() => {
+        async function getCategories() {
+            setCategoriesLoading(true);
+            try {
+                const data = await fetchCategories();
+                if (data && data.success && Array.isArray(data.data)) {
+                    const apiCategories = data.data.map(cat => ({
+                        value: cat.name,
+                        label: cat.name
+                    }));
+                    setCategories([{ value: 'all', label: 'Semua Kategori' }, ...apiCategories]);
+                } else {
+                    setCategories([{ value: 'all', label: 'Semua Kategori' }]);
+                }
+            } catch (error) {
+                setCategories([{ value: 'all', label: 'Semua Kategori' }]);
+            } finally {
+                setCategoriesLoading(false);
+            }
+        }
+        getCategories();
+    }, []);
 
     // Pagination logic
     const indexOfLastProduct = currentPage * productsPerPage
@@ -228,11 +247,15 @@ function MarketplaceContent() {
                                     value={filters.category}
                                     onChange={(e) => handleFilterChange('category', e.target.value)}
                                 >
-                                    {categories.map(cat => (
-                                        <option key={cat.value} value={cat.value}>
-                                            {cat.label}
-                                        </option>
-                                    ))}
+                                    {categoriesLoading ? (
+                                        <option>Loading...</option>
+                                    ) : (
+                                        categories.map(cat => (
+                                            <option key={cat.value} value={cat.value}>
+                                                {cat.label}
+                                            </option>
+                                        ))
+                                    )}
                                 </select>
                             </div>
 

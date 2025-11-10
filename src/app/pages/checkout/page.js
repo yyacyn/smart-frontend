@@ -28,6 +28,8 @@ export default function CheckoutPage() {
     });
     const [paymentMethod, setPaymentMethod] = useState("transfer");
     const [isProcessing, setIsProcessing] = useState(false);
+    const [phoneError, setPhoneError] = useState("");
+    const [postalError, setPostalError] = useState("");
 
     useEffect(() => {
         async function getProductsForCheckout() {
@@ -103,6 +105,28 @@ export default function CheckoutPage() {
     const total = subtotal + shippingCost;
 
     const handleInputChange = (field, value) => {
+        if (field === "phone") {
+            // Only allow numbers, max 12 digits
+            const cleaned = value.replace(/\D/g, "").slice(0, 12);
+            setShippingAddress(prev => ({ ...prev, phone: cleaned }));
+            if (cleaned.length > 0 && (cleaned.length < 10 || cleaned.length > 12)) {
+                setPhoneError("Nomor telepon harus 10-12 digit.");
+            } else {
+                setPhoneError("");
+            }
+            return;
+        }
+        if (field === "postalCode") {
+            // Only allow numbers, max 5 digits
+            const cleaned = value.replace(/\D/g, "").slice(0, 5);
+            setShippingAddress(prev => ({ ...prev, postalCode: cleaned }));
+            if (cleaned.length > 0 && cleaned.length !== 5) {
+                setPostalError("Kode pos harus 5 digit.");
+            } else {
+                setPostalError("");
+            }
+            return;
+        }
         setShippingAddress(prev => ({ ...prev, [field]: value }));
     };
 
@@ -117,7 +141,15 @@ export default function CheckoutPage() {
         }, 2000);
     };
 
-    const isFormValid = shippingAddress.name && shippingAddress.phone && shippingAddress.address && shippingAddress.city && shippingAddress.postalCode;
+    const isFormValid =
+        shippingAddress.name &&
+        shippingAddress.phone.length >= 10 &&
+        shippingAddress.phone.length <= 12 &&
+        shippingAddress.address &&
+        shippingAddress.city &&
+        shippingAddress.postalCode.length === 5 &&
+        !phoneError &&
+        !postalError;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -156,12 +188,15 @@ export default function CheckoutPage() {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1 ">Nomor Telepon *</label>
                                     <input
-                                        type="number"
-                                        className="input input-bordered w-full bg-white focus:outline-none border-gray-200"
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        className={`input input-bordered w-full bg-white focus:outline-none border-gray-200 ${phoneError ? 'border-red-400' : ''}`}
                                         value={shippingAddress.phone}
                                         onChange={(e) => handleInputChange('phone', e.target.value)}
                                         placeholder="08xxxxxxxxxx"
                                     />
+                                    {phoneError && <p className="text-xs text-red-500 mt-1">{phoneError}</p>}
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap *</label>
@@ -187,11 +222,14 @@ export default function CheckoutPage() {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Kode Pos *</label>
                                     <input
                                         type="text"
-                                        className="input input-bordered w-full bg-white focus:outline-none border-gray-200"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        className={`input input-bordered w-full bg-white focus:outline-none border-gray-200 ${postalError ? 'border-red-400' : ''}`}
                                         value={shippingAddress.postalCode}
                                         onChange={(e) => handleInputChange('postalCode', e.target.value)}
                                         placeholder="12345"
                                     />
+                                    {postalError && <p className="text-xs text-red-500 mt-1">{postalError}</p>}
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Catatan untuk Kurir</label>
