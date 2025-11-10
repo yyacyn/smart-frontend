@@ -59,13 +59,15 @@ export default function CartPage() {
 
     // 🔹 Sinkronisasi cart object → array detail produk
     useEffect(() => {
-        if (products.length > 0 && cartItems) {
+        if (Array.isArray(products) && products.length > 0 && cartItems && typeof cartItems === 'object') {
             const array = [];
             for (const [id, qty] of Object.entries(cartItems)) {
                 const product = products.find((p) => String(p.id) === String(id));
                 if (product) array.push({ ...product, quantity: qty });
             }
             setCartArray(array);
+        } else {
+            setCartArray([]);
         }
     }, [cartItems, products]);
 
