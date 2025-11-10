@@ -33,7 +33,7 @@ export default function ProductCard({ product }) {
                             className="w-full h-full object-cover"
                         />
                         <div className="badge badge-primary absolute top-2 right-2">
-                            {product.category}
+                            {product.category?.name}
                         </div>
                         {hasDiscount && (
                             <div className="badge badge-warning absolute bottom-2 left-2">

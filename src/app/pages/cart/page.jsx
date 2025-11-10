@@ -563,14 +563,16 @@ export default function CartPage() {
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Ongkos Kirim</span>
                                     <span className="font-medium">
-                                        Rp {Number(12000).toLocaleString("id-ID")}
+                                        {/* Rp {Number(12000).toLocaleString("id-ID")} */}
+                                        GRATIS
                                     </span>
                                 </div>
                                 <div className="border-t border-gray-200 pt-3">
                                     <div className="flex justify-between">
                                         <span className="font-semibold text-gray-900">Total</span>
                                         <span className="font-bold text-xl text-[#ED775A]">
-                                            Rp {(subtotal + 12000).toLocaleString("id-ID")}
+                                            {/* Rp {(subtotal + 12000).toLocaleString("id-ID")} */}
+                                            Rp {(subtotal).toLocaleString("id-ID")}
                                         </span>
                                     </div>
                                 </div>
