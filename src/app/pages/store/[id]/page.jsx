@@ -2,16 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { useStoreRefresh } from "../../../hooks/useStoreRefresh";
 import Navbar from "../../../components/navbar/Navbar";
 import Footer from "../../../components/footer/Footer";
 import ProductCard from "../../../components/product/Card";
 import { fetchProducts, fetchStores } from "../../../api";
-import { FiStar, FiMessageCircle, FiFlag, FiMapPin, FiPhone, FiMail, FiClock, FiUsers, FiShoppingBag, FiHeart, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiStar, FiMessageCircle, FiFlag, FiMapPin, FiPhone, FiMail, FiClock, FiUsers, FiShoppingBag, FiHeart, FiChevronLeft, FiChevronRight, FiEdit } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 
 export default function StorePage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useUser();
+    const { refreshStore } = useStoreRefresh();
     const storeId = params.id;
 
     const [currentStore, setCurrentStore] = useState(null);
@@ -198,7 +202,17 @@ export default function StorePage() {
                         <div className="flex-1">
                             <div className="flex flex-col sm:flex-row justify-between items-start mb-3">
                                 <div>
-                                    <h2 className="text-3xl font-bold text-gray-900 mb-2">{currentStore.name}</h2>
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-3xl font-bold text-gray-900 mb-2">{currentStore.name}</h2>
+                                        {currentStore.userId === user?.id && (
+                                            <button
+                                                onClick={() => router.push(`/pages/editstore/${currentStore.id}`)}
+                                                className="btn btn-ghost btn-sm p-1 border-none shadow-none  hover:bg-white hover:text-[#ED775A]"
+                                            >
+                                                <FiEdit size={18} />
+                                            </button>
+                                        )}
+                                    </div>
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className="font-semibold text-base text-gray-700">@{currentStore.username}</span>
                                         {currentStore.status && (

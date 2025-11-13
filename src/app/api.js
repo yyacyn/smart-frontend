@@ -169,7 +169,7 @@ export const addAddress = async (addressData, token = null) => {
     
     const response = await axios.post(
         `${BASE_URL}/api/address`,
-        addressData,
+        { address: addressData }, // Send address data wrapped in an address object
         { headers }
     );
     return response.data;

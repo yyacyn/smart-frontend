@@ -53,7 +53,7 @@ export default function CheckoutPage() {
                     // Filter addresses to only show current user's addresses
                     // Try both 'userId' and 'user_id' as property names
                     const userAddresses = allAddresses.filter(address => {
-                        return address.userId === user.id || address.user_id === user.id;
+                        return (address && address.userId === user.id) || (address && address.user_id === user.id);
                     });
                     console.log("Filtered user addresses:", userAddresses);
                     setAddresses(userAddresses);
@@ -139,7 +139,7 @@ export default function CheckoutPage() {
             });
         } else {
             setShowNewAddressForm(false);
-            const selectedAddress = addresses.find(addr => addr.id === addressId);
+            const selectedAddress = addresses.find(addr => addr && addr.id === addressId);
             if (selectedAddress) {
                 setShippingAddress({
                     name: selectedAddress.name || "",
@@ -186,7 +186,11 @@ export default function CheckoutPage() {
             };
             
             // Update addresses list
-            setAddresses(prev => [...prev, addressWithUserId]);
+            setAddresses(prev => {
+                const newAddresses = [...prev, addressWithUserId];
+                console.log("Updated addresses list:", newAddresses);
+                return newAddresses;
+            });
             setSelectedAddressId(addressWithUserId.id);
             setShowNewAddressForm(false);
             
@@ -274,7 +278,7 @@ export default function CheckoutPage() {
                     quantity: item.quantity
                 })),
                 couponCode: null, // Add coupon code if you have one
-                paymentMethod: paymentMethodMap[paymentMethod] || 'STRIPE'
+                paymentMethod: paymentMethodMap[paymentMethod] || 'BANK_TRANSFER' // Use BANK_TRANSFER as fallback instead of STRIPE
             };
             // TODO: Replace null with actual token if needed
             const response = await orderPost(orderData, null);
@@ -361,7 +365,7 @@ export default function CheckoutPage() {
                                         <option value="">Pilih alamat pengiriman</option>
                                         {addresses.filter(address => {
                                             console.log("Checking address:", address, "User ID:", user?.id);
-                                            return address.userId === user.id || address.user_id === user.id;
+                                            return (address && address.userId === user.id) || (address && address.user_id === user.id);
                                         }).map((address) => (
                                             <option key={address.id} value={address.id}>
                                                 {address.name} - {address.city}

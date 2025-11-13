@@ -72,10 +72,50 @@ export default function Navbar() {
                 } finally {
                     setIsLoadingStore(false);
                 }
+            } else {
+                // User is not logged in, reset store data
+                setUserStore(null);
             }
         }
         checkUserStore();
-    }, [user?.id]);
+    }, [user?.id]); // Only runs when user.id changes (login/logout/account change)
+
+    // Function to refresh the store data (useful when store data changes via other means)
+    const refreshStoreData = async () => {
+        if (user?.id) {
+            setIsLoadingStore(true);
+            try {
+                const storeResponse = await fetchStores();
+                if (storeResponse?.stores) {
+                    const currentUserStore = storeResponse.stores.find(store => store.userId === user.id);
+                    setUserStore(currentUserStore || null);
+                }
+            } catch (error) {
+                console.error('Error fetching stores:', error);
+                // Check if it's an authentication error
+                if (error.response?.status === 401) {
+                    console.warn('Authentication failed when fetching stores. User may need to re-authenticate.');
+                }
+                setUserStore(null);
+            } finally {
+                setIsLoadingStore(false);
+            }
+        }
+    };
+
+    // Make refreshStoreData available globally when component mounts
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            window.refreshStoreData = refreshStoreData;
+        }
+
+        // Cleanup function to remove the global function when component unmounts
+        return () => {
+            if (typeof window !== 'undefined') {
+                delete window.refreshStoreData;
+            }
+        };
+    }, [refreshStoreData]);
 
 
     // Search submit handler
@@ -214,9 +254,18 @@ export default function Navbar() {
                             <Link href="/pages/cart" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white shadow-none border-none hover:bg-[#ED775A] hover:border-none">
                                 <FiShoppingCart size={20} />
                             </Link>
-                            <Link href="/pages/addstore" className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none shadow-none hover:bg-[#ED775A] hover:border-none  mr-5">
-                                <FiShoppingBag size={20} />
-                            </Link>
+                            {isLoadingStore ? (
+                                <div className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none shadow-none hover:bg-[#ED775A] hover:border-none mr-5">
+                                    <span className="loading loading-spinner loading-sm text-[#ED775A]"></span>
+                                </div>
+                            ) : (
+                                <Link
+                                    href={userStore ? `/pages/store/${userStore.id}` : "/pages/addstore"}
+                                    className="btn btn-ghost btn-circle hover:bg-orange-custom hover:text-white border-none shadow-none hover:bg-[#ED775A] hover:border-none  mr-5"
+                                >
+                                    <FiShoppingBag size={20} />
+                                </Link>
+                            )}
                             {/* User Menu */}
                             <UserButton>
                                 <UserButton.MenuItems>

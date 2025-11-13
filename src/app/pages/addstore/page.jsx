@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { useStoreRefresh } from "../../hooks/useStoreRefresh";
 import { createStore } from "../../api";
 import Swal from "sweetalert2";
 import Navbar from "../../components/navbar/Navbar";
@@ -18,6 +19,7 @@ export default function AddStorePage() {
     });
 
     const { getToken } = useAuth();
+    const { refreshStore } = useStoreRefresh();
 
     const onChangeHandler = (e) => {
         const { name, value, type, files } = e.target;
@@ -43,6 +45,8 @@ export default function AddStorePage() {
             // debug: log formData entries (optional)
             for (let pair of formData.entries()) console.log(pair[0], pair[1]);
             await createStore(formData, token);
+            // Refresh store data in navbar after successful creation
+            refreshStore();
             Swal.fire({
                 icon: "success",
                 title: "Store created successfully! Please wait for admin approval.",

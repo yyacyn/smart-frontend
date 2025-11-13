@@ -1,74 +1,119 @@
-{
-  "products": [
-    {
-      "id": "cmhrvssqz0001k304v86fu1zm",
-      "name": "cwk anime",
-      "description": "bukankah ini my",
-      "mrp": 9999,
-      "price": 8888,
-      "images": [
-        "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/Screenshot_2025-08-18_193915__1__XZBvZsvwh.png",
-        "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/e34d16950560f9539419e2f3768ae29e_Lv_ACfssD.jpg",
-        "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/44e2c88961067bde33a27c6c54699a8c_27QGgwoAI.jpg",
-        "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/af294f1a649157260d7c77f163b29656_gUz6et9S7.jpg"
-      ],
-      "categoryId": "4",
-      "inStock": true,
-      "storeId": "cmhrvolqx0001jv04iub3yrcs",
-      "createdAt": "2025-11-09T15:41:48.299Z",
-      "updatedAt": "2025-11-10T11:39:53.688Z",
-      "stock": 0,
-      "minStock": 0,
-      "weight": null,
-      "dimensions": null,
-      "model": null,
-      "additionalInfo": null,
-      "status": "published",
-      "sku": null,
-      "barcode": null,
-      "shippingWeight": null,
-      "shippingLength": null,
-      "shippingWidth": null,
-      "shippingHeight": null,
-      "warranty": null,
-      "returnPolicy": null,
-      "tags": null,
-      "metaTitle": null,
-      "metaDescription": null,
-      "rating": [],
-      "store": {
-        "id": "cmhrvolqx0001jv04iub3yrcs",
-        "userId": "user_34m1L9XTTchJBBDRaLWqfZfavpp",
-        "name": "Fahri Store",
-        "username": "fahri",
-        "description": "i sell cps",
-        "address": "Jakarta",
-        "email": "fahri@gmail.com",
-        "contact": "+62 812-8252-0510",
-        "logo": "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-512/logos/1756436943-Screenshot_2025-03-03_211707_WE1Dlz_TH.png",
-        "website": null,
-        "categoryId": null,
-        "establishedDate": null,
-        "statusReason": null,
-        "isActive": true,
-        "status": "approved",
-        "createdAt": "2025-11-09T15:38:32.601Z",
-        "updatedAt": "2025-11-10T02:49:24.274Z"
-      },
-      "category": {
-        "id": "4",
-        "name": "Kucing",
-        "description": null,
-        "image": "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-512/categories/Zenless_Zone_Zero_Ridu_Stroll_Sticker_Pack_1_Nekomata_QMT9l26WI.webp",
-        "status": "ACTIVE",
-        "slug": "kucing",
-        "metaTitle": null,
-        "metaDescription": null,
-        "sortOrder": 1,
-        "parentCategoryId": null,
-        "createdAt": "2025-11-09T16:37:27.589Z",
-        "updatedAt": "2025-11-09T16:37:27.589Z"
+import prisma from "@/lib/prisma";
+import { getAuth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { PaymentMethod } from "@prisma/client";
+
+export async function POST(request) {
+  try {
+    const { userId, has} = getAuth(request)
+    
+    if(!userId){
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { addressId, items, couponCode, paymentMethod } = await request.json();
+    
+    if(!addressId || !items || !Array.isArray(items) || !paymentMethod || items.length < 1){
+      return NextResponse.json({ error: "Invalid request data" }, { status: 400 });
+    }
+
+    let coupon = null;
+
+    if(couponCode){
+      coupon = await prisma.coupon.findUnique({ where: { code: couponCode } });
+      if(!coupon){
+        return NextResponse.json({ error: "Invalid coupon code" }, { status: 400 });
       }
     }
-  ]
+
+    // kelompokkan order berdasarkan storeId
+    const ordersByStore = new Map()
+
+    for(const item of items){
+      const product = await prisma.product.findUnique({ where: { id: item.id } });
+      const storeId = product.storeId;
+      if(!ordersByStore.has(storeId)){
+        ordersByStore.set(storeId, []);
+      }
+      ordersByStore.get(storeId).push({ ...item, price: product.price });
+    }
+
+    let orderIds = [];
+    let fullAmount = 0;
+
+    // let isShippingFeeAdded = false;
+
+    // membuat order untuk setiap seller
+    for(const [storeId, sellerItems] of ordersByStore.entries()){
+      let total = sellerItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+      if(couponCode){
+        total -= (total * coupon.discount) / 100;
+      }
+
+      // if(!isShippingFeeAdded){
+      //   total += 15000; // tambahkan ongkir hanya sekali per order
+      //   isShippingFeeAdded = true;
+      // }
+
+      fullAmount += parseFloat(total.toFixed(2));
+
+      const order = await prisma.order.create({
+        data: {
+          userId,
+          storeId,
+          addressId,
+          total: parseFloat(total.toFixed(2)),
+          paymentMethod,
+          isCouponUsed: coupon ? true : false,
+          coupon: coupon ? coupon : {},
+          orderItems: {
+            create: sellerItems.map(item => ({
+              productId: item.id,
+              quantity: item.quantity,
+              price: item.price
+            }))
+          }
+        }
+      })
+      orderIds.push(order.id);
+    }
+
+    // kosongkan cart user setelah order
+    await prisma.user.update({
+      where: { id: userId },
+      data: { cart: {} }
+    })
+
+    return NextResponse.json({ message: "Order placed successfully"});
+
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: error.code || error.message }, { status: 400 });
+  } 
 }
+
+// ambil semua orderan user
+export async function GET(request) {
+  try {
+    const { userId } = getAuth(request)
+    const orders = await prisma.order.findMany({
+      where: { userId, OR: [
+        { paymentMethod: PaymentMethod.COD },
+        { paymentMethod: PaymentMethod.BANK_TRANSFER }
+      ] },
+      include: { 
+        orderItems: {include: {product: true}},
+        address: true,
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    return NextResponse.json({ orders });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: error.code || error.message }, { status: 400 });
+  }
+}
+
+Invalid `prisma.order.create()` invocation: { data: { userId: "user_34m1L9XTTchJBBDRaLWqfZfavpp", storeId: "cmhrvolqx0001jv04iub3yrcs", addressId: "cmhxipsjb0001l5046h3rzcox", total: 8888, paymentMethod: "BANK_TRANSFER", ~~~~~~~~~~~~~~~ isCouponUsed: false, coupon: {}, orderItems: { create: [ { productId: "cmhrvssqz0001k304v86fu1zm", quantity: 1, price: 8888 } ] } } } Invalid value for argument `paymentMethod`. Expected PaymentMethod.

@@ -396,7 +396,11 @@ export default function ProductPage() {
                                         <p className="text-sm font-medium">{currentStore.name}</p>
                                         <div className="flex items-center gap-1">
                                             <FaStar className="text-yellow-500 inline" />
-                                            <p className="text-xs opacity-70 mt-0.5">{currentStore.rating} dari {currentStore.reviews} Ulasan</p>
+                                            {currentStore.reviews > 0 ? (
+                                                <p className="text-xs opacity-70 mt-0.5">{currentStore.rating} dari {currentStore.reviews} Ulasan</p>
+                                            ) : (
+                                                <p className="text-xs opacity-70 mt-0.5">Belum ada ulasan</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -405,7 +409,7 @@ export default function ProductPage() {
                                         pathname: `/pages/store/${currentStore.id}`,
                                         query: {},
                                     }}
-                                    className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow text-sm"
+                                    className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow-none text-sm"
                                     scroll={false}
                                     // Pass store info in state for the store page
                                     as={`/pages/store/${currentStore.id}`}
@@ -474,7 +478,7 @@ export default function ProductPage() {
                                     </button>
                                 </div>
 
-                                <div className="rounded-box  p-3 text-sm">
+                                <div className="rounded-box text-sm">
                                     <div className="flex items-center justify-between">
                                         <span>Subtotal</span>
                                         <span className="font-semibold">
