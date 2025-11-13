@@ -181,7 +181,7 @@ export default function LandingPage() {
                         </div>
                     </div>
                     <div className="relative">
-                        <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden">
+                        <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden ">
                             {categoriesLoading ? (
                                 <div className="text-center text-gray-500 w-full py-8">
                                     <p>Loading categories...</p>
@@ -192,7 +192,7 @@ export default function LandingPage() {
                                         key={category.id || index} 
                                         href={`/pages/marketplace?category=${encodeURIComponent(category.name)}`} 
                                         target="_blank" 
-                                        className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-[#FFE797]/30"
+                                        className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-gray-200 h-[380px]"
                                     >
                                         <figure className="relative overflow-hidden h-full w-full">
                                             <img
@@ -202,7 +202,7 @@ export default function LandingPage() {
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                                         </figure>
-                                        <div className="card-body text-center py-2">
+                                        <div className="card-body text-center py-4">
                                             <h3 className="card-title justify-center text-lg font-bold text-[#84994F]">{category.name}</h3>
                                         </div>
                                     </Link>

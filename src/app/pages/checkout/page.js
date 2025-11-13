@@ -51,7 +51,10 @@ export default function CheckoutPage() {
                     console.log("All addresses:", allAddresses);
                     console.log("Current user ID:", user.id);
                     // Filter addresses to only show current user's addresses
-                    const userAddresses = allAddresses.filter(address => address.userId === user.id);
+                    // Try both 'userId' and 'user_id' as property names
+                    const userAddresses = allAddresses.filter(address => {
+                        return address.userId === user.id || address.user_id === user.id;
+                    });
                     console.log("Filtered user addresses:", userAddresses);
                     setAddresses(userAddresses);
                 }
@@ -176,9 +179,15 @@ export default function CheckoutPage() {
             const response = await addAddress(newAddressData);
             const savedAddress = response.address || response;
             
+            // Ensure the saved address has the userId to avoid undefined errors
+            const addressWithUserId = {
+                ...savedAddress,
+                userId: savedAddress.userId || savedAddress.user_id || user.id
+            };
+            
             // Update addresses list
-            setAddresses(prev => [...prev, savedAddress]);
-            setSelectedAddressId(savedAddress.id);
+            setAddresses(prev => [...prev, addressWithUserId]);
+            setSelectedAddressId(addressWithUserId.id);
             setShowNewAddressForm(false);
             
             await Swal.fire({
@@ -253,8 +262,7 @@ export default function CheckoutPage() {
 
             // Map payment method to match backend enum
             const paymentMethodMap = {
-                'transfer': 'STRIPE',
-                'ewallet': 'STRIPE', 
+                'transfer': 'BANK_TRANSFER',
                 'cod': 'COD'
             };
 
@@ -353,7 +361,7 @@ export default function CheckoutPage() {
                                         <option value="">Pilih alamat pengiriman</option>
                                         {addresses.filter(address => {
                                             console.log("Checking address:", address, "User ID:", user?.id);
-                                            return address.userId === user?.id;
+                                            return address.userId === user.id || address.user_id === user.id;
                                         }).map((address) => (
                                             <option key={address.id} value={address.id}>
                                                 {address.name} - {address.city}
@@ -513,21 +521,6 @@ export default function CheckoutPage() {
                                         <div>
                                             <p className={`font-medium ${paymentMethod === 'transfer' ? 'text-green-800' : 'text-gray-900'}`}>Transfer Bank</p>
                                             <p className={`text-sm ${paymentMethod === 'transfer' ? 'text-green-600' : 'text-gray-600'}`}>BCA, Mandiri, BNI, BRI</p>
-                                        </div>
-                                    </label>
-                                </div>
-                                <div className={`border rounded-lg p-4 ${paymentMethod === 'ewallet' ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
-                                    <label className="flex items-center gap-3 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="payment"
-                                            className="radio radio-sm hidden"
-                                            checked={paymentMethod === 'ewallet'}
-                                            onChange={() => setPaymentMethod('ewallet')}
-                                        />
-                                        <div>
-                                            <p className={`font-medium ${paymentMethod === 'ewallet' ? 'text-green-800' : 'text-gray-900'}`}>E-Wallet</p>
-                                            <p className={`text-sm ${paymentMethod === 'ewallet' ? 'text-green-600' : 'text-gray-600'}`}>GoPay, OVO, DANA, ShopeePay</p>
                                         </div>
                                     </label>
                                 </div>

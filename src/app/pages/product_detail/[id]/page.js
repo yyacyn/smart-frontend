@@ -97,12 +97,80 @@ export default function ProductPage() {
         Spesifikasi: (
             <div className="py-6">
                 <h4 className="font-semibold mb-2 text-black">Spesifikasi</h4>
-                <ul className="text-sm opacity-80 list-disc ml-5 text-black">
-                    <li>Bahan: Katun Premium</li>
-                    <li>Ukuran: Tersedia S, M, L, XL</li>
-                    <li>Warna: Merah, Kuning, Hitam, Putih</li>
-                    <li>Berat: 500 gram</li>
-                </ul>
+                <div className="space-y-2">
+                    {currentProduct?.weight && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">Berat</span>
+                            <span className="text-sm font-medium">{currentProduct.weight} g</span>
+                        </div>
+                    )}
+                    {currentProduct?.dimensions && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">Dimensi</span>
+                            <span className="text-sm font-medium">{currentProduct.dimensions}</span>
+                        </div>
+                    )}
+                    {currentProduct?.model && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">Model</span>
+                            <span className="text-sm font-medium">{currentProduct.model}</span>
+                        </div>
+                    )}
+                    {currentProduct?.sku && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">SKU</span>
+                            <span className="text-sm font-medium">{currentProduct.sku}</span>
+                        </div>
+                    )}
+                    {currentProduct?.barcode && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">Barcode</span>
+                            <span className="text-sm font-medium">{currentProduct.barcode}</span>
+                        </div>
+                    )}
+                    {currentProduct?.warranty && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">Garansi</span>
+                            <span className="text-sm font-medium">{currentProduct.warranty}</span>
+                        </div>
+                    )}
+                    {currentProduct?.returnPolicy && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">Kebijakan Retur</span>
+                            <span className="text-sm font-medium">{currentProduct.returnPolicy}</span>
+                        </div>
+                    )}
+                    {currentProduct?.tags && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">Tags</span>
+                            <span className="text-sm font-medium">{currentProduct.tags}</span>
+                        </div>
+                    )}
+                    {currentProduct?.shippingWeight && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">Berat Pengiriman</span>
+                            <span className="text-sm font-medium">{currentProduct.shippingWeight} g</span>
+                        </div>
+                    )}
+                    {currentProduct?.shippingLength && currentProduct?.shippingWidth && currentProduct?.shippingHeight && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">Dimensi Pengiriman</span>
+                            <span className="text-sm font-medium">{currentProduct.shippingLength} x {currentProduct.shippingWidth} x {currentProduct.shippingHeight} cm</span>
+                        </div>
+                    )}
+                    {currentProduct?.additionalInfo && (
+                        <div className="flex justify-between border-b border-gray-100 py-2">
+                            <span className="text-sm opacity-70">Info Tambahan</span>
+                            <span className="text-sm font-medium">{currentProduct.additionalInfo}</span>
+                        </div>
+                    )}
+                </div>
+                {!(currentProduct?.weight || currentProduct?.dimensions || currentProduct?.model ||
+                    currentProduct?.sku || currentProduct?.barcode || currentProduct?.warranty ||
+                    currentProduct?.returnPolicy || currentProduct?.tags || currentProduct?.additionalInfo ||
+                    currentProduct?.shippingWeight || (currentProduct?.shippingLength && currentProduct?.shippingWidth && currentProduct?.shippingHeight)) && (
+                        <p className="text-sm opacity-60 italic">Spesifikasi produk belum tersedia.</p>
+                    )}
             </div>
         ),
         "Info Penting": (
@@ -182,9 +250,9 @@ export default function ProductPage() {
                                         <p className="text-sm font-medium">{review.user?.name || 'Anonymous User'}</p>
                                         <div className="flex items-center text-warning">
                                             {Array.from({ length: 5 }).map((_, idx) => (
-                                                <FaStar 
-                                                    key={idx} 
-                                                    className={idx < review.rating ? 'text-yellow-500' : 'text-gray-300'} 
+                                                <FaStar
+                                                    key={idx}
+                                                    className={idx < review.rating ? 'text-yellow-500' : 'text-gray-300'}
                                                 />
                                             ))}
                                         </div>
@@ -332,7 +400,7 @@ export default function ProductPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Link 
+                                <Link
                                     href={{
                                         pathname: `/pages/store/${currentStore.id}`,
                                         query: {},
@@ -430,7 +498,7 @@ export default function ProductPage() {
                                             try {
                                                 // Check if product already exists in cart
                                                 const productExistsInCart = cartItems && cartItems[currentProduct.id];
-                                                
+
                                                 if (productExistsInCart) {
                                                     // Product exists, increase quantity by qty amount
                                                     for (let i = 0; i < qty; i++) {
@@ -445,9 +513,9 @@ export default function ProductPage() {
                                                     });
                                                 } else {
                                                     // Product doesn't exist, add new item
-                                                    dispatch(addToCart({ 
-                                                        productId: currentProduct.id, 
-                                                        quantity: qty 
+                                                    dispatch(addToCart({
+                                                        productId: currentProduct.id,
+                                                        quantity: qty
                                                     }));
                                                     await Swal.fire({
                                                         icon: 'success',

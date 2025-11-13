@@ -32,7 +32,7 @@ smart-frontend/
 - `npm run start` - Start production server
 
 ## Notes
-- [Add any important notes about the codebase here]
+- do not run npm run dev by yourself, i will do it myself and send you the error if it has one
 - [Any special configurations or setup instructions]
 - [API endpoints or external services used]
 

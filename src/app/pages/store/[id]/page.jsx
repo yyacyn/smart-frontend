@@ -41,9 +41,17 @@ export default function StorePage() {
                 }
                 if (!store) {
                     // fallback: fetch from API if not found in sessionStorage
-                    const storeRes = await fetchStores();
-                    const stores = storeRes.stores || [];
-                    store = stores.find(s => s.id === storeId);
+                    try {
+                        const storeRes = await fetchStores();
+                        const stores = storeRes.stores || [];
+                        store = stores.find(s => s.id === storeId);
+                    } catch (error) {
+                        console.error('Error fetching stores:', error);
+                        // Check if it's an authentication error
+                        if (error.response?.status === 401) {
+                            console.warn('Authentication failed when fetching stores. User may need to re-authenticate.');
+                        }
+                    }
                 }
                 setCurrentStore(store);
 

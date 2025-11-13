@@ -64,6 +64,10 @@ export default function Navbar() {
                     }
                 } catch (error) {
                     console.error('Error fetching stores:', error);
+                    // Check if it's an authentication error
+                    if (error.response?.status === 401) {
+                        console.warn('Authentication failed when fetching stores. User may need to re-authenticate.');
+                    }
                     setUserStore(null);
                 } finally {
                     setIsLoadingStore(false);

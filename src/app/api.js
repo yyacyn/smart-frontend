@@ -2,15 +2,17 @@
 // api.js
 import axios from "axios";
 
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://besukma.vercel.app';
 
 // Helper function to get Clerk token on client side
 const getClerkToken = async () => {
-    if (typeof window !== 'undefined') {
-        // Client side - use window.Clerk
-        if (window.Clerk?.session) {
-            return await window.Clerk.session.getToken();
+    if (typeof window !== 'undefined' && window.Clerk && window.Clerk.session) {
+        try {
+            const token = await window.Clerk.session.getToken();
+            return token;
+        } catch (error) {
+            console.error('Error getting Clerk token:', error);
+            return null;
         }
     }
     return null;
@@ -21,26 +23,44 @@ export const fetchProducts = async () => {
     return response.data;
 };
 
-export const fetchStores = async () => {
-    const authToken = await getClerkToken();
-    const response = await axios.get(
-        `${BASE_URL}/api/admin/stores`,
-        {
-            headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+export const fetchStores = async (token = null) => {
+    const authToken = token || (await getClerkToken());
+    const headers = {};
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    try {
+        const response = await axios.get(
+            `${BASE_URL}/api/admin/stores`,
+            { headers }
+        );
+        return response.data;
+    } catch (error) {
+        // Check if it's an authentication error
+        if (error.response?.status === 401) {
+            console.warn('Authentication failed when fetching stores. This endpoint may require admin privileges.');
+            // Return an empty result or handle the error as appropriate for your use case
+            return { stores: [] };
         }
-    );
-    return response.data;
+        // Re-throw other errors
+        throw error;
+    }
 };
 
 export const createStore = async (formData, token = null) => {
     const authToken = token || await getClerkToken();
+    const headers = {
+        "Content-Type": "multipart/form-data"
+    };
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+    
     const response = await axios.post(
         `${BASE_URL}/api/store/create`,
         formData,
-        { headers: { 
-            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-            "Content-Type": "multipart/form-data"
-        }}
+        { headers }
     );
     return response.data;
 };
@@ -57,24 +77,29 @@ export const fetchCategories = async () => {
 // Fetch cart (GET)
 export const fetchCart = async (token = null) => {
     const authToken = token || await getClerkToken();
-    const response = await axios.get(`${BASE_URL}/api/cart`, {
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
-    });
+    const headers = {};
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+    
+    const response = await axios.get(`${BASE_URL}/api/cart`, { headers });
     return response.data;
 };
 
 // Add to cart (POST)
 export const addToCart = async (cartData, token = null) => {
     const authToken = token || await getClerkToken();
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+    
     const response = await axios.post(
         `${BASE_URL}/api/cart`,
         cartData,
-        {
-            headers: {
-                ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-                'Content-Type': 'application/json'
-            }
-        }
+        { headers }
     );
     return response.data;
 };
@@ -82,57 +107,71 @@ export const addToCart = async (cartData, token = null) => {
 // Place an order (POST)
 export const orderPost = async (orderData, token = null) => {
     const authToken = token || await getClerkToken();
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+    
     const response = await axios.post(
         `${BASE_URL}/api/orders`,
         orderData,
-        {
-            headers: {
-                ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-                'Content-Type': 'application/json'
-            }
-        }
+        { headers }
     );
     return response.data;
 };
 
 export const fetchOrders = async (token = null) => {
     const authToken = token || await getClerkToken();
-    const response = await axios.get(`${BASE_URL}/api/orders`, {
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
-    });
+    const headers = {};
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+    
+    const response = await axios.get(`${BASE_URL}/api/orders`, { headers });
     return response.data;
 };
 
 // Fetch specific order by ID (GET)
 export const fetchOrderById = async (orderId, token = null) => {
     const authToken = token || await getClerkToken();
-    const response = await axios.get(`${BASE_URL}/api/orders/${orderId}`, {
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
-    });
+    const headers = {};
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+    
+    const response = await axios.get(`${BASE_URL}/api/orders/${orderId}`, { headers });
     return response.data;
 };
 
 // Fetch user addresses (GET)
 export const fetchAddresses = async (token = null) => {
     const authToken = token || await getClerkToken();
-    const response = await axios.get(`${BASE_URL}/api/address`, {
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
-    });
+    const headers = {};
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+    
+    const response = await axios.get(`${BASE_URL}/api/address`, { headers });
     return response.data;
 };
 
 // Add new address (POST)
 export const addAddress = async (addressData, token = null) => {
     const authToken = token || await getClerkToken();
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+    
     const response = await axios.post(
         `${BASE_URL}/api/address`,
         addressData,
-        {
-            headers: {
-                ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-                'Content-Type': 'application/json'
-            }
-        }
+        { headers }
     );
     return response.data;
 };
+

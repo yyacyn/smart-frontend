@@ -6,7 +6,6 @@ import Footer from "../../../components/footer/Footer";
 import { FiSend, FiCheckCircle, FiMessageSquare, FiStar, FiImage, FiFileText, FiClock, FiXCircle } from "react-icons/fi";
 import { useRouter, useParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { fetchOrderById } from "../../../api";
 import Link from "next/link";
 
 export default function StatusPage() {
@@ -33,28 +32,50 @@ export default function StatusPage() {
     const [review, setReview] = useState("");
     const [rating, setRating] = useState(0);
 
-    // Fetch order data
+    // Use static order data
     useEffect(() => {
-        async function getOrderData() {
-            if (!orderId || !user) return;
-            
-            setLoading(true);
-            setError("");
-            
-            try {
-                // Get user token if available
-                const token = await user.getToken();
-                const orderData = await fetchOrderById(orderId, token);
-                setOrder(orderData.order || orderData);
-            } catch (err) {
-                console.error("Error fetching order:", err);
-                setError("Gagal mengambil data pesanan. Periksa koneksi atau coba lagi.");
-            } finally {
-                setLoading(false);
-            }
-        }
+        // Static order data
+        const staticOrder = {
+            id: orderId,
+            status: "shipped", // Can be "pending", "processing", "shipped", "delivered", "completed", "cancelled"
+            createdAt: new Date().toISOString(),
+            store: {
+                name: "Fahri Store",
+            },
+            items: [
+                {
+                    id: "item1",
+                    name: "cwk anime",
+                    quantity: 1,
+                    price: 8888,
+                    image: "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/Screenshot_2025-08-18_193915__1__XZBvZsvwh.png"
+                },
+                {
+                    id: "item2",
+                    name: "Kucing Lucu",
+                    quantity: 2,
+                    price: 45000,
+                    image: "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-512/categories/Zenless_Zone_Zero_Ridu_Stroll_Sticker_Pack_1_Nekomata_QMT9l26WI.webp"
+                }
+            ],
+            shippingAddress: {
+                name: user?.fullName || "John Doe",
+                phone: "81234567890",
+                address: "Jl. Sukmajaya No. 123",
+                city: "Depok",
+                postalCode: "16419"
+            },
+            trackingNumber: "JNE1234567890",
+            paymentMethod: "BANK_TRANSFER",
+            subtotal: 98888,
+            discount: 10000,
+            shippingCost: 12000,
+            tax: 0,
+            total: 100888
+        };
         
-        getOrderData();
+        setOrder(staticOrder);
+        setLoading(false);
     }, [orderId, user]);
 
     // Helper functions

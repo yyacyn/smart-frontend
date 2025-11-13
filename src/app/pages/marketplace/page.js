@@ -213,7 +213,7 @@ function MarketplaceContent() {
                         </button>
 
                         {/* Filter Panel */}
-                        <div className={`bg-white rounded-lg shadow-sm p-6 ${isFilterOpen ? 'block' : 'hidden lg:block'}`}>
+                        <div className={`bg-white rounded-lg shadow-none border border-gray-200 p-6 ${isFilterOpen ? 'block' : 'hidden lg:block'}`}>
                             <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-lg font-semibold text-gray-800">Filter</h2>
                                 <button
