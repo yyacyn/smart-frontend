@@ -34,6 +34,7 @@ export default function CheckoutPage() {
     });
     const [paymentMethod, setPaymentMethod] = useState("transfer");
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isAddressesLoading, setIsAddressesLoading] = useState(false);
     const [phoneError, setPhoneError] = useState("");
     const [postalError, setPostalError] = useState("");
 
@@ -46,7 +47,9 @@ export default function CheckoutPage() {
 
                 // Fetch user addresses only if user is logged in
                 if (user?.id) {
+                    setIsAddressesLoading(true);
                     const addressData = await fetchAddresses();
+                    setIsAddressesLoading(false);
                     const allAddresses = addressData && addressData.addresses ? addressData.addresses : [];
                     console.log("All addresses:", allAddresses);
                     console.log("Current user ID:", user.id);
@@ -111,6 +114,7 @@ export default function CheckoutPage() {
             } catch (error) {
                 setProducts([]);
                 setSelectedItems([]);
+                setIsAddressesLoading(false);
             }
         }
         getProductsForCheckout();
@@ -175,16 +179,16 @@ export default function CheckoutPage() {
                 country: shippingAddress.notes || "Indonesia",
                 email: user.primaryEmailAddress?.emailAddress || "user@example.com"
             };
-            
+
             const response = await addAddress(newAddressData);
             const savedAddress = response.address || response;
-            
+
             // Ensure the saved address has the userId to avoid undefined errors
             const addressWithUserId = {
                 ...savedAddress,
                 userId: savedAddress.userId || savedAddress.user_id || user.id
             };
-            
+
             // Update addresses list
             setAddresses(prev => {
                 const newAddresses = [...prev, addressWithUserId];
@@ -193,7 +197,7 @@ export default function CheckoutPage() {
             });
             setSelectedAddressId(addressWithUserId.id);
             setShowNewAddressForm(false);
-            
+
             await Swal.fire({
                 icon: 'success',
                 title: 'Berhasil!',
@@ -204,7 +208,7 @@ export default function CheckoutPage() {
         } catch (error) {
             console.error("Error saving address:", error);
             let errorMessage = 'Gagal menyimpan alamat. Silakan coba lagi.';
-            
+
             // Handle specific error cases
             if (error.response?.data?.error) {
                 errorMessage = error.response.data.error;
@@ -213,7 +217,7 @@ export default function CheckoutPage() {
             } else if (error.message) {
                 errorMessage = error.message;
             }
-            
+
             await Swal.fire({
                 icon: 'error',
                 title: 'Gagal Menyimpan Alamat',
@@ -278,26 +282,22 @@ export default function CheckoutPage() {
                     quantity: item.quantity
                 })),
                 couponCode: null, // Add coupon code if you have one
-                paymentMethod: paymentMethodMap[paymentMethod] || 'BANK_TRANSFER' // Use BANK_TRANSFER as fallback instead of STRIPE
+                paymentMethod: paymentMethodMap[paymentMethod] || 'BANK_TRANSFER' // Use BANK_TRANSFER as fallback
             };
             // TODO: Replace null with actual token if needed
             const response = await orderPost(orderData, null);
-            // Expecting response to contain orderIds or orderId
-            let orderId = null;
-            if (response && response.orderIds && Array.isArray(response.orderIds) && response.orderIds.length > 0) {
-                orderId = response.orderIds[0];
-            } else if (response && response.orderId) {
-                orderId = response.orderId;
-            }
-            if (orderId) {
+
+            // New backend returns a success message when order is placed successfully
+            if (response && response.message === "Order placed successfully") {
                 await Swal.fire({
                     icon: 'success',
                     title: 'Pesanan Berhasil!',
-                    text: 'Pesanan berhasil dibuat! Anda akan dialihkan ke halaman status pesanan.',
+                    text: 'Pesanan berhasil dibuat!',
                     timer: 2000,
                     showConfirmButton: false
                 });
-                router.push(`/pages/status/${orderId}`);
+                // Redirect to user's order history page after successful order
+                router.push('/pages/profile/orders');
             } else {
                 await Swal.fire({
                     icon: 'warning',
@@ -306,20 +306,21 @@ export default function CheckoutPage() {
                     timer: 2000,
                     showConfirmButton: false
                 });
-                router.push('/pages/status');
+                router.push('/pages/profile/orders');
             }
         } catch (error) {
+            console.error('Order placement error:', error);
             await Swal.fire({
                 icon: 'error',
                 title: 'Gagal',
-                text: error?.response?.data?.error || 'Gagal membuat pesanan.',
+                text: error?.response?.data?.error || error?.response?.data?.message || 'Gagal membuat pesanan.',
             });
         } finally {
             setIsProcessing(false);
         }
     };
 
-    const isFormValid = selectedAddressId && selectedAddressId !== "new" ? 
+    const isFormValid = selectedAddressId && selectedAddressId !== "new" ?
         true : // If existing address selected, form is valid
         (shippingAddress.name &&
         shippingAddress.phone.length >= 10 &&
@@ -358,21 +359,33 @@ export default function CheckoutPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Alamat *</label>
                                 <div className="relative">
                                     <select
-                                        className="select select-bordered w-full bg-white focus:outline-none border-gray-200"
+                                        className={`select select-bordered w-full bg-white focus:outline-none border-gray-200 ${isAddressesLoading ? 'opacity-0' : ''}`}
                                         value={selectedAddressId}
                                         onChange={(e) => handleAddressSelect(e.target.value)}
+                                        disabled={isAddressesLoading}
                                     >
-                                        <option value="">Pilih alamat pengiriman</option>
-                                        {addresses.filter(address => {
-                                            console.log("Checking address:", address, "User ID:", user?.id);
-                                            return (address && address.userId === user.id) || (address && address.user_id === user.id);
-                                        }).map((address) => (
-                                            <option key={address.id} value={address.id}>
-                                                {address.name} - {address.city}
-                                            </option>
-                                        ))}
-                                        <option value="new">+ Tambah Alamat Baru</option>
+                                        {isAddressesLoading ? (
+                                            <option value="">Loading alamat...</option>
+                                        ) : (
+                                            <>
+                                                <option value="">Pilih alamat pengiriman</option>
+                                                {addresses.filter(address => {
+                                                    console.log("Checking address:", address, "User ID:", user?.id);
+                                                    return (address && address.userId === user.id) || (address && address.user_id === user.id);
+                                                }).map((address) => (
+                                                    <option key={address.id} value={address.id}>
+                                                        {address.name} - {address.city}
+                                                    </option>
+                                                ))}
+                                                <option value="new">+ Tambah Alamat Baru</option>
+                                            </>
+                                        )}
                                     </select>
+                                    {isAddressesLoading && (
+                                        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                            <span className="loading loading-spinner loading-xs"></span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -482,7 +495,7 @@ export default function CheckoutPage() {
                                 <FiTruck className="w-5 h-5 text-[#ED775A]" />
                                 <h2 className="text-lg font-semibold text-gray-900">Metode Pengiriman</h2>
                             </div>
-                            
+
                             <div className="space-y-3">
                                 <div className="border border-green-200 rounded-lg p-4 bg-green-50">
                                     <div className="flex items-center justify-between">

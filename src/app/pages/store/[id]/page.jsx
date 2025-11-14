@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useStoreRefresh } from "../../../hooks/useStoreRefresh";
@@ -10,6 +10,7 @@ import ProductCard from "../../../components/product/Card";
 import { fetchProducts, fetchStores } from "../../../api";
 import { FiStar, FiMessageCircle, FiFlag, FiMapPin, FiPhone, FiMail, FiClock, FiUsers, FiShoppingBag, FiHeart, FiChevronLeft, FiChevronRight, FiEdit } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
+import ReportModal from "../../../components/ReportModal";
 
 export default function StorePage() {
     const params = useParams();
@@ -27,6 +28,7 @@ export default function StorePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isProductsLoading, setIsProductsLoading] = useState(true);
     const productsPerLoad = 12;
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     useEffect(() => {
         async function fetchStoreAndProducts() {
@@ -119,43 +121,52 @@ export default function StorePage() {
     const hasMoreProducts = displayedProductsCount < sortedProducts.length;
 
     // Infinite scroll effect
+    const handleScroll = useCallback(() => {
+        if (isLoading || !hasMoreProducts) return;
+
+        const scrollPosition = window.innerHeight + window.scrollY;
+        const documentHeight = document.documentElement.offsetHeight;
+
+        // Load more when user is within 500px of bottom
+        if (scrollPosition >= documentHeight - 500) {
+            setIsLoading(true);
+
+            // Simulate loading delay
+            setTimeout(() => {
+                setDisplayedProductsCount(prev => prev + productsPerLoad);
+                setIsLoading(false);
+            }, 500);
+        }
+    }, [isLoading, hasMoreProducts, productsPerLoad]);
+
     useEffect(() => {
-        const handleScroll = () => {
-            if (isLoading || !hasMoreProducts) return;
-
-            const scrollPosition = window.innerHeight + window.scrollY;
-            const documentHeight = document.documentElement.offsetHeight;
-
-            // Load more when user is within 500px of bottom
-            if (scrollPosition >= documentHeight - 500) {
-                setIsLoading(true);
-
-                // Simulate loading delay
-                setTimeout(() => {
-                    setDisplayedProductsCount(prev => prev + productsPerLoad);
-                    setIsLoading(false);
-                }, 500);
-            }
-        };
-
         window.addEventListener('scroll', handleScroll);
+        // Clean up the event listener
         return () => window.removeEventListener('scroll', handleScroll);
-    }, [isLoading, hasMoreProducts]);
+    }, [handleScroll]);
 
     // Reset displayed products count when filters change
     useEffect(() => {
         setDisplayedProductsCount(productsPerLoad);
-    }, [selectedCategory, sortBy]);
+    }, [selectedCategory, sortBy, productsPerLoad]);
 
 
 
-    const handleChatStore = () => {
+    const handleChatStore = useCallback(() => {
         alert(`Memulai chat dengan ${currentStore?.name}`);
-    };
+    }, [currentStore?.name]);
 
-    const handleReportStore = () => {
-        alert(`Melaporkan toko ${currentStore?.name}`);
-    };
+    const handleReportSubmit = useCallback(async (reportData) => {
+        // This would normally send the report to your backend
+        // For now, we'll simulate this with a timeout
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log('Report submitted:', reportData);
+                alert(`Laporan berhasil dikirim untuk toko: ${currentStore?.name}`);
+                resolve();
+            }, 1000);
+        });
+    }, [currentStore?.name]);
 
     if (!currentStore) {
         return (
@@ -183,6 +194,16 @@ export default function StorePage() {
                     </button>
                     <h1 className="text-2xl font-bold text-gray-900">Detail Toko</h1>
                 </div>
+
+                {/* Report Modal */}
+                <ReportModal
+                    isOpen={isReportModalOpen}
+                    onClose={() => setIsReportModalOpen(false)}
+                    onSubmit={handleReportSubmit}
+                    targetType="store"
+                    targetId={currentStore?.id}
+                    targetName={currentStore?.name}
+                />
 
                 {/* Store Profile Section */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
@@ -262,7 +283,7 @@ export default function StorePage() {
                                         Chat Toko
                                     </button>
                                     <button
-                                        onClick={handleReportStore}
+                                        onClick={() => setIsReportModalOpen(true)}
                                         className="btn btn-outline border-red-500 text-red-500 hover:bg-red-500 hover:text-white shadow-none"
                                     >
                                         <FiFlag className="w-4 h-4" />

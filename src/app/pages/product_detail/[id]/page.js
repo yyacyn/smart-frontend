@@ -10,11 +10,12 @@ import { useRouter } from "next/navigation";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 // import ProductCard from "../../../components/product/Card"
 import ProductCard from "../../../components/product/Card"
-import { fetchProducts } from "../../../api";
+import { fetchProducts, addToCart as addToCartAPI, fetchCart } from "../../../api";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, increaseQuantity } from "@/lib/features/cart/cartSlice";
 import Swal from 'sweetalert2';
 import Link from "next/link";
+import ReportModal from "../../../components/ReportModal";
 
 export default function ProductPage() {
     const router = useRouter();
@@ -33,6 +34,7 @@ export default function ProductPage() {
     const [selectedColor, setSelectedColor] = useState(colors[0]);
     const [isWishlisted, setIsWishlisted] = useState(false);
     const [reviews, setReviews] = useState([]); // Add reviews state
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     useEffect(() => {
         async function getProducts() {
@@ -71,6 +73,19 @@ export default function ProductPage() {
     if (currentProduct && currentProduct.mrp > currentProduct.price) {
         discountPercent = Math.round(((currentProduct.mrp - currentProduct.price) / currentProduct.mrp) * 100);
     }
+
+    // Function to handle report submission
+    const handleReportSubmit = async (reportData) => {
+        // This would normally send the report to your backend
+        // For now, we'll simulate this with a timeout
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log('Report submitted:', reportData);
+                alert(`Laporan berhasil dikirim untuk produk: ${currentProduct.name}`);
+                resolve();
+            }, 1000);
+        });
+    };
 
     // Show loading if product data isn't loaded yet
     if (!currentProduct || !currentStore) {
@@ -290,6 +305,15 @@ export default function ProductPage() {
 
             {/* Top Section: Gallery + Info + Quantity Card */}
             <main className="mx-auto max-w-7xl px-4 pb-12">
+                {/* Report Modal */}
+                <ReportModal
+                    isOpen={isReportModalOpen}
+                    onClose={() => setIsReportModalOpen(false)}
+                    onSubmit={handleReportSubmit}
+                    targetType="product"
+                    targetId={currentProduct?.id}
+                    targetName={currentProduct?.name}
+                />
                 <div className="grid gap-8 lg:grid-cols-[1.1fr_1.2fr_0.8fr]">
                     {/* Gallery */}
                     <section aria-labelledby="gallery" className="space-y-4">
@@ -329,7 +353,10 @@ export default function ProductPage() {
                                     </span>
                                 )}
                             </div>
-                            <button className="ml-3 px-3 py-1 rounded border border-red-500 text-red-500 bg-white hover:bg-red-50 text-xs font-semibold" onClick={() => alert('Laporkan produk ini!')}>
+                            <button
+                                className="ml-3 px-3 py-1 rounded border border-red-500 text-red-500 bg-white hover:bg-red-50 text-xs font-semibold"
+                                onClick={() => setIsReportModalOpen(true)}
+                            >
                                 Report
                             </button>
                         </h1>
@@ -500,40 +527,49 @@ export default function ProductPage() {
                                     <button className="btn bg-white w-1/4 shadow-none text-[#ED775A] border hover:bg-gray-100 border-[#ED775A] hover:border-[#eb6b4b] hover:text-[#ED775A]"
                                         onClick={async () => {
                                             try {
-                                                // Check if product already exists in cart
-                                                const productExistsInCart = cartItems && cartItems[currentProduct.id];
+                                                // Fetch current cart from backend to ensure we have the latest state
+                                                const currentCartResponse = await fetchCart();
+                                                const currentCart = currentCartResponse.cart || {};
 
-                                                if (productExistsInCart) {
+                                                // Calculate the new cart state based on current backend state
+                                                const currentProductQty = currentCart[currentProduct.id] || 0;
+                                                const newProductQty = currentProductQty + qty;
+
+                                                // Prepare the updated cart to send to backend
+                                                const updatedCart = {
+                                                    ...currentCart,
+                                                    [currentProduct.id]: newProductQty
+                                                };
+
+                                                // Send updated cart to backend
+                                                await addToCartAPI({ cart: updatedCart });
+
+                                                // Then update Redux state to match
+                                                if (currentProductQty > 0) {
                                                     // Product exists, increase quantity by qty amount
                                                     for (let i = 0; i < qty; i++) {
                                                         dispatch(increaseQuantity({ productId: currentProduct.id }));
                                                     }
-                                                    await Swal.fire({
-                                                        icon: 'success',
-                                                        title: 'Berhasil',
-                                                        text: `${currentProduct.name} (${qty} pcs) berhasil ditambahkan ke keranjang!`,
-                                                        timer: 2000,
-                                                        showConfirmButton: false
-                                                    });
                                                 } else {
                                                     // Product doesn't exist, add new item
                                                     dispatch(addToCart({
                                                         productId: currentProduct.id,
                                                         quantity: qty
                                                     }));
-                                                    await Swal.fire({
-                                                        icon: 'success',
-                                                        title: 'Berhasil',
-                                                        text: `${currentProduct.name} (${qty} pcs) berhasil ditambahkan ke keranjang!`,
-                                                        timer: 2000,
-                                                        showConfirmButton: false
-                                                    });
                                                 }
+
+                                                await Swal.fire({
+                                                    icon: 'success',
+                                                    title: 'Berhasil',
+                                                    text: `${currentProduct.name} (${qty} pcs) berhasil ditambahkan ke keranjang!`,
+                                                    timer: 2000,
+                                                    showConfirmButton: false
+                                                });
                                             } catch (error) {
                                                 await Swal.fire({
                                                     icon: 'error',
                                                     title: 'Gagal',
-                                                    text: 'Gagal menambahkan ke keranjang.',
+                                                    text: error?.response?.data?.error || 'Gagal menambahkan ke keranjang.',
                                                 });
                                             }
                                         }}
