@@ -175,3 +175,21 @@ export const addAddress = async (addressData, token = null) => {
     return response.data;
 };
 
+// Submit a report (POST)
+export const submitReport = async (reportData, token = null) => {
+    const authToken = token || await getClerkToken();
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    const response = await axios.post(
+        `${BASE_URL}/api/reports`,
+        reportData,
+        { headers }
+    );
+    return response.data;
+};
+

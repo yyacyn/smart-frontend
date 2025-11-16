@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 // import ProductCard from "../../../components/product/Card"
 import ProductCard from "../../../components/product/Card"
-import { fetchProducts, addToCart as addToCartAPI, fetchCart } from "../../../api";
+import { fetchProducts, addToCart as addToCartAPI, fetchCart, submitReport } from "../../../api";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, increaseQuantity } from "@/lib/features/cart/cartSlice";
 import Swal from 'sweetalert2';
@@ -76,15 +76,30 @@ export default function ProductPage() {
 
     // Function to handle report submission
     const handleReportSubmit = async (reportData) => {
-        // This would normally send the report to your backend
-        // For now, we'll simulate this with a timeout
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log('Report submitted:', reportData);
-                alert(`Laporan berhasil dikirim untuk produk: ${currentProduct.name}`);
-                resolve();
-            }, 1000);
-        });
+        try {
+            // Prepare the report data according to backend requirements
+            const reportPayload = {
+                productId: currentProduct?.id,
+                subject: reportData.type,
+                message: reportData.description,
+                category: reportData.type
+            };
+
+            // Submit the report via API
+            await submitReport(reportPayload);
+
+            // Show success message
+            await Swal.fire({
+                icon: 'success',
+                title: 'Laporan Terkirim!',
+                text: `Laporan Anda untuk produk ${currentProduct.name} telah berhasil dikirim.`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } catch (error) {
+            console.error('Error submitting report:', error);
+            throw new Error(error?.response?.data?.error || 'Gagal mengirim laporan. Silakan coba lagi.');
+        }
     };
 
     // Show loading if product data isn't loaded yet

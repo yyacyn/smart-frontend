@@ -7,9 +7,10 @@ import { useStoreRefresh } from "../../../hooks/useStoreRefresh";
 import Navbar from "../../../components/navbar/Navbar";
 import Footer from "../../../components/footer/Footer";
 import ProductCard from "../../../components/product/Card";
-import { fetchProducts, fetchStores } from "../../../api";
+import { fetchProducts, fetchStores, submitReport } from "../../../api";
 import { FiStar, FiMessageCircle, FiFlag, FiMapPin, FiPhone, FiMail, FiClock, FiUsers, FiShoppingBag, FiHeart, FiChevronLeft, FiChevronRight, FiEdit } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
+import Swal from 'sweetalert2';
 import ReportModal from "../../../components/ReportModal";
 
 export default function StorePage() {
@@ -157,16 +158,31 @@ export default function StorePage() {
     }, [currentStore?.name]);
 
     const handleReportSubmit = useCallback(async (reportData) => {
-        // This would normally send the report to your backend
-        // For now, we'll simulate this with a timeout
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log('Report submitted:', reportData);
-                alert(`Laporan berhasil dikirim untuk toko: ${currentStore?.name}`);
-                resolve();
-            }, 1000);
-        });
-    }, [currentStore?.name]);
+        try {
+            // Prepare the report data according to backend requirements
+            const reportPayload = {
+                storeId: currentStore?.id,
+                subject: reportData.type,
+                message: reportData.description,
+                category: reportData.type
+            };
+
+            // Submit the report via API
+            await submitReport(reportPayload);
+
+            // Show success message
+            await Swal.fire({
+                icon: 'success',
+                title: 'Laporan Terkirim!',
+                text: `Laporan Anda untuk toko ${currentStore?.name} telah berhasil dikirim.`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } catch (error) {
+            console.error('Error submitting report:', error);
+            throw new Error(error?.response?.data?.error || 'Gagal mengirim laporan. Silakan coba lagi.');
+        }
+    }, [currentStore?.id, currentStore?.name]);
 
     if (!currentStore) {
         return (

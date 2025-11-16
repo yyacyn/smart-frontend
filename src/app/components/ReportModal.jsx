@@ -3,28 +3,38 @@ import { useState } from 'react';
 const ReportModal = ({ isOpen, onClose, onSubmit, targetType, targetId, targetName }) => {
     const [reportType, setReportType] = useState('');
     const [description, setDescription] = useState('');
+    const [attachments, setAttachments] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleFileChange = (e) => {
+        const files = Array.from(e.target.files);
+        setAttachments(files);
+    };
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!reportType || !description.trim()) {
             alert('Please fill in all required fields');
             return;
         }
 
         setIsSubmitting(true);
-        
+
         try {
-            await onSubmit({
+            // Create FormData for submission if there are attachments
+            const reportData = {
                 type: reportType,
                 description,
                 targetType,
                 targetId
-            });
+            };
+
+            await onSubmit(reportData);
             // Reset form
             setReportType('');
             setDescription('');
+            setAttachments([]);
             onClose();
         } catch (error) {
             console.error('Error submitting report:', error);
@@ -37,13 +47,13 @@ const ReportModal = ({ isOpen, onClose, onSubmit, targetType, targetId, targetNa
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-500 bg-opacity-30 backdrop-blur-sm">
             <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold text-gray-900">Laporkan {targetType === 'product' ? 'Produk' : 'Toko'}</h3>
-                        <button 
-                            onClick={onClose} 
+                        <button
+                            onClick={onClose}
                             className="text-gray-400 hover:text-gray-500"
                         >
                             &times;
@@ -82,6 +92,24 @@ const ReportModal = ({ isOpen, onClose, onSubmit, targetType, targetId, targetNa
                                 placeholder="Jelaskan secara rinci mengapa Anda melaporkan ini..."
                                 required
                             ></textarea>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Lampiran
+                            </label>
+                            <input
+                                type="file"
+                                multiple
+                                onChange={handleFileChange}
+                                className="file-input file-input-bordered w-full bg-white border-gray-200"
+                                accept="image/*,.pdf,.doc,.docx"
+                            />
+                            {attachments.length > 0 && (
+                                <div className="mt-2 text-sm text-gray-600">
+                                    {attachments.length} file{attachments.length > 1 ? 's' : ''} dipilih
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-end space-x-3 mt-6">
