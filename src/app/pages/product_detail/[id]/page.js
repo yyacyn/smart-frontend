@@ -94,7 +94,8 @@ export default function ProductPage() {
                 title: 'Laporan Terkirim!',
                 text: `Laporan Anda untuk produk ${currentProduct.name} telah berhasil dikirim.`,
                 timer: 2000,
-                showConfirmButton: false
+                showConfirmButton: false,
+                timerProgressBar: true
             });
         } catch (error) {
             console.error('Error submitting report:', error);
@@ -332,7 +333,7 @@ export default function ProductPage() {
                 <div className="grid gap-8 lg:grid-cols-[1.1fr_1.2fr_0.8fr]">
                     {/* Gallery */}
                     <section aria-labelledby="gallery" className="space-y-4">
-                        <div className="aspect-[4/3] w-full overflow-hidden rounded-box ">
+                        <div className="aspect-[5/4] w-full overflow-hidden rounded-box ">
                             <img
                                 alt={currentProduct?.name}
                                 className="h-full w-full object-cover"

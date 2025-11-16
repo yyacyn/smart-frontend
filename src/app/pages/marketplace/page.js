@@ -10,12 +10,14 @@ import { FiFilter } from "react-icons/fi";
 import { AiOutlineFrown } from "react-icons/ai";
 import { flashSales, recommendedProducts } from "../../data/products";
 import { fetchProducts, fetchCategories } from "../../api";
+import { useGlobalData } from "../../contexts/GlobalDataContext";
 
 function MarketplaceContent() {
     const searchParams = useSearchParams();
     const initialCategory = searchParams.get('category') || 'all';
     const [products, setProducts] = useState([])
     const [filteredProducts, setFilteredProducts] = useState([])
+    const [productsLoading, setProductsLoading] = useState(true)
     const [filters, setFilters] = useState({
         search: '',
         category: initialCategory,
@@ -31,30 +33,65 @@ function MarketplaceContent() {
     const [currentPage, setCurrentPage] = useState(1)
     const [productsPerPage] = useState(12)
 
+    const { cachedProducts, cachedCategories, loading: globalLoading } = useGlobalData();
+    const [categories, setCategories] = useState([
+        { value: 'all', label: 'Semua Kategori' }
+    ]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
     useEffect(() => {
-        async function getProducts() {
-            try {
-                const data = await fetchProducts();
-                if (data && data.products) {
-                    setProducts(data.products);
-                    setFilteredProducts(data.products);
-                } else {
-                    setProducts([]);
-                    setFilteredProducts([]);
-                }
-            } catch (error) {
-                setProducts([]);
-                setFilteredProducts([]);
-            }
+        if (cachedProducts) {
+            // Set initial products from cache
+            setProducts(cachedProducts);
+            setFilteredProducts(cachedProducts);
+            setProductsLoading(false);
         }
-        getProducts();
-    }, []);
+    }, [cachedProducts]);
 
-    // Sync category and discount filter with query param whenever it changes
+    useEffect(() => {
+        if (cachedCategories !== undefined && cachedCategories !== null) {
+            // Use cached categories if available
+            if (Array.isArray(cachedCategories)) {
+                const apiCategories = cachedCategories.map(cat => ({
+                    value: cat.name,
+                    label: cat.name
+                }));
+                setCategories([{ value: 'all', label: 'Semua Kategori' }, ...apiCategories]);
+                setCategoriesLoading(false);
+            } else {
+                fetchCategoriesFromAPI();
+            }
+        } else {
+            fetchCategoriesFromAPI();
+        }
+    }, [cachedCategories]);
+
+    const fetchCategoriesFromAPI = async () => {
+        setCategoriesLoading(true);
+        try {
+            const data = await fetchCategories();
+            if (data && data.success && Array.isArray(data.data)) {
+                const apiCategories = data.data.map(cat => ({
+                    value: cat.name,
+                    label: cat.name
+                }));
+                setCategories([{ value: 'all', label: 'Semua Kategori' }, ...apiCategories]);
+            } else {
+                setCategories([{ value: 'all', label: 'Semua Kategori' }]);
+            }
+        } catch (error) {
+            setCategories([{ value: 'all', label: 'Semua Kategori' }]);
+        } finally {
+            setCategoriesLoading(false);
+        }
+    };
+
+
+    // Sync category, discount, and search filter with query param whenever it changes
     useEffect(() => {
         const categoryFromQuery = searchParams.get('category');
         const discountFromQuery = searchParams.get('discount');
+        const searchFromQuery = searchParams.get('search');
         let updates = {};
         if (categoryFromQuery && categoryFromQuery !== filters.category) {
             updates.category = categoryFromQuery;
@@ -62,12 +99,17 @@ function MarketplaceContent() {
         if (typeof discountFromQuery === 'string') {
             updates.discount = discountFromQuery === 'true';
         }
+        if (searchFromQuery !== null && searchFromQuery !== filters.search) {
+            updates.search = searchFromQuery;
+        }
         if (Object.keys(updates).length > 0) {
             setFilters(prev => ({ ...prev, ...updates }));
         }
     }, [searchParams])
 
     useEffect(() => {
+        if (!products || products.length === 0) return;  // Don't filter if no products loaded yet
+
         let filtered = products.filter(product => {
             // Match API attributes
             const name = product.name || "";
@@ -104,7 +146,7 @@ function MarketplaceContent() {
                 match = match && product.cod === true;
             }
             if (filters.discount) {
-                match = match && product.discount != null && product.discount > 0;
+                match = match && product.mrp != null && product.price != null && product.mrp > product.price;
             }
             if (filters.gratisOngkir) {
                 match = match && product.gratisOngkir === true;
@@ -155,37 +197,6 @@ function MarketplaceContent() {
         })
     }
 
-    const handlePageChange = (page) => {
-        setCurrentPage(page)
-    }
-
-    const [categories, setCategories] = useState([
-        { value: 'all', label: 'Semua Kategori' }
-    ]);
-    const [categoriesLoading, setCategoriesLoading] = useState(true);
-
-    useEffect(() => {
-        async function getCategories() {
-            setCategoriesLoading(true);
-            try {
-                const data = await fetchCategories();
-                if (data && data.success && Array.isArray(data.data)) {
-                    const apiCategories = data.data.map(cat => ({
-                        value: cat.name,
-                        label: cat.name
-                    }));
-                    setCategories([{ value: 'all', label: 'Semua Kategori' }, ...apiCategories]);
-                } else {
-                    setCategories([{ value: 'all', label: 'Semua Kategori' }]);
-                }
-            } catch (error) {
-                setCategories([{ value: 'all', label: 'Semua Kategori' }]);
-            } finally {
-                setCategoriesLoading(false);
-            }
-        }
-        getCategories();
-    }, []);
 
     // Pagination logic
     const indexOfLastProduct = currentPage * productsPerPage
@@ -370,7 +381,11 @@ function MarketplaceContent() {
 
                         </div>
                         {/* Products Grid */}
-                        {filteredProducts.length > 0 ? (
+                        {productsLoading ? (
+                            <div className="flex justify-center items-center h-64 w-full">
+                                <div className="loading loading-spinner loading-lg text-[#ED775A]"></div>
+                            </div>
+                        ) : filteredProducts.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                                 {currentProducts.map((product) => (
                                     <ProductCard key={product.id || product.ID} product={product} />

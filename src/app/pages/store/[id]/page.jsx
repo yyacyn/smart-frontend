@@ -176,7 +176,8 @@ export default function StorePage() {
                 title: 'Laporan Terkirim!',
                 text: `Laporan Anda untuk toko ${currentStore?.name} telah berhasil dikirim.`,
                 timer: 2000,
-                showConfirmButton: false
+                showConfirmButton: false,
+                timerProgressBar: true
             });
         } catch (error) {
             console.error('Error submitting report:', error);

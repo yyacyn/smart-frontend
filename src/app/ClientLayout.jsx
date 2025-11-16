@@ -8,6 +8,7 @@ import { fetchCart } from "@/lib/features/cart/cartSlice";
 import { fetchAddress } from "@/lib/features/address/addressSlice";
 import { fetchUserRatings } from "@/lib/features/rating/ratingSlice";
 import { uploadCart } from "@/lib/features/cart/cartSlice";
+import { GlobalDataProvider } from "./contexts/GlobalDataContext";
 
 export default function ClientLayout({ children }) {
   const dispatch = useDispatch();
@@ -34,5 +35,9 @@ export default function ClientLayout({ children }) {
   //   }
   // }, [cartItems, user, getToken, dispatch]);
 
-  return <>{children}</>;
+  return (
+    <GlobalDataProvider>
+      {children}
+    </GlobalDataProvider>
+  );
 }

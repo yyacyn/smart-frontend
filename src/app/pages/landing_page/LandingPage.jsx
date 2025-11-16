@@ -10,52 +10,61 @@ import { flashSales, recommendedProducts } from "../../data/products";
 import { fetchProducts, fetchCategories } from "../../api";
 import BestSelling from "@/app/components/landing_page/BestSelling";
 import CTA from "@/app/components/CTA";
+import { useGlobalData } from "../../contexts/GlobalDataContext";
 
 export default function LandingPage() {
     const router = useRouter();
-    const [products, setProducts] = useState([]);
     const [countdown, setCountdown] = useState("23:59:45");
     const [precomputedFlashSales, setPrecomputedFlashSales] = useState([]);
     const [precomputedProducts, setPrecomputedProducts] = useState([]);
     const [recommendedProductsList, setRecommendedProductsList] = useState([]);
     const [categories, setCategories] = useState([]);
     const [categoriesLoading, setCategoriesLoading] = useState(true);
+    const { cachedProducts, cachedCategories, loading: globalLoading } = useGlobalData();
 
     useEffect(() => {
-        async function getProducts() {
-            try {
-                const data = await fetchProducts();
-                if (data && data.products) {
-                    setProducts(data.products);
-                } else {
-                    setProducts([]);
-                }
-            } catch (error) {
-                setProducts([]);
-            }
+        if (cachedProducts) {
+            // Filter products to only include those with discounts (mrp > price)
+            const discountedProducts = cachedProducts.filter(product =>
+                product.mrp != null && product.price != null && product.mrp > product.price
+            );
+            setPrecomputedFlashSales(discountedProducts);
+
+            // Use all available products for recommendations
+            setRecommendedProductsList(cachedProducts);
         }
-        getProducts();
-    }, []);
+    }, [cachedProducts]);
 
     useEffect(() => {
-        async function getCategories() {
-            setCategoriesLoading(true);
-            try {
-                const data = await fetchCategories();
-                if (data && data.success && Array.isArray(data.data)) {
-                    setCategories(data.data);
-                } else {
-                    setCategories([]);
-                }
-            } catch (error) {
-                console.error('Error fetching categories:', error);
-                setCategories([]);
-            } finally {
+        if (cachedCategories !== undefined && cachedCategories !== null) {
+            // Use cached categories if available
+            if (Array.isArray(cachedCategories)) {
+                setCategories(cachedCategories);
                 setCategoriesLoading(false);
+            } else {
+                fetchCategoriesFromAPI();
             }
+        } else {
+            fetchCategoriesFromAPI();
         }
-        getCategories();
-    }, []);
+    }, [cachedCategories]);
+
+    const fetchCategoriesFromAPI = async () => {
+        setCategoriesLoading(true);
+        try {
+            const data = await fetchCategories();
+            if (data && data.success && Array.isArray(data.data)) {
+                setCategories(data.data);
+            } else {
+                setCategories([]);
+            }
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+            setCategories([]);
+        } finally {
+            setCategoriesLoading(false);
+        }
+    };
 
     useEffect(() => {
         const targetTime = new Date();
@@ -108,16 +117,21 @@ export default function LandingPage() {
     };
 
     useEffect(() => {
-        setPrecomputedFlashSales(flashSales);
-    }, []);
+        // Filter products to only include those with discounts (mrp > price)
+        if (cachedProducts) {
+            const discountedProducts = cachedProducts.filter(product =>
+                product.mrp != null && product.price != null && product.mrp > product.price
+            );
+            setPrecomputedFlashSales(discountedProducts);
+
+            // Use all available products for recommendations
+            setRecommendedProductsList(cachedProducts);
+        }
+    }, [cachedProducts]);
 
     // useEffect(() => {
     //     setPrecomputedProducts(sampleProducts);
     // }, []);
-
-    useEffect(() => {
-        setRecommendedProductsList(recommendedProducts);
-    }, []);
 
     const handleProductClick = (productId) => {
         router.push(`/product_detail/${productId}`);
@@ -128,32 +142,36 @@ export default function LandingPage() {
             <Navbar />
 
             {/* Hero Section */}
-            <section className="bg-gradient-to-br from-[#ED775A] to-[#FFE797] py-16 mt-16">
+            <section className="bg-gradient-to-br from-[#ED775A]/90 to-[#ED775A] py-16 mt-16">
                 <div className="max-w-7xl mx-auto px-4 my-5 sm:px-6 lg:px-8">
                     <div className="flex flex-col lg:flex-row gap-8">
-                        <div className="hero bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm rounded-xl lg:w-[70%] min-h-96 shadow-2xl border border-white/20">
-                            <div className="hero-content text-center">
-                                <div className="max-w-md">
-                                    <h1 className="text-5xl font-bold text-white drop-shadow-lg">SMART</h1>
+                        <div
+                            className="hero bg-cover bg-center rounded-xl lg:w-[70%] min-h-96 shadow-2xl  overflow-hidden"
+                            style={{ backgroundImage: "url('/images/hero_imgs.png')" }}
+                        >
+                            <div className="hero-content text-center p-0 bg-gradient-to-r backdrop-blur-sm w-full h-full flex items-center justify-start">
+                                <div className="max-w-md text-left p-8">
+                                    <h1 className="text-5xl font-bold text-white drop-shadow-lg mb-4">SMART</h1>
                                     <p className="py-6 text-white/90 text-lg font-medium">
                                         Platform jual beli online terpercaya untuk masyarakat Sukmajaya.
                                         Temukan produk lokal berkualitas dari penjual terverifikasi!
                                     </p>
-                                    <button className="btn btn-lg bg-white text-[#ED775A] hover:bg-white/90 border-none shadow-lg">
+                                    <Link href="/pages/marketplace" className="btn btn-lg bg-white text-[#ED775A] hover:bg-white/90 border-none shadow-lg">
                                         Mulai Belanja Sekarang
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
-                        <div className="card bg-gradient-to-br from-[#476EAE] to-[#84994F] shadow-2xl lg:w-[30%] text-white border border-white/20">
-                            <div className="card-body items-center text-center">
-                                <div className="badge badge-warning badge-lg mb-4">✨ Promo Spesial</div>
-                                <h2 className="card-title text-2xl mb-4">Flash Sale Hari Ini!</h2>
-                                <p className="text-white/90 mb-4">Diskon hingga 50% untuk produk pilihan dari lapak terverifikasi</p>
+                        <div
+                            className="card bg-cover bg-center shadow-2xl lg:w-[30%] text-white  rounded-xl overflow-hidden"
+                            style={{ backgroundImage: "url('/images/heros_imgs1.png')" }}
+                        >
+                            <div className="card-body bg-gradient-to-br items-center text-center p-6 justify-between">
+                                <h2 className="card-title text-2xl mb-4">Promo Spesial!</h2>
                                 <div className="card-actions">
-                                    <button className="btn bg-[#FFE797] text-[#476EAE] hover:bg-[#FFE797]/90 border-none">
+                                    <Link href="/pages/marketplace?discount=true" className="btn bg-white text-[#ED775A] hover:bg-white/90 shadow-none border-none">
                                         Lihat Promo
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
@@ -188,10 +206,10 @@ export default function LandingPage() {
                                 </div>
                             ) : categories.length > 0 ? (
                                 categories.map((category, index) => (
-                                    <Link 
-                                        key={category.id || index} 
-                                        href={`/pages/marketplace?category=${encodeURIComponent(category.name)}`} 
-                                        target="_blank" 
+                                    <Link
+                                        key={category.id || index}
+                                        href={`/pages/marketplace?category=${encodeURIComponent(category.name)}`}
+                                        target="_blank"
                                         className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-gray-200 h-[380px]"
                                     >
                                         <figure className="relative overflow-hidden h-full w-full">
@@ -225,19 +243,19 @@ export default function LandingPage() {
                             <h2 className="text-4xl font-bold text-white drop-shadow-lg">FLASH SALE</h2>
                         </div>
                         <p className="text-xl text-white/90 font-medium">Buruan! Penawaran terbatas waktu dengan diskon fantastis</p>
-                        <div className="flex justify-center mt-4">
+                        {/* <div className="flex justify-center mt-4">
                             <div className="stats shadow-lg bg-white/20 backdrop-blur-sm border border-white/30">
                                 <div className="stat place-items-center">
                                     <div className="stat-title text-white/80">Berakhir dalam</div>
                                     <div className="stat-value text-white text-2xl w-30">{countdown}</div>
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-6 px-1 py-2">
                         {precomputedFlashSales.slice(0, 4).map((product) => (
                             <ProductCard
-                                key={product.ID}
+                                key={product.id || product.ID}
                                 product={product}
                             />
                         ))}
@@ -249,7 +267,7 @@ export default function LandingPage() {
                                 </span>
                                 <p className="text-gray-600 text-sm">Jangan sampai terlewat!</p>
                             </div>
-                            <Link href={{ pathname: '/pages/marketplace', query: { discount: 'true' } }} className="btn btn-primary">
+                            <Link href="/pages/marketplace?discount=true" className="btn btn-primary">
                                 Lihat Semua
                             </Link>
                         </div>
@@ -270,9 +288,9 @@ export default function LandingPage() {
                             <p className="text-xl text-gray-600">Dipilih khusus berdasarkan preferensi dan minat Anda</p>
                         </div>
                         <div className="grid grid-cols-2 grid-rows-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-                            {(Array.isArray(recommendedProductsList) ? recommendedProductsList : []).map((product) => (
+                            {recommendedProductsList.slice(0, 10).map((product) => (
                                 <ProductCard
-                                    key={product?.ID ?? Math.random()}
+                                    key={product.id || product.ID}
                                     product={product}
                                 />
                             ))}

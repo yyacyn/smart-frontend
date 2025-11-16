@@ -123,6 +123,8 @@ export default function Navbar() {
         e.preventDefault();
         if (searchQuery.trim()) {
             router.push(`/pages/marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+        } else {
+            router.push('/pages/marketplace');
         }
     };
 

@@ -2,11 +2,13 @@
 import { useSelector } from 'react-redux'
 import ProductCard from "../product/Card";
 import Link from "next/link";
+import { useGlobalData } from "../../contexts/GlobalDataContext";
 
 const BestSelling = () => {
 
     const displayQuantity = 8
-    const products = useSelector(state => state.product.list)
+    const { cachedProducts } = useGlobalData();
+    const products = useSelector(state => state.product.list) || (cachedProducts || [])
 
     return (
         <div>
@@ -23,8 +25,13 @@ const BestSelling = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 overflow-x-auto scrollbar-hide px-1 py-2">
                         {products.length > 0 ? (
                             <>
-                                {products.slice().sort((a, b) => b.rating.length - a.rating.length).slice(0, displayQuantity).map((product, index) => (
-                                    <ProductCard key={index} product={product} />
+                                {products.slice().sort((a, b) => {
+                                    // Sort by rating count, defaulting to 0 if no ratings exist
+                                    const aRatingCount = Array.isArray(a.rating) ? a.rating.length : 0;
+                                    const bRatingCount = Array.isArray(b.rating) ? b.rating.length : 0;
+                                    return bRatingCount - aRatingCount;
+                                }).slice(0, displayQuantity).map((product, index) => (
+                                    <ProductCard key={product.id || product.ID || index} product={product} />
                                 ))}
                                 {/* Only show the 'Lihat Semua Produk Terlaku' card after products are rendered */}
                                 {products.length > 0 && (
