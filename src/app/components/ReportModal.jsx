@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const ReportModal = ({ isOpen, onClose, onSubmit, targetType, targetId, targetName }) => {
+    const modalRef = useRef(null);
     const [reportType, setReportType] = useState('');
     const [description, setDescription] = useState('');
     const [attachments, setAttachments] = useState([]);
@@ -35,6 +36,7 @@ const ReportModal = ({ isOpen, onClose, onSubmit, targetType, targetId, targetNa
             setReportType('');
             setDescription('');
             setAttachments([]);
+            modalRef.current?.close();
             onClose();
         } catch (error) {
             console.error('Error submitting report:', error);
@@ -44,100 +46,116 @@ const ReportModal = ({ isOpen, onClose, onSubmit, targetType, targetId, targetNa
         }
     };
 
-    if (!isOpen) return null;
+    // Effect to handle modal open/close based on isOpen prop
+    useEffect(() => {
+        if (isOpen && modalRef.current) {
+            modalRef.current.showModal();
+        } else if (!isOpen && modalRef.current) {
+            modalRef.current.close();
+        }
+    }, [isOpen]);
+
+    const handleClose = () => {
+        modalRef.current?.close();
+        onClose();
+    };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Laporkan {targetType === 'product' ? 'Produk' : 'Toko'}</h3>
-                        <button
-                            onClick={onClose}
-                            className="text-gray-400 hover:text-gray-500"
+        <dialog ref={modalRef} className="modal">
+            <div className="modal-box bg-white">
+                <form method="dialog">
+                    <button 
+                        type="button"
+                        onClick={handleClose}
+                        className="btn btn-sm btn-circle btn-ghost hover:bg-gray-100 border-none text-black shadow-none absolute right-2 top-2"
+                    >
+                        ✕
+                    </button>
+                </form>
+                
+                <h3 className="font-bold text-lg mb-4">Laporkan {targetType === 'product' ? 'Produk' : 'Toko'}</h3>
+
+                <form onSubmit={handleFormSubmit}>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Jenis Laporan *
+                        </label>
+                        <select
+                            value={reportType}
+                            onChange={(e) => setReportType(e.target.value)}
+                            className="select select-bordered w-full bg-white focus:outline-none border-gray-200"
+                            required
                         >
-                            &times;
-                        </button>
+                            <option value="">Pilih jenis laporan</option>
+                            <option value="fraud">Penipuan</option>
+                            <option value="inappropriate">Konten Tidak Pantas</option>
+                            <option value="spam">Spam</option>
+                            <option value="copyright">Pelanggaran Hak Cipta</option>
+                            <option value="other">Lainnya</option>
+                        </select>
                     </div>
 
-                    <form onSubmit={handleFormSubmit}>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Jenis Laporan *
-                            </label>
-                            <select
-                                value={reportType}
-                                onChange={(e) => setReportType(e.target.value)}
-                                className="select select-bordered w-full bg-white focus:outline-none border-gray-200"
-                                required
-                            >
-                                <option value="">Pilih jenis laporan</option>
-                                <option value="fraud">Penipuan</option>
-                                <option value="inappropriate">Konten Tidak Pantas</option>
-                                <option value="spam">Spam</option>
-                                <option value="copyright">Pelanggaran Hak Cipta</option>
-                                <option value="other">Lainnya</option>
-                            </select>
-                        </div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Deskripsi *
+                        </label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="textarea textarea-bordered w-full focus:outline-none border-gray-200 bg-white"
+                            rows="4"
+                            placeholder="Jelaskan secara rinci mengapa Anda melaporkan ini..."
+                            required
+                        ></textarea>
+                    </div>
 
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Deskripsi *
-                            </label>
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                className="textarea textarea-bordered w-full focus:outline-none border-gray-200 bg-white"
-                                rows="4"
-                                placeholder="Jelaskan secara rinci mengapa Anda melaporkan ini..."
-                                required
-                            ></textarea>
-                        </div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Lampiran
+                        </label>
+                        <input
+                            type="file"
+                            multiple
+                            onChange={handleFileChange}
+                            className="file-input file-input-bordered w-full bg-white border-gray-200"
+                            accept="image/*,.pdf,.doc,.docx"
+                        />
+                        {attachments.length > 0 && (
+                            <div className="mt-2 text-sm text-gray-600">
+                                {attachments.length} file{attachments.length > 1 ? 's' : ''} dipilih
+                            </div>
+                        )}
+                    </div>
 
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Lampiran
-                            </label>
-                            <input
-                                type="file"
-                                multiple
-                                onChange={handleFileChange}
-                                className="file-input file-input-bordered w-full bg-white border-gray-200"
-                                accept="image/*,.pdf,.doc,.docx"
-                            />
-                            {attachments.length > 0 && (
-                                <div className="mt-2 text-sm text-gray-600">
-                                    {attachments.length} file{attachments.length > 1 ? 's' : ''} dipilih
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex justify-end space-x-3 mt-6">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-50 shadown-none hover:shadow-none"
-                                disabled={isSubmitting}
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                className="btn bg-[#ED775A] border-none shadow-none hover:bg-[#eb6b4b] text-white"
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <span className="loading loading-spinner loading-xs mr-2"></span>
-                                        Mengirim...
-                                    </>
-                                ) : 'Kirim Laporan'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div className="modal-action">
+                        <button
+                            type="button"
+                            onClick={handleClose}
+                            className="btn btn-ghost hover:bg-gray-100 border-none text-black shadow-none"
+                            disabled={isSubmitting}
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            className="btn bg-[#ED775A] border-none hover:bg-[#eb6b4b] text-white shadow-none"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <span className="loading loading-spinner loading-xs mr-2"></span>
+                                    Mengirim...
+                                </>
+                            ) : 'Kirim Laporan'}
+                        </button>
+                    </div>
+                </form>
             </div>
-        </div>
+            
+            <form method="dialog" className="modal-backdrop">
+                <button type="button" onClick={handleClose}>close</button>
+            </form>
+        </dialog>
     );
 };
 

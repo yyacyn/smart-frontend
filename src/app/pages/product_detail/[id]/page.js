@@ -94,8 +94,7 @@ export default function ProductPage() {
                 title: 'Laporan Terkirim!',
                 text: `Laporan Anda untuk produk ${currentProduct.name} telah berhasil dikirim.`,
                 timer: 2000,
-                showConfirmButton: false,
-                timerProgressBar: true
+                showConfirmButton: false
             });
         } catch (error) {
             console.error('Error submitting report:', error);
@@ -329,6 +328,7 @@ export default function ProductPage() {
                     targetType="product"
                     targetId={currentProduct?.id}
                     targetName={currentProduct?.name}
+                    className="text-black"
                 />
                 <div className="grid gap-8 lg:grid-cols-[1.1fr_1.2fr_0.8fr]">
                     {/* Gallery */}

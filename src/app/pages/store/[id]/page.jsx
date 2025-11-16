@@ -176,8 +176,7 @@ export default function StorePage() {
                 title: 'Laporan Terkirim!',
                 text: `Laporan Anda untuk toko ${currentStore?.name} telah berhasil dikirim.`,
                 timer: 2000,
-                showConfirmButton: false,
-                timerProgressBar: true
+                showConfirmButton: false
             });
         } catch (error) {
             console.error('Error submitting report:', error);
@@ -292,20 +291,24 @@ export default function StorePage() {
                                 </div>
                                 {/* Action Buttons */}
                                 <div className="flex flex-col sm:flex-row gap-2">
-                                    <button
-                                        onClick={handleChatStore}
-                                        className="btn bg-[#ED775A] border-none hover:bg-[#eb6b4b] text-white shadow-none"
-                                    >
-                                        <FiMessageCircle className="w-4 h-4" />
-                                        Chat Toko
-                                    </button>
-                                    <button
-                                        onClick={() => setIsReportModalOpen(true)}
-                                        className="btn btn-outline border-red-500 text-red-500 hover:bg-red-500 hover:text-white shadow-none"
-                                    >
-                                        <FiFlag className="w-4 h-4" />
-                                        Laporkan
-                                    </button>
+                                    {currentStore.userId !== user?.id && (
+                                        <button
+                                            onClick={handleChatStore}
+                                            className="btn bg-[#ED775A] border-none hover:bg-[#eb6b4b] text-white shadow-none"
+                                        >
+                                            <FiMessageCircle className="w-4 h-4" />
+                                            Chat Toko
+                                        </button>
+                                    )}
+                                    {currentStore.userId !== user?.id && (
+                                        <button
+                                            onClick={() => setIsReportModalOpen(true)}
+                                            className="btn btn-outline border-red-500 text-red-500 hover:bg-red-500 hover:text-white shadow-none"
+                                        >
+                                            <FiFlag className="w-4 h-4" />
+                                            Laporkan
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             {/* Store status, description, etc. */}
