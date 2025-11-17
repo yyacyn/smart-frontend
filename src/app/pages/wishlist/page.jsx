@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSelector, useDispatch } from "react-redux";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 import ProductCard from "../../components/product/Card";
@@ -10,61 +11,65 @@ import { sampleProducts } from "../../data/products";
 import { FiHeart, FiTrash2, FiShoppingCart, FiGrid, FiList } from "react-icons/fi";
 import { useAuth } from "@clerk/nextjs";
 import axios from "axios"
+import { fetchWishlist, removeFromWishlistAPI, addToWishlistAPI } from "@/lib/features/wishlist/wishlistSlice";
 
 export default function WishlistPage() {
     const router = useRouter();
-    const [wishlistItems, setWishlistItems] = useState([]);
     const [viewMode, setViewMode] = useState("grid"); // grid or list
     const [searchTerm, setSearchTerm] = useState("");
     const [currentCart, setCurrentCart] = useState({});
+    const [products, setProducts] = useState([]);
 
     const { getToken } = useAuth();
+    const dispatch = useDispatch();
+    const { wishlistItems: reduxWishlistItems, isInitialized } = useSelector(state => state.wishlist);
 
+    // Fetch wishlist on component mount
     useEffect(() => {
-        const fetchWishlist = async () => {
-            try {
-                const token = await getToken(); // ambil token user aktif
-                const res = await axios.get("https://besukma.vercel.app/api/wishlist", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-
-                const data = await res.data;
-                console.log("Wishlist data:", data);
-                const normalizedData = data.map(item => ({
-                    ...item.product, // ambil data produk utama
-                    wishlistId: item.id, // simpan ID wishlist kalau nanti mau hapus
-                }));
-
-                setWishlistItems(normalizedData);
-            } catch (error) {
-                console.error(error);
+        const loadWishlist = async () => {
+            if (getToken) {
+                try {
+                    const token = await getToken();
+                    if (token) {
+                        await dispatch(fetchWishlist({ token }));
+                    }
+                } catch (error) {
+                    console.error('Error getting token:', error);
+                }
             }
         };
+        loadWishlist();
+    }, [dispatch, getToken]);
 
-        fetchWishlist();
-    }, [getToken]);
+    // Fetch all products to match with wishlist items
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await axios.get("https://besukma.vercel.app/api/products");
+                setProducts(response.data.products || []);
+            } catch (error) {
+                console.error("Error fetching products:", error);
+                setProducts([]);
+            }
+        };
+        fetchProducts();
+    }, []);
 
-    // const removeFromWishlist = (productId) => {
-    //     setWishlistItems(items => items.filter(item => item.ID !== productId));
-    // };
+    // Map wishlist items to actual product data
+    const wishlistItems = products.filter(product => reduxWishlistItems && reduxWishlistItems[product.id]);
 
     const removeFromWishlist = async (productId) => {
         try {
             const token = await getToken();
-            await axios.delete("https://besukma.vercel.app/api/wishlist", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                data: { productId }, // ⬅️ gunakan 'data', bukan 'body'
-            });
-
-            setWishlistItems(items => items.filter(item => item.id !== productId));
+            if (!token) {
+                throw new Error('Authentication token not available');
+            }
+            await dispatch(removeFromWishlistAPI({
+                productId,
+                token
+            }));
         } catch (err) {
-            console.error("Gagal menghapus:", err.response?.data || err.message);
+            console.error("Gagal menghapus dari wishlist:", err.response?.data || err.message);
         }
     };
 
@@ -132,19 +137,17 @@ export default function WishlistPage() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            // 5️⃣ Hapus semua item wishlist di backend
+            // 5️⃣ Hapus semua item wishlist dari Redux store (this will sync with backend)
+            if (!token) {
+                throw new Error('Authentication token not available');
+            }
             for (const item of wishlistItems) {
-                await axios.delete("https://besukma.vercel.app/api/wishlist", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                    data: { productId: item.id },
-                });
+                await dispatch(removeFromWishlistAPI({
+                    productId: item.id,
+                    token
+                }));
             }
 
-            // 6️⃣ Kosongkan wishlist di frontend
-            setWishlistItems([]);
             setCurrentCart(updatedCart);
 
             alert(`${wishlistItems.length} produk berhasil dipindahkan ke keranjang!`);

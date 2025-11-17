@@ -1,208 +1,64 @@
-{
-  "products": [
-    {
-      "id": "cmhy86s4o0001lj04d2g17nth",
-      "name": "yaccyn",
-      "description": "p",
-      "mrp": 90,
-      "price": 70,
-      "images": [
-        "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/kucing_hNTQW5til1.png"
-      ],
-      "categoryId": "2",
-      "inStock": true,
-      "storeId": "cmhrsj7vm00011nuclp012tu0",
-      "createdAt": "2025-11-14T02:15:13.128Z",
-      "updatedAt": "2025-11-14T02:15:13.128Z",
-      "stock": 0,
-      "minStock": 0,
-      "weight": null,
-      "dimensions": null,
-      "model": null,
-      "additionalInfo": null,
-      "status": "draft",
-      "sku": null,
-      "barcode": null,
-      "shippingWeight": null,
-      "shippingLength": null,
-      "shippingWidth": null,
-      "shippingHeight": null,
-      "warranty": null,
-      "returnPolicy": null,
-      "tags": null,
-      "metaTitle": null,
-      "metaDescription": null,
-      "rating": [],
-      "store": {
-        "id": "cmhrsj7vm00011nuclp012tu0",
-        "userId": "user_34dgMSEhV8ZmbUm21dMIr9GPA7M",
-        "name": "catmiawkuu",
-        "username": "catmiawkuu",
-        "description": "miaw miaw",
-        "address": "miawmiawkuu",
-        "email": "ababilpuusano@gmail.com",
-        "contact": "+6288293365518",
-        "logo": "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-512/logos/kucing_BnYFikyDf.webp",
-        "website": null,
-        "categoryId": null,
-        "establishedDate": null,
-        "statusReason": null,
-        "isActive": true,
-        "status": "approved",
-        "createdAt": "2025-11-09T14:10:22.487Z",
-        "updatedAt": "2025-11-09T16:24:05.982Z"
-      },
-      "category": {
-        "id": "2",
-        "name": "tes2",
-        "description": "pas",
-        "image": "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-512/categories/kucing_RIc-C5a6n.webp",
-        "status": "ACTIVE",
-        "slug": "tes2",
-        "metaTitle": "null",
-        "metaDescription": "null",
-        "sortOrder": 0,
-        "parentCategoryId": null,
-        "createdAt": "2025-11-09T11:20:53.553Z",
-        "updatedAt": "2025-11-09T12:33:31.273Z"
-      }
-    },
-    {
-      "id": "cmhy7yxvy0001l804wvkukejr",
-      "name": "Ababil Pusano",
-      "description": "p",
-      "mrp": 90,
-      "price": 70,
-      "images": [
-        "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/VB_ANAVIDA_Dth5qMQVG.png"
-      ],
-      "categoryId": "4",
-      "inStock": true,
-      "storeId": "cmhrsj7vm00011nuclp012tu0",
-      "createdAt": "2025-11-14T02:09:07.342Z",
-      "updatedAt": "2025-11-14T02:09:07.342Z",
-      "stock": 84,
-      "minStock": 0,
-      "weight": null,
-      "dimensions": null,
-      "model": null,
-      "additionalInfo": null,
-      "status": "draft",
-      "sku": null,
-      "barcode": null,
-      "shippingWeight": null,
-      "shippingLength": null,
-      "shippingWidth": null,
-      "shippingHeight": null,
-      "warranty": null,
-      "returnPolicy": null,
-      "tags": null,
-      "metaTitle": null,
-      "metaDescription": null,
-      "rating": [],
-      "store": {
-        "id": "cmhrsj7vm00011nuclp012tu0",
-        "userId": "user_34dgMSEhV8ZmbUm21dMIr9GPA7M",
-        "name": "catmiawkuu",
-        "username": "catmiawkuu",
-        "description": "miaw miaw",
-        "address": "miawmiawkuu",
-        "email": "ababilpuusano@gmail.com",
-        "contact": "+6288293365518",
-        "logo": "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-512/logos/kucing_BnYFikyDf.webp",
-        "website": null,
-        "categoryId": null,
-        "establishedDate": null,
-        "statusReason": null,
-        "isActive": true,
-        "status": "approved",
-        "createdAt": "2025-11-09T14:10:22.487Z",
-        "updatedAt": "2025-11-09T16:24:05.982Z"
-      },
-      "category": {
-        "id": "4",
-        "name": "Kucing",
-        "description": null,
-        "image": "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-512/categories/Zenless_Zone_Zero_Ridu_Stroll_Sticker_Pack_1_Nekomata_QMT9l26WI.webp",
-        "status": "ACTIVE",
-        "slug": "kucing",
-        "metaTitle": null,
-        "metaDescription": null,
-        "sortOrder": 1,
-        "parentCategoryId": null,
-        "createdAt": "2025-11-09T16:37:27.589Z",
-        "updatedAt": "2025-11-09T16:37:27.589Z"
-      }
-    },
-    {
-      "id": "cmhrvssqz0001k304v86fu1zm",
-      "name": "cwk anime",
-      "description": "bukankah ini my",
-      "mrp": 9999,
-      "price": 8888,
-      "images": [
-        "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/Screenshot_2025-08-18_193915__1__XZBvZsvwh.png",
-        "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/e34d16950560f9539419e2f3768ae29e_Lv_ACfssD.jpg",
-        "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/44e2c88961067bde33a27c6c54699a8c_27QGgwoAI.jpg",
-        "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/af294f1a649157260d7c77f163b29656_gUz6et9S7.jpg"
-      ],
-      "categoryId": "4",
-      "inStock": true,
-      "storeId": "cmhrvolqx0001jv04iub3yrcs",
-      "createdAt": "2025-11-09T15:41:48.299Z",
-      "updatedAt": "2025-11-13T02:41:27.959Z",
-      "stock": 99,
-      "minStock": 5,
-      "weight": "0.5",
-      "dimensions": "10x10x10",
-      "model": null,
-      "additionalInfo": "wowozer",
-      "status": "published",
-      "sku": null,
-      "barcode": null,
-      "shippingWeight": null,
-      "shippingLength": null,
-      "shippingWidth": null,
-      "shippingHeight": null,
-      "warranty": "4",
-      "returnPolicy": null,
-      "tags": "waifu",
-      "metaTitle": null,
-      "metaDescription": null,
-      "rating": [],
-      "store": {
-        "id": "cmhrvolqx0001jv04iub3yrcs",
-        "userId": "user_34m1L9XTTchJBBDRaLWqfZfavpp",
-        "name": "Fahri Store",
-        "username": "fahri",
-        "description": "i sell cps",
-        "address": "Jakarta",
-        "email": "fahri@gmail.com",
-        "contact": "+62 812-8252-0510",
-        "logo": "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-512/logos/1756436943-Screenshot_2025-03-03_211707_WE1Dlz_TH.png",
-        "website": null,
-        "categoryId": null,
-        "establishedDate": null,
-        "statusReason": null,
-        "isActive": true,
-        "status": "approved",
-        "createdAt": "2025-11-09T15:38:32.601Z",
-        "updatedAt": "2025-11-10T02:49:24.274Z"
-      },
-      "category": {
-        "id": "4",
-        "name": "Kucing",
-        "description": null,
-        "image": "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-512/categories/Zenless_Zone_Zero_Ridu_Stroll_Sticker_Pack_1_Nekomata_QMT9l26WI.webp",
-        "status": "ACTIVE",
-        "slug": "kucing",
-        "metaTitle": null,
-        "metaDescription": null,
-        "sortOrder": 1,
-        "parentCategoryId": null,
-        "createdAt": "2025-11-09T16:37:27.589Z",
-        "updatedAt": "2025-11-09T16:37:27.589Z"
-      }
-    }
-  ]
+import prisma from "@/lib/prisma";
+import { getAuth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+
+// POST /api/wishlist -> add product to wishlist for current user
+export async function POST(request) {
+  try {
+    const { userId } = getAuth(request);
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { productId } = await request.json();
+    if (!productId) return NextResponse.json({ error: "productId is required" }, { status: 400 });
+
+    // Upsert-like: prevent duplicates
+    const exists = await prisma.wishlist.findFirst({ where: { userId, productId } });
+    if (exists) return NextResponse.json({ message: "Already in wishlist" }, { status: 200 });
+
+    const item = await prisma.wishlist.create({
+      data: { userId, productId },
+      include: { product: true },
+    });
+
+    return NextResponse.json(item, { status: 201 });
+  } catch (error) {
+    console.error("POST /api/wishlist error:", error);
+    return NextResponse.json({ error: error?.message || "Failed to add to wishlist" }, { status: 500 });
+  }
 }
+
+// GET /api/wishlist -> list wishlist items for current user
+export async function GET(request) {
+  try {
+    const { userId } = getAuth(request);
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const items = await prisma.wishlist.findMany({
+      where: { userId },
+      include: { product: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(items);
+  } catch (error) {
+    console.error("GET /api/wishlist error:", error);
+    return NextResponse.json({ error: error?.message || "Failed to fetch wishlist" }, { status: 500 });
+  }
+}
+
+// DELETE /api/wishlist -> remove a product from wishlist for current user
+export async function DELETE(request) {
+  try {
+    const { userId } = getAuth(request);
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { productId } = await request.json();
+    if (!productId) return NextResponse.json({ error: "productId is required" }, { status: 400 });
+
+    await prisma.wishlist.deleteMany({ where: { userId, productId } });
+    return NextResponse.json({ message: "Removed from wishlist" });
+  } catch (error) {
+    console.error("DELETE /api/wishlist error:", error);
+    return NextResponse.json({ error: error?.message || "Failed to remove from wishlist" }, { status: 500 });
+  }
+} 

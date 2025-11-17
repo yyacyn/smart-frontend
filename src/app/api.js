@@ -56,7 +56,7 @@ export const createStore = async (formData, token = null) => {
     if (authToken) {
         headers.Authorization = `Bearer ${authToken}`;
     }
-    
+
     const response = await axios.post(
         `${BASE_URL}/api/store/create`,
         formData,
@@ -81,7 +81,7 @@ export const fetchCart = async (token = null) => {
     if (authToken) {
         headers.Authorization = `Bearer ${authToken}`;
     }
-    
+
     const response = await axios.get(`${BASE_URL}/api/cart`, { headers });
     return response.data;
 };
@@ -95,7 +95,7 @@ export const addToCart = async (cartData, token = null) => {
     if (authToken) {
         headers.Authorization = `Bearer ${authToken}`;
     }
-    
+
     const response = await axios.post(
         `${BASE_URL}/api/cart`,
         cartData,
@@ -113,7 +113,7 @@ export const orderPost = async (orderData, token = null) => {
     if (authToken) {
         headers.Authorization = `Bearer ${authToken}`;
     }
-    
+
     const response = await axios.post(
         `${BASE_URL}/api/orders`,
         orderData,
@@ -128,7 +128,7 @@ export const fetchOrders = async (token = null) => {
     if (authToken) {
         headers.Authorization = `Bearer ${authToken}`;
     }
-    
+
     const response = await axios.get(`${BASE_URL}/api/orders`, { headers });
     return response.data;
 };
@@ -140,7 +140,7 @@ export const fetchOrderById = async (orderId, token = null) => {
     if (authToken) {
         headers.Authorization = `Bearer ${authToken}`;
     }
-    
+
     const response = await axios.get(`${BASE_URL}/api/orders/${orderId}`, { headers });
     return response.data;
 };
@@ -152,7 +152,7 @@ export const fetchAddresses = async (token = null) => {
     if (authToken) {
         headers.Authorization = `Bearer ${authToken}`;
     }
-    
+
     const response = await axios.get(`${BASE_URL}/api/address`, { headers });
     return response.data;
 };
@@ -166,7 +166,7 @@ export const addAddress = async (addressData, token = null) => {
     if (authToken) {
         headers.Authorization = `Bearer ${authToken}`;
     }
-    
+
     const response = await axios.post(
         `${BASE_URL}/api/address`,
         { address: addressData }, // Send address data wrapped in an address object
@@ -192,4 +192,5 @@ export const submitReport = async (reportData, token = null) => {
     );
     return response.data;
 };
+
 

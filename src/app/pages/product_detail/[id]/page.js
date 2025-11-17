@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react"
 import { useParams } from "next/navigation"
+import { useUser, useClerk } from "@clerk/nextjs";
 import Navbar from "../../../components/navbar/Navbar"
 import Footer from "../../../components/footer/Footer"
 import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare, FiShoppingCart, } from "react-icons/fi"
@@ -13,14 +14,18 @@ import ProductCard from "../../../components/product/Card"
 import { fetchProducts, addToCart as addToCartAPI, fetchCart, submitReport } from "../../../api";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, increaseQuantity } from "@/lib/features/cart/cartSlice";
+import { addToWishlistAPI, removeFromWishlistAPI, fetchWishlist } from "@/lib/features/wishlist/wishlistSlice";
 import Swal from 'sweetalert2';
 import Link from "next/link";
 import ReportModal from "../../../components/ReportModal";
 
 export default function ProductPage() {
+    const { user } = useUser();
+    const { session } = useClerk();
     const router = useRouter();
     const dispatch = useDispatch();
-    const cartItems = useSelector((state) => state.cart.cartItems);
+    const cartItems = useSelector((state) => state.cart.items || state.cart.cartItems);
+    const wishlistItems = useSelector((state) => state.wishlist.wishlistItems);
     const params = useParams();
     const productId = params.id;
 
@@ -56,6 +61,31 @@ export default function ProductPage() {
         }
         getProducts();
     }, [productId]);
+
+    // Check if product is in wishlist when component loads
+    useEffect(() => {
+        const loadWishlist = async () => {
+            if (user && productId && session) {
+                try {
+                    // Get token from Clerk session
+                    const token = await session.getToken();
+                    if (token) {
+                        await dispatch(fetchWishlist({ token }));
+                    }
+                } catch (error) {
+                    console.error('Error getting token:', error);
+                }
+            }
+        };
+        loadWishlist();
+    }, [user, session, productId, dispatch]);
+
+    // Update the wishlist status based on Redux state
+    useEffect(() => {
+        if (productId && wishlistItems) {
+            setIsWishlisted(!!wishlistItems[productId]);
+        }
+    }, [productId, wishlistItems]);
 
     const handleRatingChange = (r) => {
         setSelectedRatings((prev) =>
@@ -369,12 +399,14 @@ export default function ProductPage() {
                                     </span>
                                 )}
                             </div>
-                            <button
-                                className="ml-3 px-3 py-1 rounded border border-red-500 text-red-500 bg-white hover:bg-red-50 text-xs font-semibold"
-                                onClick={() => setIsReportModalOpen(true)}
-                            >
-                                Report
-                            </button>
+                            {currentProduct?.userId !== user?.id && currentStore.userId !== user?.id && (
+                                <button
+                                    className="ml-3 px-3 py-1 rounded border border-red-500 text-red-500 bg-white hover:bg-red-50 text-xs font-semibold"
+                                    onClick={() => setIsReportModalOpen(true)}
+                                >
+                                    Report
+                                </button>
+                            )}
                         </h1>
 
                         {/* <div className="flex gap-2 text-sm text-base-content/70">
@@ -601,8 +633,68 @@ export default function ProductPage() {
                                     </div>
                                     <span className="flex my-2 w-0.5 rounded-2xl bg-gray-800 "></span>
                                     <div
-                                        onClick={() => setIsWishlisted(!isWishlisted)}
-                                        className={`rounded-box p-2 text-center flex flex-row items-center gap-1 hover:text-gray-500 cursor-pointer transition-colors ${isWishlisted ? "" : "text-gray-800"
+                                        onClick={async () => {
+                                            if (!user) {
+                                                router.push('/sign-in');
+                                                return;
+                                            }
+
+                                            try {
+                                                if (isWishlisted) {
+                                                    // Get token from Clerk session
+                                                    let token = null;
+                                                    try {
+                                                        token = await session.getToken();
+                                                    } catch (error) {
+                                                        console.error('Error getting Clerk token:', error);
+                                                    }
+                                                    if (!token) {
+                                                        throw new Error('Authentication token not available');
+                                                    }
+                                                    await dispatch(removeFromWishlistAPI({
+                                                        productId: currentProduct.id,
+                                                        token
+                                                    }));
+                                                    await Swal.fire({
+                                                        icon: 'success',
+                                                        title: 'Berhasil',
+                                                        text: 'Produk berhasil dihapus dari wishlist!',
+                                                        timer: 2000,
+                                                        showConfirmButton: false
+                                                    });
+                                                } else {
+                                                    // Get token from Clerk session
+                                                    let token = null;
+                                                    try {
+                                                        token = await session.getToken();
+                                                    } catch (error) {
+                                                        console.error('Error getting Clerk token:', error);
+                                                    }
+                                                    if (!token) {
+                                                        throw new Error('Authentication token not available');
+                                                    }
+                                                    await dispatch(addToWishlistAPI({
+                                                        productId: currentProduct.id,
+                                                        token
+                                                    }));
+                                                    await Swal.fire({
+                                                        icon: 'success',
+                                                        title: 'Berhasil',
+                                                        text: 'Produk berhasil ditambahkan ke wishlist!',
+                                                        timer: 2000,
+                                                        showConfirmButton: false
+                                                    });
+                                                }
+                                            } catch (error) {
+                                                console.error('Error updating wishlist:', error);
+                                                await Swal.fire({
+                                                    icon: 'error',
+                                                    title: 'Gagal',
+                                                    text: error?.response?.data?.error || 'Gagal memperbarui wishlist.',
+                                                });
+                                            }
+                                        }}
+                                        className={`rounded-box p-2 text-center flex flex-row items-center gap-1 hover:text-gray-500 cursor-pointer transition-colors ${isWishlisted ? "text-red-500" : "text-gray-800"
                                             }`}
                                     >
                                         {isWishlisted ? (
