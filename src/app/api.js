@@ -3,6 +3,7 @@
 import axios from "axios";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://besukma.vercel.app';
+// const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 // Helper function to get Clerk token on client side
 const getClerkToken = async () => {
@@ -31,20 +32,30 @@ export const fetchStores = async (token = null) => {
     }
 
     try {
-        const response = await axios.get(
-            `${BASE_URL}/api/admin/stores`,
-            { headers }
-        );
-        return response.data;
-    } catch (error) {
-        // Check if it's an authentication error
-        if (error.response?.status === 401) {
-            console.warn('Authentication failed when fetching stores. This endpoint may require admin privileges.');
-            // Return an empty result or handle the error as appropriate for your use case
-            return { stores: [] };
+        // Fetch products to get the store information
+        const productsResponse = await axios.get(`${BASE_URL}/api/products`, { headers });
+        const products = Array.isArray(productsResponse.data.products) ? productsResponse.data.products : productsResponse.data;
+
+        // Extract unique stores from products
+        const storeMap = new Map();
+        if (Array.isArray(products)) {
+            products.forEach(product => {
+                if (product.store) {
+                    // Only add store if we haven't seen it before
+                    if (!storeMap.has(product.store.id)) {
+                        storeMap.set(product.store.id, product.store);
+                    }
+                }
+            });
         }
-        // Re-throw other errors
-        throw error;
+
+        const stores = Array.from(storeMap.values());
+        return { stores }; // Return in the same format as the original endpoint
+    } catch (error) {
+        // Check if it's an authentication error or network error
+        console.warn('Could not fetch stores from products:', error.message);
+        // Return an empty result or handle the error as appropriate for your use case
+        return { stores: [] };
     }
 };
 
@@ -191,6 +202,99 @@ export const submitReport = async (reportData, token = null) => {
         { headers }
     );
     return response.data;
+};
+
+// Fetch users (GET)
+export const fetchUsers = async (token = null) => {
+    const authToken = token || (await getClerkToken());
+    const headers = {};
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    try {
+        const response = await axios.get(`${BASE_URL}/api/users`, { headers });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+    }
+};
+
+// Fetch users and their associated stores (GET)
+export const fetchUsersWithStores = async (token = null) => {
+    const authToken = token || (await getClerkToken());
+    const headers = {};
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    try {
+        // First, fetch all users
+        const usersResponse = await axios.get(`${BASE_URL}/api/users`, { headers });
+        const users = usersResponse.data.users || usersResponse.data;
+
+        // Fetch all products to get the store information
+        let stores = [];
+        try {
+            const productsResponse = await axios.get(`${BASE_URL}/api/products`, { headers });
+            const products = Array.isArray(productsResponse.data.products) ? productsResponse.data.products : productsResponse.data;
+
+            // Extract unique stores from products
+            const storeMap = new Map();
+            if (Array.isArray(products)) {
+                products.forEach(product => {
+                    if (product.store) {
+                        // Only add store if we haven't seen it before
+                        if (!storeMap.has(product.store.id)) {
+                            storeMap.set(product.store.id, product.store);
+                        }
+                    }
+                });
+            }
+
+            stores = Array.from(storeMap.values());
+        } catch (productsError) {
+            console.warn('Could not fetch stores from products:', productsError.message);
+            // If fetching products/stores fails, continue with just users
+        }
+
+        // Create a map of user ID to store for quick lookup
+        const userStoreMap = {};
+        if (Array.isArray(stores)) {
+            stores.forEach(store => {
+                if (store.userId) {
+                    userStoreMap[store.userId] = store;
+                }
+            });
+        }
+
+        // Combine user data with store data if available
+        const usersWithStores = users.map(user => {
+            const store = userStoreMap[user.id];
+            if (store) {
+                // Use store information instead of user information
+                return {
+                    ...user,
+                    name: store.name,
+                    image: store.logo,
+                    storeId: store.id,
+                    hasStore: true
+                };
+            } else {
+                // Use original user information
+                return {
+                    ...user,
+                    hasStore: false
+                };
+            }
+        });
+
+        return usersWithStores;
+    } catch (error) {
+        console.error('Error fetching users with stores:', error);
+        throw error;
+    }
 };
 
 

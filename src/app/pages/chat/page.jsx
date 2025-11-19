@@ -1,111 +1,534 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { FiSend, FiSearch, FiMoreVertical, FiImage, FiPaperclip } from "react-icons/fi";
+import io from "socket.io-client";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 import { useRouter } from "next/navigation";
+import { fetchUsersWithStores } from "../../api";
+
+let socket;
 
 export default function ChatPage() {
-    const [selectedChat, setSelectedChat] = useState(null);
+    const { user } = useUser();
+    const { session } = useClerk();
+    const [users, setUsers] = useState([]); // Users with active conversations
+    const [allUsers, setAllUsers] = useState([]); // All users (for search)
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
-    const messagesEndRef = useRef(null);
-    const router = useRouter();
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+    const [files, setFiles] = useState([]);
+    const [previewImages, setPreviewImages] = useState([]); // Store the preview URLs
     const messagesContainerRef = useRef(null);
+    const router = useRouter();
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8081';
 
-    // Sample chat data
-    const chatList = [
-        {
-            id: 1,
-            name: "Toko Elektronik Jaya",
-            avatar: "/images/categories/elektronik.png",
-            lastMessage: "Pesanan Anda sudah siap dikirim",
-            timestamp: "10:30",
-            unread: 2,
-            isOnline: true,
-            messages: [
-                { id: 1, sender: "store", message: "Halo! Ada yang bisa kami bantu?", timestamp: "09:15" },
-                { id: 2, sender: "user", message: "Saya ingin tanya tentang laptop yang kemarin saya pesan", timestamp: "09:16" },
-                { id: 3, sender: "store", message: "Baik, laptop Anda sudah kami siapkan dan akan dikirim hari ini", timestamp: "09:20" },
-                { id: 4, sender: "store", message: "Pesanan Anda sudah siap dikirim", timestamp: "10:30" }
-            ]
-        },
-        {
-            id: 2,
-            name: "Warung Bu Siti",
-            avatar: "/images/categories/makanan.png",
-            lastMessage: "Terima kasih sudah berbelanja",
-            timestamp: "Yesterday",
-            unread: 0,
-            isOnline: false,
-            messages: [
-                { id: 1, sender: "store", message: "Selamat pagi! Kami ada promo rendang hari ini", timestamp: "08:00" },
-                { id: 2, sender: "user", message: "Berapa harga per porsinya?", timestamp: "08:05" },
-                { id: 3, sender: "store", message: "Rp 25.000 per porsi, sudah termasuk nasi", timestamp: "08:07" },
-                { id: 4, sender: "user", message: "Oke, saya pesan 2 porsi ya", timestamp: "08:10" },
-                { id: 5, sender: "store", message: "Terima kasih sudah berbelanja", timestamp: "08:15" }
-            ]
-        },
-        {
-            id: 3,
-            name: "Fashion Store",
-            avatar: "/images/categories/fashion.png",
-            lastMessage: "Stok baju sudah ready",
-            timestamp: "2 days ago",
-            unread: 1,
-            isOnline: true,
-            messages: [
-                { id: 1, sender: "store", message: "Halo kak, stok baju yang ditanyakan kemarin sudah ready", timestamp: "2 days ago" },
-                { id: 2, sender: "store", message: "Stok baju sudah ready", timestamp: "2 days ago" }
-            ]
-        },
-        {
-            id: 4,
-            name: "Admin SMART",
-            avatar: "/images/categories/admin.png",
-            lastMessage: "Selamat datang di SMART!",
-            timestamp: "1 week ago",
-            unread: 0,
-            isOnline: true,
-            messages: [
-                { id: 1, sender: "admin", message: "Selamat datang di SMART marketplace!", timestamp: "1 week ago" },
-                { id: 2, sender: "admin", message: "Jika ada pertanyaan, jangan ragu untuk menghubungi kami", timestamp: "1 week ago" },
-                { id: 3, sender: "admin", message: "Selamat datang di SMART!", timestamp: "1 week ago" }
-            ]
+    // Inisialisasi socket & join room
+    useEffect(() => {
+        if (!user) return;
+
+        // Hindari socket ganda
+        if (!socket) {
+            socket = io(SOCKET_URL, {
+                transports: ["websocket"],
+                withCredentials: true
+            });
+            console.log("🔌 Socket initialized");
         }
-    ];
 
-    // Filter chats based on search
-    const filteredChats = chatList.filter(chat =>
-        chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+        // Join ke room ID user
+        socket.emit("joinRoom", user.id);
 
-    // Send message function
-    const sendMessage = () => {
-        if (messageInput.trim() && selectedChat) {
-            const newMessage = {
-                id: Date.now(),
-                sender: "user",
-                message: messageInput,
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
+        // Cleanup sebelum pasang listener baru
+        socket.off("connect");
+        socket.off("newMessage");
 
-            // Update the selected chat's messages
-            const updatedChat = {
-                ...selectedChat,
-                messages: [...selectedChat.messages, newMessage]
-            };
+        socket.on("connect", () => {
+            console.log("✅ Connected:", socket.id);
+        });
 
-            setSelectedChat(updatedChat);
-            setMessageInput("");
-            // Scroll only the chat container to bottom
-            setTimeout(() => {
-                if (messagesContainerRef.current) {
-                    messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        // Mock implementation for sendMessage if no real server
+        socket.on("sendMessage", (msg) => {
+            // In a real implementation, this would be handled by the server
+            // For mock purposes, we just update messages for the sender
+            setMessages(prev => [...prev, msg]);
+        });
+
+        return () => {
+            socket.off("connect");
+            socket.off("newMessage");
+            socket.off("sendMessage"); // Remove this listener too
+            socket.disconnect();
+            socket = null;
+        };
+    }, [user]);
+
+    // Ambil daftar user dari API - only users with active conversations
+    useEffect(() => {
+        if (!user) return;
+
+        // Fetch conversation partners (users with whom the current user has had conversations)
+        const fetchConversations = async () => {
+            try {
+                // Get Clerk token for authentication
+                let token = null;
+                try {
+                    token = await session.getToken();
+                } catch (error) {
+                    console.error('Error getting Clerk token:', error);
                 }
-            }, 100);
+
+                const response = await fetch(`https://besukma.vercel.app/api/chat?receiverId=${user.id}`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+
+                const fetchedUsers = await response.json();
+
+                // Filter out current user
+                const filteredUsers = fetchedUsers.filter(u =>
+                    u.id !== user.id
+                );
+
+                // Merge with existing users to preserve order and any additional data
+                setUsers(prevUsers => {
+                    const existingUserMap = new Map(prevUsers.map(u => [u.id, u]));
+                    const newUserMap = new Map(filteredUsers.map(u => [u.id, u]));
+
+                    // Keep existing users and update with new data where available
+                    const updatedUsers = prevUsers.map(u => {
+                        const newUserData = newUserMap.get(u.id);
+                        return newUserData ? { ...u, ...newUserData } : u;
+                    });
+
+                    // Add new users that weren't in the previous list
+                    const newUsersToAdd = filteredUsers.filter(u => !existingUserMap.has(u.id));
+
+                    return [...newUsersToAdd, ...updatedUsers];
+                });
+            } catch (err) {
+                console.error("Failed to fetch conversations:", err);
+            }
+        };
+
+        fetchConversations();
+
+        // Also set up a periodic refresh to keep the list updated
+        const interval = setInterval(fetchConversations, 30000); // Refresh every 30 seconds
+
+        return () => clearInterval(interval);
+    }, [user, session]);
+
+    // Fetch all users for search functionality
+    useEffect(() => {
+        if (!user) return;
+
+        fetchUsersWithStores()
+            .then(fetchedUsers => {
+                // Filter out the current user and their own store
+                const filteredUsers = fetchedUsers.filter(u =>
+                    u.id !== user.id &&
+                    !(u.hasStore && u.userId === user.id)
+                );
+                setAllUsers(filteredUsers);
+
+                // Also update the main users list with any conversations we might have missed
+                // (in case new conversations appeared since last fetch)
+                const fetchConversations = async () => {
+                    try {
+                        // Get Clerk token for authentication
+                        let token = null;
+                        try {
+                            token = await session.getToken();
+                        } catch (error) {
+                            console.error('Error getting Clerk token:', error);
+                        }
+
+                        const response = await fetch(`https://besukma.vercel.app/api/chat?receiverId=${user.id}`, {
+                            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                        });
+
+                        const conversationUsers = await response.json();
+
+                        // Filter out current user from conversation list
+                        const filteredConversationUsers = conversationUsers.filter(u =>
+                            u.id !== user.id
+                        );
+
+                        // Merge with existing users, avoiding duplicates
+                        setUsers(prevUsers => {
+                            const userIds = new Set(prevUsers.map(u => u.id));
+                            const newUsers = filteredConversationUsers.filter(u => !userIds.has(u.id));
+                            return [...prevUsers, ...newUsers];
+                        });
+                    } catch (err) {
+                        console.error("Failed to fetch conversations:", err);
+                    }
+                };
+
+                fetchConversations();
+            })
+            .catch((err) => {
+                console.error("Failed to fetch all users for search:", err);
+            });
+    }, [user, session]);
+
+    // Ambil pesan saat memilih user
+    useEffect(() => {
+        if (!selectedUser || !user) return;
+
+        const loadMessages = async () => {
+            try {
+                // The receiverId might be the user ID or store ID depending on how the system is set up
+                // For now, we'll use the user.id from the selectedUser object
+                const receiverId = selectedUser.id;
+
+                // Get Clerk token for authentication
+                let token = null;
+                try {
+                    token = await session.getToken();
+                } catch (error) {
+                    console.error('Error getting Clerk token:', error);
+                }
+
+                const res = await fetch(`https://besukma.vercel.app/api/chat?senderId=${user.id}&receiverId=${receiverId}`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                const data = await res.json();
+                if (Array.isArray(data)) setMessages(data);
+                else setMessages([]);
+
+                // Attempt to mark messages from partner as read on the recipient side
+                // (this ensures server updates `readAt` without requiring a manual refresh)
+                try {
+                    let token = null;
+                    try {
+                        token = await session.getToken();
+                    } catch (error) {
+                        console.error('Error getting Clerk token:', error);
+                    }
+
+                    const patchRes = await fetch('https://besukma.vercel.app/api/chat', {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(token && { 'Authorization': `Bearer ${token}` })
+                        },
+                        body: JSON.stringify({ partnerId: receiverId })
+                    });
+
+                    // Only proceed if the request was successful
+                    if (patchRes.ok) {
+                        const patchJson = await patchRes.json().catch(() => ({}));
+
+                        // choose ids to mark locally: prefer server-provided ids, fallback to locally-known partner-sent message ids
+                        const localIds = Array.isArray(data) ? data.filter(m => String(m.senderId) === String(receiverId)).map(m => m.id) : [];
+                        const ids = (patchJson?.messageIds && Array.isArray(patchJson.messageIds) && patchJson.messageIds.length) ? patchJson.messageIds : localIds;
+
+                        // emit socket markRead so sender clients update live
+                        try {
+                            socket?.emit('markRead', { partnerId: receiverId, readerId: user.id, messageIds: ids });
+                        } catch (e) { console.warn('socket emit markRead failed', e); }
+
+                        // optimistic local update for UI
+                        if (ids && ids.length) {
+                            setMessages(prev => Array.isArray(prev) ? prev.map(m => ids.includes(m.id) ? { ...m, readAt: new Date().toISOString() } : m) : prev);
+
+                            // Update the unread count in the users list since we've read messages
+                            setUsers(prev =>
+                                prev.map(u =>
+                                    u.id === selectedUser.id
+                                        ? { ...u, unread: 0 }
+                                        : u
+                                )
+                            );
+                        }
+                    } else {
+                        console.warn('Mark read request failed:', patchRes.status, patchRes.statusText);
+                        // Even if the server request failed, we can still update the UI locally
+                        // to show that messages are read in this session
+                        setUsers(prev =>
+                            prev.map(u =>
+                                u.id === selectedUser.id
+                                    ? { ...u, unread: 0 }
+                                    : u
+                            )
+                        );
+                    }
+                } catch (err) {
+                    console.error('Failed to mark messages read (recipient):', err);
+                    // Still update the UI locally to show the conversation as read
+                    setUsers(prev =>
+                        prev.map(u =>
+                            u.id === selectedUser.id
+                                ? { ...u, unread: 0 }
+                                : u
+                        )
+                    );
+                }
+
+            } catch (err) {
+                console.error("Failed to fetch messages:", err);
+            }
+        };
+
+        loadMessages();
+    }, [selectedUser, user]);
+
+    // Auto-scroll to bottom when messages change
+    useEffect(() => {
+        if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
         }
+    }, [messages]);
+
+    // Listener for updating current chat display
+    useEffect(() => {
+        if (!socket || !user || !selectedUser) return;
+
+        const handleNewMessage = (msg) => {
+            console.log("📩 newMessage event:", msg);
+
+            // Hanya tampilkan kalau pesan ini relevan
+            const isRelevant =
+                (msg.senderId === user?.id && msg.receiverId === selectedUser?.id) ||
+                (msg.senderId === selectedUser?.id && msg.receiverId === user?.id);
+
+            if (!isRelevant) return;
+
+            setMessages((prev) => {
+                if (!Array.isArray(prev)) return [msg];
+                if (prev.some((m) => m.id === msg.id)) return prev;
+                return [...prev, msg];
+            });
+        };
+
+        socket.on("newMessage", handleNewMessage);
+
+        return () => {
+            socket.off("newMessage", handleNewMessage);
+        };
+    }, [user, selectedUser]);
+
+    // Listener for updating chat list sidebar
+    useEffect(() => {
+        if (!socket || !user) return;
+
+        const handleNewMessageForSidebar = (msg) => {
+            console.log("Sidebar update - 📩 newMessage event:", msg);
+
+            // Update the conversation list in the sidebar
+            const isFromSelectedUser = msg.senderId === selectedUser?.id;
+            const isConversationPartner = users.some(u => u.id === msg.senderId);
+
+            // If it's from the currently selected user, update the last message in the sidebar
+            if (isFromSelectedUser && selectedUser) {
+                setUsers(prev =>
+                    prev.map(u =>
+                        u.id === selectedUser.id
+                            ? {
+                                ...u,
+                                lastMessage: msg.content || (msg.attachments && msg.attachments.length > 0 ? `${msg.attachments.length} attachment(s)` : ''),
+                                lastAt: msg.createdAt || new Date().toISOString(),
+                                unread: 0 // Mark as read since we're viewing this chat
+                            }
+                            : u
+                    )
+                );
+            }
+            // If it's from a different user, add to the list or update their last message
+            else if (msg.senderId !== user.id) {
+                if (!isConversationPartner) {
+                    // Find the user info from allUsers to add to conversation list
+                    const newUser = allUsers.find(u => u.id === msg.senderId);
+                    if (newUser) {
+                        const newConversation = {
+                            ...newUser,
+                            lastMessage: msg.content || (msg.attachments && msg.attachments.length > 0 ? `${msg.attachments.length} attachment(s)` : ''),
+                            lastAt: msg.createdAt || new Date().toISOString(),
+                            unread: 1 // Mark as unread since it's a new message
+                        };
+                        setUsers(prev => [newConversation, ...prev]);
+                    }
+                } else {
+                    // Update existing conversation's last message and unread count
+                    setUsers(prev =>
+                        prev.map(u =>
+                            u.id === msg.senderId
+                                ? {
+                                    ...u,
+                                    lastMessage: msg.content || (msg.attachments && msg.attachments.length > 0 ? `${msg.attachments.length} attachment(s)` : ''),
+                                    lastAt: msg.createdAt || new Date().toISOString(),
+                                    unread: u.id !== selectedUser?.id ? u.unread + 1 : u.unread
+                                }
+                                : u
+                        )
+                    );
+                }
+            }
+        };
+
+        socket.on("newMessage", handleNewMessageForSidebar);
+
+        return () => {
+            socket.off("newMessage", handleNewMessageForSidebar);
+        };
+    }, [user, selectedUser, users, allUsers]);
+
+    // Implement debounce for search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 300); // 300ms delay
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // Filter users based on search
+    // If search query is empty, show only users with active conversations
+    // If search query exists, show matching users from all users
+    const filteredUsers = debouncedSearchQuery
+        ? allUsers.filter(user =>
+            user.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+            (user.email && user.email.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) ||
+            (user.storeId && user.storeId.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) ||
+            (user.lastMessage && user.lastMessage.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
+        )
+        : users; // Only users with active conversations when no search
+
+    // Kirim pesan
+    const sendMessage = async () => {
+        // Now allows sending with just images, no text required
+        if ((messageInput.trim() === "" && files.length === 0) || !selectedUser || !user) return;
+
+        const hasFiles = files && files.length > 0;
+        let savedMessage = null;
+        try {
+            if (hasFiles) {
+                const form = new FormData();
+                form.append('senderId', user.id);
+                form.append('receiverId', selectedUser.id);
+                form.append('content', messageInput.trim()); // Can be empty string if sending only images
+                files.forEach((f) => form.append('attachments', f));
+
+                // Get Clerk token for authentication
+                let token = null;
+                try {
+                    token = await session.getToken();
+                } catch (error) {
+                    console.error('Error getting Clerk token:', error);
+                }
+
+                const res = await fetch('https://besukma.vercel.app/api/chat', {
+                    method: 'POST',
+                    body: form,
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                savedMessage = await res.json();
+            } else {
+                const payload = {
+                    senderId: user.id,
+                    receiverId: selectedUser.id,
+                    content: messageInput.trim()
+                };
+
+                // Get Clerk token for authentication
+                let token = null;
+                try {
+                    token = await session.getToken();
+                } catch (error) {
+                    console.error('Error getting Clerk token:', error);
+                }
+
+                const res = await fetch('https://besukma.vercel.app/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` })
+                    },
+                    body: JSON.stringify(payload)
+                });
+                savedMessage = await res.json();
+            }
+
+            if (!savedMessage?.id) return;
+
+            // Tambah di UI (sender)
+            setMessages((prev) => [...prev, savedMessage]);
+
+            // Kirim realtime ke penerima (only if socket is connected in real implementation)
+            if (socket) {
+                socket.emit("sendMessage", savedMessage);
+            }
+
+            // After sending a message, make sure the conversation appears in the list
+            // Check if selected user is already in the users list, if not, add them
+            const userExists = users.some(u => u.id === selectedUser.id);
+            if (!userExists) {
+                // If the user is not in the conversation list, add them
+                const newConversation = {
+                    ...selectedUser,
+                    lastMessage: messageInput.trim() || (files.length > 0 ? `${files.length} attachment(s)` : ''),
+                    lastAt: new Date().toISOString(),
+                    unread: 0
+                };
+                setUsers(prev => [newConversation, ...prev]);
+            } else {
+                // If the user already exists, update the last message and time
+                setUsers(prev =>
+                    prev.map(u =>
+                        u.id === selectedUser.id
+                            ? {
+                                ...u,
+                                lastMessage: messageInput.trim() || (files.length > 0 ? `${files.length} attachment(s)` : ''),
+                                lastAt: new Date().toISOString()
+                            }
+                            : u
+                    )
+                );
+            }
+
+            // Kosongkan input
+            setMessageInput("");
+            setFiles([]);
+            // Clear the preview images and revoke their object URLs
+            previewImages.forEach(url => URL.revokeObjectURL(url));
+            setPreviewImages([]);
+        } catch (err) {
+            console.error('Failed to send message with attachments:', err);
+        }
+    };
+
+    const handleFileChange = (e) => {
+        const newFiles = Array.from(e.target.files || []);
+
+        // Create preview URLs for the selected images
+        const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+
+        // Set new files and previews, replacing existing ones
+        setFiles(newFiles);
+        setPreviewImages(newPreviews);
+
+        // Reset the file input to allow selecting the same file again if needed
+        e.target.value = '';
+    };
+
+    const removePreviewImage = (index) => {
+        setFiles(prevFiles => {
+            const newFiles = prevFiles.filter((_, i) => i !== index);
+            return newFiles;
+        });
+
+        setPreviewImages(prevPreviews => {
+            // Revoke the object URL for the image being removed before filtering
+            const previewToRemove = prevPreviews[index];
+            if (previewToRemove) {
+                URL.revokeObjectURL(previewToRemove);
+            }
+            return prevPreviews.filter((_, i) => i !== index);
+        });
     };
 
     // Handle Enter key press
@@ -115,8 +538,6 @@ export default function ChatPage() {
             sendMessage();
         }
     };
-
-    // Removed auto-scroll effect
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -128,7 +549,7 @@ export default function ChatPage() {
                     <button onClick={() => router.back()} className="btn btn-sm btn-ghost shadow-none border-none text-gray-700 border border-gray-300 hover:bg-gray-100">
                         &larr;
                     </button>
-                    <h1 className="text-2xl font-bold text-gray-900">Keranjang Belanja</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Chat</h1>
                 </div>
 
                 {/* Chat Container */}
@@ -152,49 +573,73 @@ export default function ChatPage() {
 
                             {/* Chat List */}
                             <div className="flex-1 overflow-y-auto">
-                                {filteredChats.map((chat) => (
-                                    <div
-                                        key={chat.id}
-                                        onClick={() => setSelectedChat(chat)}
-                                        className={`p-4 border-b border-gray-100 cursor-pointer transition-colors ${selectedChat?.id === chat.id ? 'bg-[#ED775A] bg-opacity-10 border-l-4 border-l-[#ED775A]' : 'hover:bg-gray-50'}`}
-                                    >
-                                        <div className="flex items-center space-x-3">
-                                            <div className="relative">
-                                                <img
-                                                    src={chat.avatar}
-                                                    alt={chat.name}
-                                                    className="w-12 h-12 rounded-full object-cover border border-gray-200"
-                                                />
-                                                {chat.isOnline && (
-                                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between">
-                                                    <h3 className={`font-semibold truncate ${selectedChat?.id === chat.id ? 'text-white' : 'text-gray-900'}`}>{chat.name}</h3>
-                                                    <span className={`text-xs ${selectedChat?.id === chat.id ? 'text-gray-200' : 'text-gray-500'}`}>{chat.timestamp}</span>
+                                {filteredUsers.length > 0 ? (
+                                    filteredUsers.map((u) => (
+                                        <div
+                                            key={u.id}
+                                            onClick={() => {
+                                                setSelectedUser(u);
+                                            }}
+                                            className={`p-4 border-b border-gray-100 cursor-pointer transition-colors ${selectedUser?.id === u.id ? 'bg-[#ED775A] bg-opacity-10  border-l-[#ED775A]' : 'hover:bg-gray-50'}`}
+                                        >
+                                            <div className="flex items-center space-x-3">
+                                                <div className="relative">
+                                                    <img
+                                                        src={u.image || "/default-avatar.png"}
+                                                        alt={u.name}
+                                                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                                                    />
+                                                    {/* Assuming online status if last message was recent */}
+                                                    {/* Note: This is a simplified check - consider adding real-time online status if needed */}
+                                                    {/* <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> */}
                                                 </div>
-                                                <div className="flex items-center justify-between">
-                                                    <p className={`text-sm truncate mt-1 ${selectedChat?.id === chat.id ? 'text-gray-200' : 'text-gray-600'}`}>{chat.lastMessage}</p>
-                                                    {/* Hide unread badge if selected */}
-                                                    {chat.unread > 0 && selectedChat?.id !== chat.id && (
-                                                        <div className="mt-2">
-                                                            <span className="inline-block bg-[#ED775A] text-white text-xs px-2.5 py-1 rounded-full">
-                                                                {chat.unread}
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between">
+                                                        <h3 className={`font-semibold truncate ${selectedUser?.id === u.id ? 'text-white' : 'text-gray-900'}`}>
+                                                            {u.name}
+                                                            {u.hasStore && (
+                                                                <span className="ml-2 text-xs bg-[#ED775A] text-white px-2 py-0.5 rounded-full">
+                                                                    Toko
+                                                                </span>
+                                                            )}
+                                                        </h3>
+                                                        <span className={`text-xs ${selectedUser?.id === u.id ? 'text-gray-200' : 'text-gray-500'}`}>
+                                                            {u.lastAt ? new Date(u.lastAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <p className={`text-sm truncate mt-1 ${selectedUser?.id === u.id ? 'text-gray-200' : 'text-gray-600'}`}>
+                                                            {u.lastMessage || 'No messages yet'}
+                                                        </p>
+                                                        {/* Hide unread badge if selected */}
+                                                        {u.unread > 0 && selectedUser?.id !== u.id && (
+                                                            <div className="mt-2">
+                                                                <span className="inline-block bg-[#ED775A] text-white text-xs px-2.5 py-1 rounded-full">
+                                                                    {u.unread}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                    ))
+                                ) : searchQuery ? (
+                                    <div className="p-4 text-center text-gray-500">
+                                        <p>No users or stores match your search.</p>
                                     </div>
-                                ))}
+                                ) : (
+                                    <div className="p-4 text-center text-gray-500">
+                                        <p>No active conversations yet.</p>
+                                        <p className="text-sm mt-1">Search for users or stores to start a chat.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         {/* Chat Interface */}
                         <div className="flex-1 flex flex-col">
-                            {selectedChat ? (
+                            {selectedUser ? (
                                 <>
                                     {/* Chat Header */}
                                     <div className="p-4 border-b border-gray-200 bg-white">
@@ -202,19 +647,21 @@ export default function ChatPage() {
                                             <div className="flex items-center space-x-3">
                                                 <div className="relative">
                                                     <img
-                                                        src={selectedChat.avatar}
-                                                        alt={selectedChat.name}
+                                                        src={selectedUser.image || "/default-avatar.png"}
+                                                        alt={selectedUser.name}
                                                         className="w-10 h-10 rounded-full object-cover"
                                                     />
-                                                    {selectedChat.isOnline && (
-                                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                                                    )}
+                                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-semibold text-gray-900">{selectedChat.name}</h3>
-                                                    <p className="text-sm text-gray-500">
-                                                        {selectedChat.isOnline ? 'Online' : 'Offline'}
-                                                    </p>
+                                                    <h3 className="font-semibold text-gray-900">
+                                                        {selectedUser.name}
+                                                        {selectedUser.hasStore && (
+                                                            <span className="ml-2 text-xs bg-[#ED775A] text-white px-2 py-0.5 rounded-full">
+                                                                Toko
+                                                            </span>
+                                                        )}
+                                                    </h3>
                                                 </div>
                                             </div>
                                             <button className="p-2 hover:bg-gray-100 rounded-full">
@@ -226,35 +673,70 @@ export default function ChatPage() {
                                     {/* Messages */}
                                     <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
                                         <div ref={messagesContainerRef} className="space-y-4 h-full overflow-y-auto">
-                                            {selectedChat.messages.map((message) => (
+                                            {messages.map((msg) => (
                                                 <div
-                                                    key={message.id}
-                                                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                                                    key={msg.id || msg._id}
+                                                    className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
                                                 >
-                                                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.sender === 'user'
+                                                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.senderId === user?.id
                                                         ? 'bg-[#ED775A] text-white'
                                                         : 'bg-white text-gray-900 border border-gray-200'
                                                         }`}>
-                                                        <p className="text-sm">{message.message}</p>
-                                                        <p className={`text-xs mt-1 ${message.sender === 'user' ? 'text-orange-100' : 'text-gray-500'
+                                                        {msg.content && <p className="text-sm">{msg.content}</p>}
+                                                        {Array.isArray(msg.attachments) && msg.attachments.length > 0 && (
+                                                            <div className="mt-2 flex gap-2">
+                                                                {msg.attachments.map((a, i) => (
+                                                                    <img key={i} src={a} alt={`attachment-${i}`} className="w-32 h-32 object-cover rounded" />
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        <p className={`text-xs mt-1 ${msg.senderId === user?.id ? 'text-orange-100' : 'text-gray-500'
                                                             }`}>
-                                                            {message.timestamp}
+                                                            {new Date(msg.createdAt || msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </p>
                                                     </div>
                                                 </div>
                                             ))}
-                                            <div ref={messagesEndRef} />
                                         </div>
                                     </div>
 
                                     {/* Message Input */}
                                     <div className="p-4 border-t border-gray-200 bg-white">
+                                        {/* Image Previews */}
+                                        {previewImages.length > 0 && (
+                                            <div className="mb-3 flex flex-wrap gap-2">
+                                                {previewImages.map((preview, index) => (
+                                                    <div key={index} className="relative group">
+                                                        <img
+                                                            src={preview}
+                                                            alt={`Preview ${index}`}
+                                                            className="w-16 h-16 object-cover rounded border border-gray-300"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            onClick={() => removePreviewImage(index)}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
                                         <div className="flex items-center space-x-3">
                                             <button className="p-2 hover:bg-gray-100 rounded-full">
-                                                <FiPaperclip className="w-5 h-5 text-gray-600" />
-                                            </button>
-                                            <button className="p-2 hover:bg-gray-100 rounded-full">
-                                                <FiImage className="w-5 h-5 text-gray-600" />
+                                                <FiImage className="w-5 h-5 text-gray-600"
+                                                    onClick={() => document.getElementById('image-upload').click()} />
+                                                <input
+                                                    id="image-upload"
+                                                    type="file"
+                                                    className="hidden"
+                                                    multiple
+                                                    accept="image/*"
+                                                    onChange={handleFileChange} />
                                             </button>
                                             <div className="flex-1">
                                                 <input
@@ -268,7 +750,7 @@ export default function ChatPage() {
                                             </div>
                                             <button
                                                 onClick={sendMessage}
-                                                disabled={!messageInput.trim()}
+                                                disabled={(!messageInput.trim() && files.length === 0) || !selectedUser}
                                                 className="p-2 bg-[#ED775A] text-white rounded-full hover:bg-[#d86a4a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                             >
                                                 <FiSend className="w-5 h-5" />
