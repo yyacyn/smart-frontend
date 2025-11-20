@@ -2,13 +2,10 @@
 import { useEffect, useState, useRef } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { FiSend, FiSearch, FiMoreVertical, FiImage, FiPaperclip } from "react-icons/fi";
-import io from "socket.io-client";
 import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 import { useRouter } from "next/navigation";
 import { fetchUsersWithStores } from "../../api";
-
-let socket;
 
 export default function ChatPage() {
     const { user } = useUser();
@@ -22,49 +19,10 @@ export default function ChatPage() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
     const [files, setFiles] = useState([]);
     const [previewImages, setPreviewImages] = useState([]); // Store the preview URLs
+    const [lastMessageTimestamp, setLastMessageTimestamp] = useState(null);
     const messagesContainerRef = useRef(null);
     const router = useRouter();
-    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8081';
-
-    // Inisialisasi socket & join room
-    useEffect(() => {
-        if (!user) return;
-
-        // Hindari socket ganda
-        if (!socket) {
-            socket = io(SOCKET_URL, {
-                transports: ["websocket"],
-                withCredentials: true
-            });
-            console.log("🔌 Socket initialized");
-        }
-
-        // Join ke room ID user
-        socket.emit("joinRoom", user.id);
-
-        // Cleanup sebelum pasang listener baru
-        socket.off("connect");
-        socket.off("newMessage");
-
-        socket.on("connect", () => {
-            console.log("✅ Connected:", socket.id);
-        });
-
-        // Mock implementation for sendMessage if no real server
-        socket.on("sendMessage", (msg) => {
-            // In a real implementation, this would be handled by the server
-            // For mock purposes, we just update messages for the sender
-            setMessages(prev => [...prev, msg]);
-        });
-
-        return () => {
-            socket.off("connect");
-            socket.off("newMessage");
-            socket.off("sendMessage"); // Remove this listener too
-            socket.disconnect();
-            socket = null;
-        };
-    }, [user]);
+    const pollingIntervalRef = useRef(null);
 
     // Ambil daftar user dari API - only users with active conversations
     useEffect(() => {
@@ -197,8 +155,36 @@ export default function ChatPage() {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                 });
                 const data = await res.json();
-                if (Array.isArray(data)) setMessages(data);
-                else setMessages([]);
+                if (Array.isArray(data)) {
+                    setMessages(data);
+
+                    // Update the last message timestamp for polling
+                    if (data.length > 0) {
+                        const latestMessage = data.reduce((latest, current) =>
+                            new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest
+                        );
+                        setLastMessageTimestamp(new Date(latestMessage.createdAt).getTime());
+
+                        // Update the sidebar with the latest message for this conversation
+                        const lastMessageContent = latestMessage.attachments && latestMessage.attachments.length > 0 
+                            ? `${latestMessage.attachments.length} foto` 
+                            : (latestMessage.content || '');
+
+                        setUsers(prev =>
+                            prev.map(u =>
+                                u.id === selectedUser.id
+                                    ? {
+                                        ...u,
+                                        lastMessage: lastMessageContent,
+                                        lastAt: latestMessage.createdAt
+                                    }
+                                    : u
+                            )
+                        );
+                    }
+                } else {
+                    setMessages([]);
+                }
 
                 // Attempt to mark messages from partner as read on the recipient side
                 // (this ensures server updates `readAt` without requiring a manual refresh)
@@ -226,11 +212,6 @@ export default function ChatPage() {
                         // choose ids to mark locally: prefer server-provided ids, fallback to locally-known partner-sent message ids
                         const localIds = Array.isArray(data) ? data.filter(m => String(m.senderId) === String(receiverId)).map(m => m.id) : [];
                         const ids = (patchJson?.messageIds && Array.isArray(patchJson.messageIds) && patchJson.messageIds.length) ? patchJson.messageIds : localIds;
-
-                        // emit socket markRead so sender clients update live
-                        try {
-                            socket?.emit('markRead', { partnerId: receiverId, readerId: user.id, messageIds: ids });
-                        } catch (e) { console.warn('socket emit markRead failed', e); }
 
                         // optimistic local update for UI
                         if (ids && ids.length) {
@@ -277,6 +258,169 @@ export default function ChatPage() {
         loadMessages();
     }, [selectedUser, user]);
 
+    // Polling effect for new messages when a chat is selected
+    useEffect(() => {
+        if (!selectedUser || !user) return;
+
+        // Clear any existing interval
+        if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+        }
+
+        // Set up new polling interval
+        pollingIntervalRef.current = setInterval(async () => {
+            try {
+                const receiverId = selectedUser.id;
+
+                // Get Clerk token for authentication
+                let token = null;
+                try {
+                    token = await session.getToken();
+                } catch (error) {
+                    console.error('Error getting Clerk token:', error);
+                }
+
+                const res = await fetch(`https://besukma.vercel.app/api/chat?senderId=${user.id}&receiverId=${receiverId}`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                const data = await res.json();
+
+                if (Array.isArray(data)) {
+                    // Find new messages by comparing timestamps
+                    const newMessages = lastMessageTimestamp
+                        ? data.filter(msg => new Date(msg.createdAt).getTime() > lastMessageTimestamp)
+                        : data;
+
+                    if (newMessages.length > 0) {
+                        // Update messages with new ones
+                        setMessages(prev => {
+                            // Combine existing and new messages, avoiding duplicates
+                            const existingIds = new Set(prev.map(msg => msg.id));
+                            const uniqueNewMessages = newMessages.filter(msg => !existingIds.has(msg.id));
+                            return [...prev, ...uniqueNewMessages];
+                        });
+
+                        // Update the last message timestamp
+                        const latestMessage = data.reduce((latest, current) =>
+                            new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest
+                        );
+                        setLastMessageTimestamp(new Date(latestMessage.createdAt).getTime());
+
+                        // Update the sidebar with the latest message for this conversation
+                        const lastMessageContent = latestMessage.attachments && latestMessage.attachments.length > 0 
+                            ? `${latestMessage.attachments.length} foto` 
+                            : (latestMessage.content || '');
+
+                        setUsers(prev =>
+                            prev.map(u =>
+                                u.id === selectedUser.id
+                                    ? {
+                                        ...u,
+                                        lastMessage: lastMessageContent,
+                                        lastAt: latestMessage.createdAt
+                                    }
+                                    : u
+                            )
+                        );
+                    }
+                }
+            } catch (err) {
+                console.error("Polling error:", err);
+            }
+        }, 2000); // Poll every 2 seconds
+
+        // Cleanup interval on component unmount or when selected user changes
+        return () => {
+            if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+            }
+        };
+    }, [selectedUser, user, lastMessageTimestamp]);
+
+    // Global polling effect for non-selected chats to update sidebar
+    useEffect(() => {
+        // Set up global polling interval to update conversations list
+        const globalPollingInterval = setInterval(async () => {
+            if (!user) return;
+
+            try {
+                // Get Clerk token for authentication
+                let token = null;
+                try {
+                    token = await session.getToken();
+                } catch (error) {
+                    console.error('Error getting Clerk token:', error);
+                }
+
+                const response = await fetch(`https://besukma.vercel.app/api/chat?receiverId=${user.id}`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+
+                const fetchedUsers = await response.json();
+
+                // Filter out current user
+                const filteredUsers = fetchedUsers.filter(u =>
+                    u.id !== user.id
+                );
+
+                setUsers(prevUsers => {
+                    const existingUserMap = new Map(prevUsers.map(u => [u.id, u]));
+
+                    // Update existing users with new data from API
+                    // For non-selected users, always use API data for lastMessage/lastAt
+                    // For selected user, preserve local state unless API has newer data
+                    const updatedUsers = prevUsers.map(prevUser => {
+                        const updatedData = filteredUsers.find(newUser => newUser.id === prevUser.id);
+                        if (updatedData) {
+                            // If this is not the currently selected user, always use API data
+                            if (!selectedUser || selectedUser.id !== prevUser.id) {
+                                return {
+                                    ...prevUser, 
+                                    ...updatedData,
+                                    lastMessage: updatedData.lastMessage,
+                                    lastAt: updatedData.lastAt,
+                                    unread: updatedData.unread
+                                };
+                            }
+                            // For selected user, only update if API has newer data
+                            else {
+                                const apiDate = new Date(updatedData.lastAt || 0);
+                                const localDate = new Date(prevUser.lastAt || 0);
+                                
+                                if (apiDate > localDate) {
+                                    return {
+                                        ...prevUser, 
+                                        ...updatedData,
+                                        lastMessage: updatedData.lastMessage,
+                                        lastAt: updatedData.lastAt,
+                                        unread: updatedData.unread
+                                    };
+                                }
+                                // Keep local state for selected user if it's newer
+                                return { ...prevUser, unread: updatedData.unread };
+                            }
+                        }
+                        return prevUser;
+                    });
+
+                    // Find new users that weren't in the previous list
+                    const newUsers = filteredUsers.filter(newUser =>
+                        !existingUserMap.has(newUser.id)
+                    );
+
+                    return [...newUsers, ...updatedUsers];
+                });
+            } catch (err) {
+                console.error("Global polling error:", err);
+            }
+        }, 3000); // Poll every 3 seconds for global updates
+
+        return () => {
+            clearInterval(globalPollingInterval);
+        };
+    }, [user, session]);
+
     // Auto-scroll to bottom when messages change
     useEffect(() => {
         if (messagesContainerRef.current) {
@@ -284,98 +428,6 @@ export default function ChatPage() {
         }
     }, [messages]);
 
-    // Listener for updating current chat display
-    useEffect(() => {
-        if (!socket || !user || !selectedUser) return;
-
-        const handleNewMessage = (msg) => {
-            console.log("📩 newMessage event:", msg);
-
-            // Hanya tampilkan kalau pesan ini relevan
-            const isRelevant =
-                (msg.senderId === user?.id && msg.receiverId === selectedUser?.id) ||
-                (msg.senderId === selectedUser?.id && msg.receiverId === user?.id);
-
-            if (!isRelevant) return;
-
-            setMessages((prev) => {
-                if (!Array.isArray(prev)) return [msg];
-                if (prev.some((m) => m.id === msg.id)) return prev;
-                return [...prev, msg];
-            });
-        };
-
-        socket.on("newMessage", handleNewMessage);
-
-        return () => {
-            socket.off("newMessage", handleNewMessage);
-        };
-    }, [user, selectedUser]);
-
-    // Listener for updating chat list sidebar
-    useEffect(() => {
-        if (!socket || !user) return;
-
-        const handleNewMessageForSidebar = (msg) => {
-            console.log("Sidebar update - 📩 newMessage event:", msg);
-
-            // Update the conversation list in the sidebar
-            const isFromSelectedUser = msg.senderId === selectedUser?.id;
-            const isConversationPartner = users.some(u => u.id === msg.senderId);
-
-            // If it's from the currently selected user, update the last message in the sidebar
-            if (isFromSelectedUser && selectedUser) {
-                setUsers(prev =>
-                    prev.map(u =>
-                        u.id === selectedUser.id
-                            ? {
-                                ...u,
-                                lastMessage: msg.content || (msg.attachments && msg.attachments.length > 0 ? `${msg.attachments.length} attachment(s)` : ''),
-                                lastAt: msg.createdAt || new Date().toISOString(),
-                                unread: 0 // Mark as read since we're viewing this chat
-                            }
-                            : u
-                    )
-                );
-            }
-            // If it's from a different user, add to the list or update their last message
-            else if (msg.senderId !== user.id) {
-                if (!isConversationPartner) {
-                    // Find the user info from allUsers to add to conversation list
-                    const newUser = allUsers.find(u => u.id === msg.senderId);
-                    if (newUser) {
-                        const newConversation = {
-                            ...newUser,
-                            lastMessage: msg.content || (msg.attachments && msg.attachments.length > 0 ? `${msg.attachments.length} attachment(s)` : ''),
-                            lastAt: msg.createdAt || new Date().toISOString(),
-                            unread: 1 // Mark as unread since it's a new message
-                        };
-                        setUsers(prev => [newConversation, ...prev]);
-                    }
-                } else {
-                    // Update existing conversation's last message and unread count
-                    setUsers(prev =>
-                        prev.map(u =>
-                            u.id === msg.senderId
-                                ? {
-                                    ...u,
-                                    lastMessage: msg.content || (msg.attachments && msg.attachments.length > 0 ? `${msg.attachments.length} attachment(s)` : ''),
-                                    lastAt: msg.createdAt || new Date().toISOString(),
-                                    unread: u.id !== selectedUser?.id ? u.unread + 1 : u.unread
-                                }
-                                : u
-                        )
-                    );
-                }
-            }
-        };
-
-        socket.on("newMessage", handleNewMessageForSidebar);
-
-        return () => {
-            socket.off("newMessage", handleNewMessageForSidebar);
-        };
-    }, [user, selectedUser, users, allUsers]);
 
     // Implement debounce for search
     useEffect(() => {
@@ -458,32 +510,37 @@ export default function ChatPage() {
             // Tambah di UI (sender)
             setMessages((prev) => [...prev, savedMessage]);
 
-            // Kirim realtime ke penerima (only if socket is connected in real implementation)
-            if (socket) {
-                socket.emit("sendMessage", savedMessage);
-            }
-
             // After sending a message, make sure the conversation appears in the list
             // Check if selected user is already in the users list, if not, add them
             const userExists = users.some(u => u.id === selectedUser.id);
             if (!userExists) {
                 // If the user is not in the conversation list, add them
+                // Use the actual saved message content for lastMessage
+                const lastMessageContent = savedMessage.attachments && savedMessage.attachments.length > 0 
+                    ? `${savedMessage.attachments.length} foto` 
+                    : (savedMessage.content || '');
+                
                 const newConversation = {
                     ...selectedUser,
-                    lastMessage: messageInput.trim() || (files.length > 0 ? `${files.length} attachment(s)` : ''),
-                    lastAt: new Date().toISOString(),
+                    lastMessage: lastMessageContent,
+                    lastAt: savedMessage.createdAt || new Date().toISOString(),
                     unread: 0
                 };
                 setUsers(prev => [newConversation, ...prev]);
             } else {
                 // If the user already exists, update the last message and time
+                // Use the actual saved message content for lastMessage
+                const lastMessageContent = savedMessage.attachments && savedMessage.attachments.length > 0 
+                    ? `${savedMessage.attachments.length} foto` 
+                    : (savedMessage.content || '');
+                    
                 setUsers(prev =>
                     prev.map(u =>
                         u.id === selectedUser.id
                             ? {
                                 ...u,
-                                lastMessage: messageInput.trim() || (files.length > 0 ? `${files.length} attachment(s)` : ''),
-                                lastAt: new Date().toISOString()
+                                lastMessage: lastMessageContent,
+                                lastAt: savedMessage.createdAt || new Date().toISOString()
                             }
                             : u
                     )
