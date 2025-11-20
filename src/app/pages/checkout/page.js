@@ -33,6 +33,7 @@ export default function CheckoutPage() {
         notes: ""
     });
     const [paymentMethod, setPaymentMethod] = useState("transfer");
+    const [couponCode, setCouponCode] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
     const [isAddressesLoading, setIsAddressesLoading] = useState(false);
     const [phoneError, setPhoneError] = useState("");
@@ -274,18 +275,49 @@ export default function CheckoutPage() {
                 'cod': 'COD'
             };
 
-            // Prepare order data
+            // Validate selectedItems before processing
+            console.log('Selected items before processing:', selectedItems);
+            
+            // Filter out items with undefined/null IDs and validate data
+            const validItems = selectedItems.filter(item => {
+                if (!item.id) {
+                    console.error('Item missing ID:', item);
+                    return false;
+                }
+                if (!item.quantity || item.quantity <= 0) {
+                    console.error('Item missing or invalid quantity:', item);
+                    return false;
+                }
+                return true;
+            });
+
+            if (validItems.length === 0) {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Tidak ada produk valid untuk dipesan. Silakan coba lagi.',
+                });
+                setIsProcessing(false);
+                return;
+            }
+
+            // Prepare order data - match backend expectations exactly
             const orderData = {
                 addressId: selectedAddressId,
-                items: selectedItems.map(item => ({
-                    id: item.id,
+                items: validItems.map(item => ({
+                    id: item.id,  // Backend uses item.id to find product and get productId
                     quantity: item.quantity
+                    // Don't send price - backend will get it from product lookup
                 })),
-                couponCode: null, // Add coupon code if you have one
                 paymentMethod: paymentMethodMap[paymentMethod] || 'BANK_TRANSFER' // Use BANK_TRANSFER as fallback
+                // Don't send userId, storeId, couponCode if null - let backend handle it
             };
-            // TODO: Replace null with actual token if needed
-            const response = await orderPost(orderData, null);
+            
+            // Only add couponCode if it's not empty
+            if (couponCode && couponCode.trim() !== '') {
+                orderData.couponCode = couponCode.trim();
+            }
+            const response = await orderPost(orderData);
 
             // New backend returns a success message when order is placed successfully
             if (response && response.message === "Order placed successfully") {
@@ -310,10 +342,24 @@ export default function CheckoutPage() {
             }
         } catch (error) {
             console.error('Order placement error:', error);
+            let errorMessage = 'Gagal membuat pesanan.';
+
+            // Handle different possible error response formats
+            if (error?.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error?.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error?.response?.data) {
+                // If the entire response is a string or has other structure
+                errorMessage = typeof error.response.data === 'string' ? error.response.data : JSON.stringify(error.response.data);
+            } else if (error?.message) {
+                errorMessage = error.message;
+            }
+
             await Swal.fire({
                 icon: 'error',
                 title: 'Gagal',
-                text: error?.response?.data?.error || error?.response?.data?.message || 'Gagal membuat pesanan.',
+                text: errorMessage,
             });
         } finally {
             setIsProcessing(false);

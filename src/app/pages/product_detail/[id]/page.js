@@ -11,10 +11,9 @@ import { useRouter } from "next/navigation";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 // import ProductCard from "../../../components/product/Card"
 import ProductCard from "../../../components/product/Card"
-import { fetchProducts, addToCart as addToCartAPI, fetchCart, submitReport } from "../../../api";
+import { fetchProducts, addToCart as addToCartAPI, fetchCart, submitReport, fetchWishlist, addToWishlist, removeFromWishlist } from "../../../api";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, increaseQuantity } from "@/lib/features/cart/cartSlice";
-import { addToWishlistAPI, removeFromWishlistAPI, fetchWishlist } from "@/lib/features/wishlist/wishlistSlice";
 import Swal from 'sweetalert2';
 import Link from "next/link";
 import ReportModal from "../../../components/ReportModal";
@@ -25,7 +24,6 @@ export default function ProductPage() {
     const router = useRouter();
     const dispatch = useDispatch();
     const cartItems = useSelector((state) => state.cart.items || state.cart.cartItems);
-    const wishlistItems = useSelector((state) => state.wishlist.wishlistItems);
     const params = useParams();
     const productId = params.id;
 
@@ -70,7 +68,16 @@ export default function ProductPage() {
                     // Get token from Clerk session
                     const token = await session.getToken();
                     if (token) {
-                        await dispatch(fetchWishlist({ token }));
+                        const wishlistData = await fetchWishlist(token);
+                        // Convert the fetched wishlist to the expected format
+                        const wishlistProductIds = {};
+                        if (Array.isArray(wishlistData) && wishlistData.length > 0) {
+                            wishlistData.forEach(item => {
+                                wishlistProductIds[item.productId] = true;
+                            });
+                        }
+                        // Check if current product is in wishlist
+                        setIsWishlisted(!!wishlistProductIds[productId]);
                     }
                 } catch (error) {
                     console.error('Error getting token:', error);
@@ -78,14 +85,8 @@ export default function ProductPage() {
             }
         };
         loadWishlist();
-    }, [user, session, productId, dispatch]);
+    }, [user, session, productId]);
 
-    // Update the wishlist status based on Redux state
-    useEffect(() => {
-        if (productId && wishlistItems) {
-            setIsWishlisted(!!wishlistItems[productId]);
-        }
-    }, [productId, wishlistItems]);
 
     const handleRatingChange = (r) => {
         setSelectedRatings((prev) =>
@@ -640,21 +641,20 @@ export default function ProductPage() {
                                             }
 
                                             try {
+                                                // Get token from Clerk session
+                                                let token = null;
+                                                try {
+                                                    token = await session.getToken();
+                                                } catch (error) {
+                                                    console.error('Error getting Clerk token:', error);
+                                                }
+                                                if (!token) {
+                                                    throw new Error('Authentication token not available');
+                                                }
+
                                                 if (isWishlisted) {
-                                                    // Get token from Clerk session
-                                                    let token = null;
-                                                    try {
-                                                        token = await session.getToken();
-                                                    } catch (error) {
-                                                        console.error('Error getting Clerk token:', error);
-                                                    }
-                                                    if (!token) {
-                                                        throw new Error('Authentication token not available');
-                                                    }
-                                                    await dispatch(removeFromWishlistAPI({
-                                                        productId: currentProduct.id,
-                                                        token
-                                                    }));
+                                                    await removeFromWishlist(currentProduct.id, token);
+                                                    setIsWishlisted(false);
                                                     await Swal.fire({
                                                         icon: 'success',
                                                         title: 'Berhasil',
@@ -663,20 +663,8 @@ export default function ProductPage() {
                                                         showConfirmButton: false
                                                     });
                                                 } else {
-                                                    // Get token from Clerk session
-                                                    let token = null;
-                                                    try {
-                                                        token = await session.getToken();
-                                                    } catch (error) {
-                                                        console.error('Error getting Clerk token:', error);
-                                                    }
-                                                    if (!token) {
-                                                        throw new Error('Authentication token not available');
-                                                    }
-                                                    await dispatch(addToWishlistAPI({
-                                                        productId: currentProduct.id,
-                                                        token
-                                                    }));
+                                                    await addToWishlist(currentProduct.id, token);
+                                                    setIsWishlisted(true);
                                                     await Swal.fire({
                                                         icon: 'success',
                                                         title: 'Berhasil',

@@ -11,7 +11,7 @@ import { sampleProducts } from "../../data/products";
 import { FiHeart, FiTrash2, FiShoppingCart, FiGrid, FiList } from "react-icons/fi";
 import { useAuth } from "@clerk/nextjs";
 import axios from "axios"
-import { fetchWishlist, removeFromWishlistAPI, addToWishlistAPI } from "@/lib/features/wishlist/wishlistSlice";
+import { fetchProducts as fetchProductsAPI, fetchWishlist, removeFromWishlist, addToWishlist } from "../../api";
 
 export default function WishlistPage() {
     const router = useRouter();
@@ -21,8 +21,8 @@ export default function WishlistPage() {
     const [products, setProducts] = useState([]);
 
     const { getToken } = useAuth();
-    const dispatch = useDispatch();
-    const { wishlistItems: reduxWishlistItems, isInitialized } = useSelector(state => state.wishlist);
+    const [wishlistItems, setWishlistItems] = useState({});
+    const dispatch = useDispatch(); // We still need this for cart operations
 
     // Fetch wishlist on component mount
     useEffect(() => {
@@ -31,7 +31,15 @@ export default function WishlistPage() {
                 try {
                     const token = await getToken();
                     if (token) {
-                        await dispatch(fetchWishlist({ token }));
+                        const wishlistData = await fetchWishlist(token);
+                        // Convert the fetched wishlist to the expected format
+                        const wishlistObj = {};
+                        if (Array.isArray(wishlistData) && wishlistData.length > 0) {
+                            wishlistData.forEach(item => {
+                                wishlistObj[item.productId] = true;
+                            });
+                        }
+                        setWishlistItems(wishlistObj);
                     }
                 } catch (error) {
                     console.error('Error getting token:', error);
@@ -39,7 +47,7 @@ export default function WishlistPage() {
             }
         };
         loadWishlist();
-    }, [dispatch, getToken]);
+    }, [getToken]);
 
     // Fetch all products to match with wishlist items
     useEffect(() => {
@@ -56,18 +64,21 @@ export default function WishlistPage() {
     }, []);
 
     // Map wishlist items to actual product data
-    const wishlistItems = products.filter(product => reduxWishlistItems && reduxWishlistItems[product.id]);
+    const wishlistProductData = products.filter(product => wishlistItems && wishlistItems[product.id]);
 
-    const removeFromWishlist = async (productId) => {
+    const handleRemoveFromWishlist = async (productId) => {
         try {
             const token = await getToken();
             if (!token) {
                 throw new Error('Authentication token not available');
             }
-            await dispatch(removeFromWishlistAPI({
-                productId,
-                token
-            }));
+            await removeFromWishlist(productId, token);
+            // Update local state to reflect the change
+            setWishlistItems(prev => {
+                const newWishlist = { ...prev };
+                delete newWishlist[productId];
+                return newWishlist;
+            });
         } catch (err) {
             console.error("Gagal menghapus dari wishlist:", err.response?.data || err.message);
         }
@@ -106,7 +117,7 @@ export default function WishlistPage() {
     };
 
     const moveAllToCart = async () => {
-        if (wishlistItems.length === 0) return;
+        if (Object.keys(wishlistItems).length === 0) return;
 
         try {
             const token = await getToken();
@@ -122,7 +133,7 @@ export default function WishlistPage() {
             const updatedCart = { ...currentCart };
 
             // 3️⃣ Tambahkan semua produk wishlist ke cart
-            wishlistItems.forEach(item => {
+            wishlistProductData.forEach(item => {
                 if (updatedCart[item.id]) {
                     updatedCart[item.id] += 1; // tambah quantity kalau sudah ada
                 } else {
@@ -137,20 +148,20 @@ export default function WishlistPage() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            // 5️⃣ Hapus semua item wishlist dari Redux store (this will sync with backend)
+            // 5️⃣ Hapus semua item wishlist dari backend
             if (!token) {
                 throw new Error('Authentication token not available');
             }
-            for (const item of wishlistItems) {
-                await dispatch(removeFromWishlistAPI({
-                    productId: item.id,
-                    token
-                }));
+            for (const item of wishlistProductData) {
+                await removeFromWishlist(item.id, token);
             }
+
+            // Clear wishlist state
+            setWishlistItems({});
 
             setCurrentCart(updatedCart);
 
-            alert(`${wishlistItems.length} produk berhasil dipindahkan ke keranjang!`);
+            alert(`${Object.keys(wishlistItems).length} produk berhasil dipindahkan ke keranjang!`);
         } catch (err) {
             console.error("Gagal memindahkan semua:", err.response?.data || err.message);
             alert("Terjadi kesalahan saat memindahkan produk ke keranjang.");
@@ -160,7 +171,7 @@ export default function WishlistPage() {
 
 
     // Filtered wishlist items based on search
-    const filteredItems = wishlistItems.filter(item => {
+    const filteredItems = wishlistProductData.filter(item => {
         const term = searchTerm.trim().toLowerCase();
         if (!term) return true;
         return item.name.toLowerCase().includes(term);
@@ -182,7 +193,7 @@ export default function WishlistPage() {
                         </button>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">Wishlist Saya</h1>
-                            <p className="text-sm text-gray-600">{wishlistItems.length} produk</p>
+                            <p className="text-sm text-gray-600">{Object.keys(wishlistItems).length} produk</p>
                         </div>
                     </div>
 
@@ -206,7 +217,7 @@ export default function WishlistPage() {
                 </div>
 
                 {/* Search and Actions Bar */}
-                {wishlistItems.length > 0 && (
+                {Object.keys(wishlistItems).length > 0 && (
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                         <div className="flex-1">
                             <input
@@ -233,15 +244,15 @@ export default function WishlistPage() {
                         <div className="max-w-md mx-auto">
                             <FiHeart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                             <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                                {wishlistItems.length === 0 ? "Wishlist Kosong" : "Tidak ada hasil pencarian"}
+                                {Object.keys(wishlistItems).length === 0 ? "Wishlist Kosong" : "Tidak ada hasil pencarian"}
                             </h3>
                             <p className="text-gray-500 mb-6">
-                                {wishlistItems.length === 0
+                                {Object.keys(wishlistItems).length === 0
                                     ? "Mulai tambahkan produk favorit Anda ke wishlist untuk melihatnya di sini"
                                     : "Coba kata kunci yang berbeda"
                                 }
                             </p>
-                            {wishlistItems.length === 0 && (
+                            {Object.keys(wishlistItems).length === 0 && (
                                 <Link
                                     href="/pages/marketplace"
                                     className="btn bg-[#ED775A] border-none hover:bg-[#eb6b4b] text-white shadow-none"
@@ -263,7 +274,7 @@ export default function WishlistPage() {
                                     {/* Wishlist Actions Overlay */}
                                     <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
-                                            onClick={() => removeFromWishlist(product.id)}
+                                            onClick={() => handleRemoveFromWishlist(product.id)}
                                             className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 text-red-500"
                                             title="Hapus dari wishlist"
                                         >
@@ -316,7 +327,7 @@ export default function WishlistPage() {
                                             Tambah ke Keranjang
                                         </button>
                                         <button
-                                            onClick={() => removeFromWishlist(product.id)}
+                                            onClick={() => handleRemoveFromWishlist(product.id)}
                                             className="btn btn-sm btn-outline border-red-500 text-red-500 hover:bg-red-500 hover:text-white shadow-none"
                                         >
                                             <FiTrash2 className="w-4 h-4" />
@@ -330,7 +341,7 @@ export default function WishlistPage() {
                 )}
 
                 {/* Recently Viewed or Recommended Products */}
-                {wishlistItems.length > 0 && (
+                {Object.keys(wishlistItems).length > 0 && (
                     <div className="mt-16">
                         <h2 className="text-xl font-bold text-gray-900 mb-6">Produk Lainnya untuk Anda</h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

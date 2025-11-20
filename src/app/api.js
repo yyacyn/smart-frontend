@@ -3,7 +3,7 @@
 import axios from "axios";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://besukma.vercel.app';
-// const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Helper function to get Clerk token on client side
 const getClerkToken = async () => {
@@ -116,7 +116,7 @@ export const addToCart = async (cartData, token = null) => {
 };
 
 // Place an order (POST)
-export const orderPost = async (orderData, token = null) => {
+export const orderPost = async (orderData, token = null, retries = 3) => {
     const authToken = token || await getClerkToken();
     const headers = {
         'Content-Type': 'application/json'
@@ -125,12 +125,38 @@ export const orderPost = async (orderData, token = null) => {
         headers.Authorization = `Bearer ${authToken}`;
     }
 
-    const response = await axios.post(
-        `${BASE_URL}/api/orders`,
-        orderData,
-        { headers }
-    );
-    return response.data;
+    // Add timeout and retry logic for connection issues
+    const axiosConfig = {
+        headers,
+        timeout: 30000, // 30 seconds timeout
+        retry: retries,
+        retryDelay: 1000 // 1 second delay between retries
+    };
+
+    try {
+        const response = await axios.post(
+            `${BASE_URL}/api/orders`,
+            orderData,
+            axiosConfig
+        );
+        return response.data;
+    } catch (error) {
+        console.error('orderPost error:', error);
+        
+        // If it's a connection error and we have retries left, try again
+        if (retries > 0 && (
+            error.code === 'ECONNRESET' || 
+            error.code === 'NETWORK_ERROR' ||
+            error.message?.includes('Connection terminated unexpectedly') ||
+            error.message?.includes('Network Error')
+        )) {
+            console.log(`Retrying order post, ${retries} attempts left...`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+            return orderPost(orderData, token, retries - 1);
+        }
+        
+        throw error;
+    }
 };
 
 export const fetchOrders = async (token = null) => {
@@ -200,6 +226,57 @@ export const submitReport = async (reportData, token = null) => {
         `${BASE_URL}/api/reports`,
         reportData,
         { headers }
+    );
+    return response.data;
+};
+
+// Wishlist functions
+// Fetch user's wishlist (GET)
+export const fetchWishlist = async (token = null) => {
+    const authToken = token || await getClerkToken();
+    const headers = {};
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    const response = await axios.get(`${BASE_URL}/api/wishlist`, { headers });
+    return response.data;
+};
+
+// Add to wishlist (POST)
+export const addToWishlist = async (productId, token = null) => {
+    const authToken = token || await getClerkToken();
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    const response = await axios.post(
+        `${BASE_URL}/api/wishlist`,
+        { productId },
+        { headers }
+    );
+    return response.data;
+};
+
+// Remove from wishlist (DELETE)
+export const removeFromWishlist = async (productId, token = null) => {
+    const authToken = token || await getClerkToken();
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    const response = await axios.delete(
+        `${BASE_URL}/api/wishlist`,
+        {
+            headers,
+            data: { productId }
+        }
     );
     return response.data;
 };
