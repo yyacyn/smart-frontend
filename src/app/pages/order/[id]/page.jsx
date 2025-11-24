@@ -30,8 +30,8 @@ export default function OrderPage() {
                 const response = await fetchOrders(token);
                 const allOrders = response.orders || response || [];
                 // Filter orders based on Clerk user.id only
-                const userOrders = allOrders.filter(order => 
-                    order.userId === user.id || 
+                const userOrders = allOrders.filter(order =>
+                    order.userId === user.id ||
                     order.user_id === user.id ||
                     order.user?.id === user.id
                 );
@@ -40,9 +40,9 @@ export default function OrderPage() {
                 console.error("Error fetching orders:", err);
                 setError("Gagal mengambil data pesanan. Periksa koneksi atau coba lagi.");
                 Swal.fire({
-                  icon: 'error',
-                  title: 'Gagal',
-                  text: 'Gagal mengambil data pesanan. Periksa koneksi atau coba lagi.',
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'Gagal mengambil data pesanan. Periksa koneksi atau coba lagi.',
                 });
             } finally {
                 setLoading(false);
@@ -53,55 +53,55 @@ export default function OrderPage() {
 
     // Helper functions
     const getStatusDisplay = (status) => {
-        switch (status?.toLowerCase()) {
-            case "pending":
-                return { 
-                    icon: <FiClock className="w-5 h-5 text-yellow-500" />, 
+        switch (status?.toUpperCase()) {
+            case "ORDER_PLACED":
+                return {
+                    icon: <FiClock className="w-5 h-5 text-[#f59e0b]" />,
                     text: "Menunggu Konfirmasi",
-                    color: "text-yellow-600",
-                    bgColor: "bg-yellow-50 border-yellow-200"
+                    color: "text-[#ca8a04]",
+                    bgColor: "bg-[#fefce8] border-[#fef9c3]"
                 };
-            case "processing":
-                return { 
-                    icon: <FiClock className="w-5 h-5 text-blue-500" />, 
+            case "PROCESSING":
+                return {
+                    icon: <FiClock className="w-5 h-5 text-[#3b82f6]" />,
                     text: "Sedang Diproses",
-                    color: "text-blue-600",
-                    bgColor: "bg-blue-50 border-blue-200"
+                    color: "text-[#1d4ed8]",
+                    bgColor: "bg-[#eff6ff] border-[#bfdbfe]"
                 };
-            case "shipped":
-                return { 
-                    icon: <FiPackage className="w-5 h-5 text-purple-500" />, 
+            case "SHIPPED":
+                return {
+                    icon: <FiPackage className="w-5 h-5 text-[#8b5cf6]" />,
                     text: "Sedang Dikirim",
-                    color: "text-purple-600",
-                    bgColor: "bg-purple-50 border-purple-200"
+                    color: "text-[#7e22ce]",
+                    bgColor: "bg-[#f3e8ff] border-[#ddd6fe]"
                 };
-            case "delivered":
-                return { 
-                    icon: <FiCheckCircle className="w-5 h-5 text-green-500" />, 
+            case "DELIVERED":
+                return {
+                    icon: <FiCheckCircle className="w-5 h-5 text-[#10b981]" />,
                     text: "Telah Sampai",
-                    color: "text-green-600",
-                    bgColor: "bg-green-50 border-green-200"
+                    color: "text-[#047857]",
+                    bgColor: "bg-[#ecfdf5] border-[#bbf7d0]"
                 };
-            case "completed":
-                return { 
-                    icon: <FiCheckCircle className="w-5 h-5 text-green-500" />, 
+            case "COMPLETED":
+                return {
+                    icon: <FiCheckCircle className="w-5 h-5 text-[#10b981]" />,
                     text: "Selesai",
-                    color: "text-green-600",
-                    bgColor: "bg-green-50 border-green-200"
+                    color: "text-[#047857]",
+                    bgColor: "bg-[#ecfdf5] border-[#bbf7d0]"
                 };
-            case "cancelled":
-                return { 
-                    icon: <FiXCircle className="w-5 h-5 text-red-500" />, 
+            case "CANCELLED":
+                return {
+                    icon: <FiXCircle className="w-5 h-5 text-[#ef4444]" />,
                     text: "Dibatalkan",
-                    color: "text-red-600",
-                    bgColor: "bg-red-50 border-red-200"
+                    color: "text-[#dc2626]",
+                    bgColor: "bg-[#fef2f2] border-[#fecaca]"
                 };
             default:
-                return { 
-                    icon: <FiClock className="w-5 h-5 text-gray-500" />, 
+                return {
+                    icon: <FiClock className="w-5 h-5 text-[#6b7280]" />,
                     text: "Status Tidak Diketahui",
-                    color: "text-gray-600",
-                    bgColor: "bg-gray-50 border-gray-200"
+                    color: "text-[#4b5563]",
+                    bgColor: "bg-[#f9fafb] border-[#e5e7eb]"
                 };
         }
     };
@@ -112,7 +112,7 @@ export default function OrderPage() {
             const date = new Date(dateString);
             return date.toLocaleDateString("id-ID", {
                 day: "2-digit",
-                month: "short", 
+                month: "short",
                 year: "numeric"
             });
         } catch {
@@ -123,7 +123,17 @@ export default function OrderPage() {
     // Filter orders based on selected filter
     const filteredOrders = orders.filter(order => {
         if (filter === "all") return true;
-        return order.status?.toLowerCase() === filter;
+
+        // Map UI filter values to backend status values
+        let backendStatus = filter;
+        if (filter === "pending") backendStatus = "ORDER_PLACED";
+        if (filter === "processing") backendStatus = "PROCESSING";
+        if (filter === "shipped") backendStatus = "SHIPPED";
+        if (filter === "delivered") backendStatus = "DELIVERED";
+        if (filter === "completed") backendStatus = "COMPLETED";
+        if (filter === "cancelled") backendStatus = "CANCELLED";
+
+        return order.status?.toUpperCase() === backendStatus;
     });
 
     // Show loading state
@@ -169,7 +179,7 @@ export default function OrderPage() {
                     <div className="flex flex-col items-center justify-center py-20">
                         <FiXCircle className="w-16 h-16 text-red-500" />
                         <p className="mt-4 text-red-500 text-center">{error}</p>
-                        <button 
+                        <button
                             onClick={() => window.location.reload()}
                             className="mt-4 btn bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none"
                         >
@@ -238,7 +248,7 @@ export default function OrderPage() {
                         <p className="mt-4 text-gray-500 text-center">
                             {filter === "all" ? "Belum ada pesanan" : `Tidak ada pesanan dengan status "${getStatusDisplay(filter).text}"`}
                         </p>
-                        <button 
+                        <button
                             onClick={() => router.push("/pages/marketplace")}
                             className="mt-4 btn bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none shadow-none"
                         >
@@ -259,7 +269,7 @@ export default function OrderPage() {
                                         {/* Order Header */}
                                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
                                             <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                                                <div className={`px-3 py-1 rounded-full border ${statusDisplay.bgColor}`}>
+                                                <div className={`px-3 py-1 rounded-full border ${statusDisplay.bgColor.replace('oklch', '')}`}>
                                                     <div className="flex items-center gap-2">
                                                         {statusDisplay.icon}
                                                         <span className={`text-sm font-medium ${statusDisplay.color}`}>
@@ -287,22 +297,22 @@ export default function OrderPage() {
 
                                         {/* Order Items */}
                                         <div className="space-y-3 mb-4">
-                                            {order.items && order.items.length > 0 ? (
-                                                order.items.slice(0, 2).map((item, index) => (
-                                                    <div key={item.id || index} className="flex gap-3">
+                                            {order.orderItems && order.orderItems.length > 0 ? (
+                                                order.orderItems.slice(0, 2).map((item, index) => (
+                                                    <div key={item.productId || index} className="flex gap-3">
                                                         <div className="w-12 h-12 bg-gray-200 rounded flex-shrink-0">
                                                             <img
-                                                                src={item.image || item.product?.images?.[0] || "/images/default.png"}
-                                                                alt={item.name || item.product?.name || "Product"}
+                                                                src={item.product?.images?.[0] || "/images/default.png"}
+                                                                alt={item.product?.name || "Product"}
                                                                 className="w-full h-full object-cover rounded"
                                                             />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className="font-medium text-sm text-gray-900 truncate">
-                                                                {item.name || item.product?.name || `Produk #${item.id}`}
+                                                                {item.product?.name || `Produk #${item.productId}`}
                                                             </p>
                                                             <p className="text-xs text-gray-500">
-                                                                Qty: {item.quantity || 1} × Rp{(item.price || item.product?.price || 0).toLocaleString("id-ID")}
+                                                                Qty: {item.quantity || 1} × Rp{(item.product?.price || item.price || 0).toLocaleString("id-ID")}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -315,9 +325,9 @@ export default function OrderPage() {
                                                     </div>
                                                 </div>
                                             )}
-                                            {order.items && order.items.length > 2 && (
+                                            {order.orderItems && order.orderItems.length > 2 && (
                                                 <p className="text-xs text-gray-500 ml-15">
-                                                    +{order.items.length - 2} produk lainnya
+                                                    +{order.orderItems.length - 2} produk lainnya
                                                 </p>
                                             )}
                                         </div>
@@ -328,13 +338,18 @@ export default function OrderPage() {
                                                 {order.paymentMethod && (
                                                     <div className="flex items-center gap-1 text-xs text-gray-600">
                                                         <FiCreditCard className="w-3 h-3" />
-                                                        <span className="capitalize">{order.paymentMethod}</span>
+                                                        <span className="capitalize">
+                                                            {order.paymentMethod === 'BANK_TRANSFER' ? 'Bank Transfer' :
+                                                             order.paymentMethod === 'COD' ? 'Cash on Delivery' :
+                                                             order.paymentMethod === 'EWALLET' ? 'E-Wallet' :
+                                                             order.paymentMethod?.toLowerCase().split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Metode Pembayaran Tidak Diketahui'}
+                                                        </span>
                                                     </div>
                                                 )}
-                                                {order.shippingAddress?.city && (
+                                                {order.address?.city && (
                                                     <div className="flex items-center gap-1 text-xs text-gray-600">
                                                         <FiMapPin className="w-3 h-3" />
-                                                        <span>{order.shippingAddress.city}</span>
+                                                        <span>{order.address.city}</span>
                                                     </div>
                                                 )}
                                             </div>

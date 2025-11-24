@@ -374,4 +374,31 @@ export const fetchUsersWithStores = async (token = null) => {
     }
 };
 
+// Fetch specific store by ID (GET) - fetch all stores and filter by ID
+export const fetchStoreById = async (storeId, token = null) => {
+    const authToken = token || await getClerkToken();
+    const headers = {};
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    try {
+        // Fetch all stores using the existing fetchStores function
+        const response = await fetchStores(token);
+        const stores = response.stores || response;
+
+        // Find the store with the matching ID
+        const store = stores.find(s => s.id === storeId);
+
+        if (store) {
+            return { store }; // Return in the same format as the original function
+        } else {
+            throw new Error(`Store with ID ${storeId} not found`);
+        }
+    } catch (error) {
+        console.error('Error fetching store by ID:', error);
+        throw error;
+    }
+};
+
 
