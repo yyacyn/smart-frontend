@@ -9,6 +9,7 @@ import Footer from "../../components/footer/Footer";
 import { fetchProducts, orderPost, fetchAddresses, addAddress } from "../../api";
 import { FiMapPin, FiCreditCard, FiTruck, FiCheck, FiEdit3, FiPlus, FiChevronDown } from "react-icons/fi";
 import Swal from 'sweetalert2';
+import { useGlobalData } from '../../contexts/GlobalDataContext';
 
 // Helper to get store name by id
 function getStoreName(storeId, products) {
@@ -19,6 +20,7 @@ function getStoreName(storeId, products) {
 export default function CheckoutPage() {
     const router = useRouter();
     const { user } = useUser();
+    const { cachedAddresses, setCachedAddresses } = useGlobalData();
     const [selectedItems, setSelectedItems] = useState([]);
     const [products, setProducts] = useState([]);
     const [addresses, setAddresses] = useState([]);
@@ -49,9 +51,20 @@ export default function CheckoutPage() {
                 // Fetch user addresses only if user is logged in
                 if (user?.id) {
                     setIsAddressesLoading(true);
-                    const addressData = await fetchAddresses();
+
+                    // Check if addresses are already cached
+                    let allAddresses = cachedAddresses;
+
+                    if (!allAddresses) {
+                        // If not cached, fetch them
+                        const addressData = await fetchAddresses();
+                        allAddresses = addressData && addressData.addresses ? addressData.addresses : [];
+
+                        // Cache the addresses for future use
+                        setCachedAddresses(allAddresses);
+                    }
+
                     setIsAddressesLoading(false);
-                    const allAddresses = addressData && addressData.addresses ? addressData.addresses : [];
                     console.log("All addresses:", allAddresses);
                     console.log("Current user ID:", user.id);
                     // Filter addresses to only show current user's addresses
@@ -119,7 +132,7 @@ export default function CheckoutPage() {
             }
         }
         getProductsForCheckout();
-    }, [user]);
+    }, [user, cachedAddresses, setCachedAddresses]);
 
     const calculatePrice = (item) => {
         return item.price || 0;
@@ -196,6 +209,16 @@ export default function CheckoutPage() {
                 console.log("Updated addresses list:", newAddresses);
                 return newAddresses;
             });
+
+            // Also update the cached addresses
+            setCachedAddresses(prev => {
+                if (prev) {
+                    return [...prev, addressWithUserId];
+                } else {
+                    return [addressWithUserId];
+                }
+            });
+
             setSelectedAddressId(addressWithUserId.id);
             setShowNewAddressForm(false);
 

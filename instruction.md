@@ -1,119 +1,289 @@
-import prisma from '@/lib/prisma';
-import { NextResponse } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
-import imageKit from '@/configs/imageKit';
-
-// Public endpoint to submit a customer report/complaint
-export async function POST(request) {
-  try {
-    // Determine content type: support JSON body or multipart/form-data with files
-    const contentType = request.headers.get('content-type') || '';
-
-    let payload = null;
-    let attachmentsUrls = [];
-
-    if (contentType.includes('multipart/form-data')) {
-      // parse form data (files + fields)
-      const formData = await request.formData();
-      payload = Object.fromEntries(formData.entries());
-
-      // attachments may be sent as `attachments` fields (multiple) or `images`
-      const files = formData.getAll('attachments').length ? formData.getAll('attachments') : formData.getAll('images');
-
-      if (files && files.length) {
-        attachmentsUrls = await Promise.all(files.map(async (file) => {
-          try {
-            const buffer = Buffer.from(await file.arrayBuffer());
-            const response = await imageKit.upload({
-              file: buffer,
-              fileName: file.name || `report-${Date.now()}`,
-              folder: 'reports',
-            });
-
-            const url = imageKit.url({
-              path: response.filePath,
-              transformation: [
-                { quality: 'auto' },
-                { format: 'webp' },
-                { height: '1024' }
-              ]
-            });
-
-            return url;
-          } catch (uploadErr) {
-            console.error('ImageKit upload failed for report attachment:', uploadErr);
-            return null;
-          }
-        }));
-
-        // filter out failed uploads
-        attachmentsUrls = attachmentsUrls.filter(Boolean);
-      }
-    } else {
-      // JSON body
-      payload = await request.json();
-      attachmentsUrls = Array.isArray(payload.attachments) ? payload.attachments : [];
-    }
-
-    // Require authenticated reporter; store reporterId (reference to User)
-    const { userId } = getAuth(request);
-    if (!userId) return NextResponse.json({ error: 'Authentication required to submit report' }, { status: 401 });
-
-    // Infer reportType and populate target fields. Require productId or storeId (enum only PRODUCT/STORE)
-    let targetId = '';
-    let inferredType = null;
-
-    if (payload.productId) {
-      const product = await prisma.product.findUnique({ where: { id: payload.productId } });
-      if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-      inferredType = 'PRODUCT';
-      targetId = product.id;
-    } else if (payload.storeId) {
-      const store = await prisma.store.findUnique({ where: { id: payload.storeId } });
-      if (!store) return NextResponse.json({ error: 'Store not found' }, { status: 404 });
-      inferredType = 'STORE';
-      targetId = store.id;
-    } else {
-      return NextResponse.json({ error: 'report must target a productId or storeId' }, { status: 400 });
-    }
-
-    // minimal validation: require core fields
-    const required = ['subject', 'message'];
-    for (const k of required) {
-      if (!payload[k]) return NextResponse.json({ error: `Missing field ${k}` }, { status: 400 });
-    }
-
-    // reporterId is taken from Clerk auth
-    const reporterId = userId;
-
-    // suggestedPriority (optional) from user: accept values low/medium/high/urgent (case-insensitive)
-    let suggestedPriority = null;
-    if (payload.suggestedPriority) {
-      const up = String(payload.suggestedPriority).toUpperCase();
-      if (['LOW','MEDIUM','HIGH','URGENT'].includes(up)) suggestedPriority = up;
-    }
-
-    // Determine initial priority: prefer suggestedPriority if present, otherwise MEDIUM
-    const initialPriority = suggestedPriority || 'MEDIUM';
-
-    const created = await prisma.report.create({ data: {
-      reporterId,
-      // reportType is Prisma enum: PRODUCT | STORE
-      reportType: inferredType,
-      targetId,
-      subject: payload.subject,
-      message: payload.message,
-      suggestedPriority: suggestedPriority,
-      priority: initialPriority,
-      // status is an enum ReportStatus - public submissions always start as NEW
-      status: 'NEW',
-      category: payload.category || null,
-      attachments: attachmentsUrls,
-    } });
-
-    return NextResponse.json({ report: created }, { status: 201 });
-  } catch (error) {
-    console.error('POST /api/reports error:', error);
-    return NextResponse.json({ error: error?.message || 'Failed to create report' }, { status: 500 });
-  }
+{
+    "orders": [
+        {
+            "id": "cmiekg1bc000bl504tozy0zvt",
+            "total": 222,
+            "status": "ORDER_PLACED",
+            "userId": "user_34m1L9XTTchJBBDRaLWqfZfavpp",
+            "storeId": "cmhrwodw50001kz04x0tip9y0",
+            "addressId": "cmhryg9720001l104kjflv9zu",
+            "isPaid": false,
+            "paymentMethod": "BANK_TRANSFER",
+            "notes": null,
+            "paymentReceipt": [],
+            "createdAt": "2025-11-25T12:42:39.144Z",
+            "updatedAt": "2025-11-25T12:42:39.144Z",
+            "isCouponUsed": false,
+            "coupon": {},
+            "orderItems": [
+                {
+                    "orderId": "cmiekg1bc000bl504tozy0zvt",
+                    "productId": "cmi7j7pa80001jr04mtcakypw",
+                    "quantity": 1,
+                    "price": 222,
+                    "product": {
+                        "id": "cmi7j7pa80001jr04mtcakypw",
+                        "name": "hackattack",
+                        "description": "aytttttack",
+                        "mrp": 333,
+                        "price": 222,
+                        "images": [
+                            "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/LOGO_KATALIS_-gfcq_lk2.PNG",
+                            "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/A4_-_4_JB67fFH_Q.png"
+                        ],
+                        "categoryId": "4",
+                        "inStock": true,
+                        "storeId": "cmhrwodw50001kz04x0tip9y0",
+                        "createdAt": "2025-11-20T14:33:47.457Z",
+                        "updatedAt": "2025-11-20T14:35:00.753Z",
+                        "stock": 10,
+                        "minStock": 2,
+                        "weight": "3",
+                        "dimensions": "2 x 3 x 4",
+                        "model": "hoya",
+                        "additionalInfo": "asjdbas",
+                        "status": "published",
+                        "sku": "11",
+                        "barcode": "22",
+                        "shippingWeight": null,
+                        "shippingLength": null,
+                        "shippingWidth": null,
+                        "shippingHeight": null,
+                        "warranty": null,
+                        "returnPolicy": null,
+                        "tags": null,
+                        "metaTitle": null,
+                        "metaDescription": null
+                    }
+                }
+            ],
+            "address": {
+                "id": "cmhryg9720001l104kjflv9zu",
+                "userId": "user_34m1L9XTTchJBBDRaLWqfZfavpp",
+                "name": "asd",
+                "email": "asdasd@gmail.com",
+                "street": "asdasd",
+                "city": "asdas",
+                "state": "asddas",
+                "zip": "12312",
+                "country": "sadad",
+                "phone": "1231231",
+                "createdAt": "2025-11-09T16:56:01.934Z"
+            }
+        },
+        {
+            "id": "cmi7ml5df000pu4uwecsxdbdc",
+            "total": 222,
+            "status": "ORDER_PLACED",
+            "userId": "user_34m1L9XTTchJBBDRaLWqfZfavpp",
+            "storeId": "cmhrwodw50001kz04x0tip9y0",
+            "addressId": "cmhxipsjb0001l5046h3rzcox",
+            "isPaid": false,
+            "paymentMethod": "BANK_TRANSFER",
+            "notes": null,
+            "paymentReceipt": [],
+            "createdAt": "2025-11-20T16:08:13.684Z",
+            "updatedAt": "2025-11-20T16:08:13.684Z",
+            "isCouponUsed": false,
+            "coupon": {},
+            "orderItems": [
+                {
+                    "orderId": "cmi7ml5df000pu4uwecsxdbdc",
+                    "productId": "cmi7j7pa80001jr04mtcakypw",
+                    "quantity": 1,
+                    "price": 222,
+                    "product": {
+                        "id": "cmi7j7pa80001jr04mtcakypw",
+                        "name": "hackattack",
+                        "description": "aytttttack",
+                        "mrp": 333,
+                        "price": 222,
+                        "images": [
+                            "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/LOGO_KATALIS_-gfcq_lk2.PNG",
+                            "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/A4_-_4_JB67fFH_Q.png"
+                        ],
+                        "categoryId": "4",
+                        "inStock": true,
+                        "storeId": "cmhrwodw50001kz04x0tip9y0",
+                        "createdAt": "2025-11-20T14:33:47.457Z",
+                        "updatedAt": "2025-11-20T14:35:00.753Z",
+                        "stock": 10,
+                        "minStock": 2,
+                        "weight": "3",
+                        "dimensions": "2 x 3 x 4",
+                        "model": "hoya",
+                        "additionalInfo": "asjdbas",
+                        "status": "published",
+                        "sku": "11",
+                        "barcode": "22",
+                        "shippingWeight": null,
+                        "shippingLength": null,
+                        "shippingWidth": null,
+                        "shippingHeight": null,
+                        "warranty": null,
+                        "returnPolicy": null,
+                        "tags": null,
+                        "metaTitle": null,
+                        "metaDescription": null
+                    }
+                }
+            ],
+            "address": {
+                "id": "cmhxipsjb0001l5046h3rzcox",
+                "userId": "user_34m1L9XTTchJBBDRaLWqfZfavpp",
+                "name": "Yashin Al Fauzy Sabara",
+                "email": "yashinalfauzysabara@gmail.com",
+                "street": "Jalan Lodaya 2",
+                "city": "Kota Bogor",
+                "state": "Indonesia",
+                "zip": "16121",
+                "country": "Indonesia",
+                "phone": "081275681640",
+                "createdAt": "2025-11-13T14:22:10.103Z"
+            }
+        },
+        {
+            "id": "cmi7mk4mz000nu4uwwvaws6mt",
+            "total": 70,
+            "status": "ORDER_PLACED",
+            "userId": "user_34m1L9XTTchJBBDRaLWqfZfavpp",
+            "storeId": "cmhrsj7vm00011nuclp012tu0",
+            "addressId": "cmhxipsjb0001l5046h3rzcox",
+            "isPaid": false,
+            "paymentMethod": "COD",
+            "notes": null,
+            "paymentReceipt": [],
+            "createdAt": "2025-11-20T16:07:26.076Z",
+            "updatedAt": "2025-11-20T16:07:26.076Z",
+            "isCouponUsed": false,
+            "coupon": {},
+            "orderItems": [
+                {
+                    "orderId": "cmi7mk4mz000nu4uwwvaws6mt",
+                    "productId": "cmhy7yxvy0001l804wvkukejr",
+                    "quantity": 1,
+                    "price": 70,
+                    "product": {
+                        "id": "cmhy7yxvy0001l804wvkukejr",
+                        "name": "Ababil Pusano",
+                        "description": "p",
+                        "mrp": 90,
+                        "price": 70,
+                        "images": [
+                            "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/VB_ANAVIDA_Dth5qMQVG.png"
+                        ],
+                        "categoryId": "4",
+                        "inStock": true,
+                        "storeId": "cmhrsj7vm00011nuclp012tu0",
+                        "createdAt": "2025-11-14T02:09:07.342Z",
+                        "updatedAt": "2025-11-14T02:09:07.342Z",
+                        "stock": 84,
+                        "minStock": 0,
+                        "weight": null,
+                        "dimensions": null,
+                        "model": null,
+                        "additionalInfo": null,
+                        "status": "draft",
+                        "sku": null,
+                        "barcode": null,
+                        "shippingWeight": null,
+                        "shippingLength": null,
+                        "shippingWidth": null,
+                        "shippingHeight": null,
+                        "warranty": null,
+                        "returnPolicy": null,
+                        "tags": null,
+                        "metaTitle": null,
+                        "metaDescription": null
+                    }
+                }
+            ],
+            "address": {
+                "id": "cmhxipsjb0001l5046h3rzcox",
+                "userId": "user_34m1L9XTTchJBBDRaLWqfZfavpp",
+                "name": "Yashin Al Fauzy Sabara",
+                "email": "yashinalfauzysabara@gmail.com",
+                "street": "Jalan Lodaya 2",
+                "city": "Kota Bogor",
+                "state": "Indonesia",
+                "zip": "16121",
+                "country": "Indonesia",
+                "phone": "081275681640",
+                "createdAt": "2025-11-13T14:22:10.103Z"
+            }
+        },
+        {
+            "id": "ORD091",
+            "total": 40000,
+            "status": "DELIVERED",
+            "userId": "user_34m1L9XTTchJBBDRaLWqfZfavpp",
+            "storeId": "cmhrsj7vm00011nuclp014t7q",
+            "addressId": "cdcaca21",
+            "isPaid": true,
+            "paymentMethod": "COD",
+            "notes": "Yang enak mas",
+            "paymentReceipt": [
+                "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/orders/VB_ANAVIDA_3M_kItxmS.png"
+            ],
+            "createdAt": "2025-11-17T00:00:00.000Z",
+            "updatedAt": "2025-11-18T19:14:18.313Z",
+            "isCouponUsed": false,
+            "coupon": {},
+            "orderItems": [
+                {
+                    "orderId": "ORD091",
+                    "productId": "cmhawr112",
+                    "quantity": 21441,
+                    "price": 21000,
+                    "product": {
+                        "id": "cmhawr112",
+                        "name": "Naga Api",
+                        "description": "Naga Api Laut",
+                        "mrp": 10000,
+                        "price": 1999,
+                        "images": [
+                            "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/44e2c88961067bde33a27c6c54699a8c_27QGgwoAI.jpg",
+                            "https://ik.imagekit.io/smartsukma/tr:q-auto:f-webp:h-1024/products/af294f1a649157260d7c77f163b29656_gUz6et9S7.jpg"
+                        ],
+                        "categoryId": "2",
+                        "inStock": true,
+                        "storeId": "cmhrsj7vm00011nuclp014t7q",
+                        "createdAt": "2025-11-18T00:00:00.000Z",
+                        "updatedAt": "2025-11-18T00:00:00.000Z",
+                        "stock": 0,
+                        "minStock": 200,
+                        "weight": null,
+                        "dimensions": null,
+                        "model": null,
+                        "additionalInfo": "Api Abadi",
+                        "status": "draft",
+                        "sku": null,
+                        "barcode": null,
+                        "shippingWeight": null,
+                        "shippingLength": null,
+                        "shippingWidth": null,
+                        "shippingHeight": null,
+                        "warranty": null,
+                        "returnPolicy": null,
+                        "tags": null,
+                        "metaTitle": null,
+                        "metaDescription": null
+                    }
+                }
+            ],
+            "address": {
+                "id": "cdcaca21",
+                "userId": "user_34wl8mDGlLaw0qbY6RI1EYD5e4K",
+                "name": "ABC",
+                "email": "a@gmail.com",
+                "street": "aw21",
+                "city": "Bogor",
+                "state": "Jawa Barat",
+                "zip": "12311",
+                "country": "Indonesia",
+                "phone": "213141",
+                "createdAt": "2025-11-17T18:04:31.031Z"
+            }
+        }
+    ]
 }

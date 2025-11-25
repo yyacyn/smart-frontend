@@ -6,6 +6,7 @@ import Navbar from "../../../components/navbar/Navbar";
 import Footer from "../../../components/footer/Footer";
 import { useRouter, useParams } from "next/navigation";
 import { fetchStoreById } from "../../../api";
+import { useGlobalData } from '../../../contexts/GlobalDataContext';
 
 export default function StoreChatPage() {
     const { user } = useUser();
@@ -13,6 +14,7 @@ export default function StoreChatPage() {
     const router = useRouter();
     const params = useParams();
     const storeId = params.id;
+    const { cachedStores, setCachedStores } = useGlobalData();
 
     const [store, setStore] = useState(null);
     const [storeOwnerId, setStoreOwnerId] = useState(null);
@@ -29,24 +31,67 @@ export default function StoreChatPage() {
     useEffect(() => {
         const loadStoreAndMessages = async () => {
             try {
-                // Load store info
-                const token = await session.getToken();
-                const storeData = await fetchStoreById(storeId, token);
-                const storeInfo = storeData.store || storeData;
-                setStore(storeInfo);
+                // Check if stores are already cached
+                let storeInfo = null;
 
-                // Extract store owner ID from the store data
-                const ownerId = storeInfo.userId || storeInfo.ownerId;
-                setStoreOwnerId(ownerId);
+                if (cachedStores) {
+                    // Find the specific store using cached data
+                    if (Array.isArray(cachedStores)) {
+                        storeInfo = cachedStores.find(s => s.id === storeId);
+                    } else if (cachedStores.store && cachedStores.store.id === storeId) {
+                        storeInfo = cachedStores.store;
+                    } else if (cachedStores.id === storeId) {
+                        storeInfo = cachedStores;
+                    }
+                }
 
-                // Load messages for this store conversation
-                if (ownerId) {
-                    const res = await fetch(`https://besukma.vercel.app/api/chat?senderId=${user?.id}&receiverId=${ownerId}`, {
-                        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                    });
-                    const data = await res.json();
-                    if (Array.isArray(data)) {
-                        setMessages(data);
+                if (storeInfo) {
+                    // Use cached store data
+                    setStore(storeInfo);
+                    const ownerId = storeInfo.userId || storeInfo.ownerId;
+                    setStoreOwnerId(ownerId);
+
+                    // Load messages for this store conversation
+                    if (ownerId) {
+                        const token = await session.getToken();
+                        const res = await fetch(`https://besukma.vercel.app/api/chat?senderId=${user?.id}&receiverId=${ownerId}`, {
+                            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                        });
+                        const data = await res.json();
+                        if (Array.isArray(data)) {
+                            setMessages(data);
+                        }
+                    }
+                } else {
+                    // If store is not in cache, fetch it individually
+                    const token = await session.getToken();
+                    const storeData = await fetchStoreById(storeId, token);
+                    const fetchedStore = storeData.store || storeData;
+                    setStore(fetchedStore);
+
+                    // Extract store owner ID from the store data
+                    const ownerId = fetchedStore.userId || fetchedStore.ownerId;
+                    setStoreOwnerId(ownerId);
+
+                    // Load messages for this store conversation
+                    if (ownerId) {
+                        const res = await fetch(`https://besukma.vercel.app/api/chat?senderId=${user?.id}&receiverId=${ownerId}`, {
+                            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                        });
+                        const data = await res.json();
+                        if (Array.isArray(data)) {
+                            setMessages(data);
+                        }
+                    }
+
+                    // Add this store to the cache for future use
+                    if (cachedStores) {
+                        const updatedStores = Array.isArray(cachedStores)
+                            ? [...cachedStores, fetchedStore]
+                            : [cachedStores, fetchedStore];
+                        setCachedStores(updatedStores);
+                    } else {
+                        setCachedStores([fetchedStore]);
                     }
                 }
             } catch (err) {
@@ -60,7 +105,7 @@ export default function StoreChatPage() {
         if (user && storeId) {
             loadStoreAndMessages();
         }
-    }, [user, storeId, session]);
+    }, [user, storeId, session, cachedStores, setCachedStores]);
 
     // Polling for new messages
     useEffect(() => {

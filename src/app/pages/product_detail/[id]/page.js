@@ -17,6 +17,7 @@ import { addToCart, increaseQuantity } from "@/lib/features/cart/cartSlice";
 import Swal from 'sweetalert2';
 import Link from "next/link";
 import ReportModal from "../../../components/ReportModal";
+import { useGlobalData } from '../../../contexts/GlobalDataContext';
 
 export default function ProductPage() {
     const { user } = useUser();
@@ -24,12 +25,12 @@ export default function ProductPage() {
     const router = useRouter();
     const dispatch = useDispatch();
     const cartItems = useSelector((state) => state.cart.items || state.cart.cartItems);
+    const { cachedProducts } = useGlobalData();
     const params = useParams();
     const productId = params.id;
 
     const [qty, setQty] = useState(1);
     const [activeTab, setActiveTab] = useState("Detail");
-    const [products, setProducts] = useState([]);
     const [currentProduct, setCurrentProduct] = useState(null);
     const [currentStore, setCurrentStore] = useState(null);
     const [selectedRatings, setSelectedRatings] = useState([]);
@@ -40,72 +41,126 @@ export default function ProductPage() {
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     useEffect(() => {
-        async function getProducts() {
-            try {
-                const data = await fetchProducts();
-                if (data && data.products) {
-                    setProducts(data.products);
-                    const product = data.products.find(p => p.id === productId);
-                    if (product) {
-                        // Calculate average rating from the product's rating array
-                        const productRatings = product.rating || [];
+        if (cachedProducts && cachedProducts.length > 0) {
+            // Use cached products if available
+            const product = cachedProducts.find(p => p.id === productId);
+            if (product) {
+                // Calculate average rating from the product's rating array
+                const productRatings = product.rating || [];
 
-                        // Calculate average rating
-                        let avgRating = 0;
-                        if (Array.isArray(productRatings) && productRatings.length > 0) {
-                            avgRating = productRatings.reduce((acc, rating) => acc + rating.rating, 0) / productRatings.length;
-                        }
+                // Calculate average rating
+                let avgRating = 0;
+                if (Array.isArray(productRatings) && productRatings.length > 0) {
+                    avgRating = productRatings.reduce((acc, rating) => acc + rating.rating, 0) / productRatings.length;
+                }
 
-                        // Update the product with the average rating
-                        const updatedProduct = {
-                            ...product,
-                            averageRating: parseFloat(avgRating.toFixed(1)),
-                            totalReviews: productRatings.length
-                        };
+                // Update the product with the average rating
+                const updatedProduct = {
+                    ...product,
+                    averageRating: parseFloat(avgRating.toFixed(1)),
+                    totalReviews: productRatings.length
+                };
 
-                        setCurrentProduct(updatedProduct);
-                        setReviews(productRatings);
+                setCurrentProduct(updatedProduct);
+                setReviews(productRatings);
 
-                        if (product.store) {
-                            // Calculate store rating based on all products from the same store
-                            const storeProducts = data.products.filter(p => p.storeId === product.storeId);
-                            let totalStoreRatings = 0;
-                            let totalStoreReviews = 0;
+                if (product.store) {
+                    // Calculate store rating based on all products from the same store
+                    const storeProducts = cachedProducts.filter(p => p.storeId === product.storeId);
+                    let totalStoreRatings = 0;
+                    let totalStoreReviews = 0;
 
-                            storeProducts.forEach(storeProduct => {
-                                if (storeProduct.rating && Array.isArray(storeProduct.rating)) {
-                                    storeProduct.rating.forEach(rating => {
-                                        totalStoreRatings += rating.rating;
-                                        totalStoreReviews++;
-                                    });
-                                }
+                    storeProducts.forEach(storeProduct => {
+                        if (storeProduct.rating && Array.isArray(storeProduct.rating)) {
+                            storeProduct.rating.forEach(rating => {
+                                totalStoreRatings += rating.rating;
+                                totalStoreReviews++;
                             });
+                        }
+                    });
 
-                            let storeAvgRating = 0;
-                            if (totalStoreReviews > 0) {
-                                storeAvgRating = totalStoreRatings / totalStoreReviews;
+                    let storeAvgRating = 0;
+                    if (totalStoreReviews > 0) {
+                        storeAvgRating = totalStoreRatings / totalStoreReviews;
+                    }
+
+                    // Update the store with calculated rating information
+                    const updatedStore = {
+                        ...product.store,
+                        rating: parseFloat(storeAvgRating.toFixed(1)),
+                        reviews: totalStoreReviews
+                    };
+
+                    setCurrentStore(updatedStore);
+                }
+            }
+        } else {
+            // Fetch products if not cached
+            async function getProducts() {
+                try {
+                    const data = await fetchProducts();
+                    if (data && data.products) {
+                        const product = data.products.find(p => p.id === productId);
+                        if (product) {
+                            // Calculate average rating from the product's rating array
+                            const productRatings = product.rating || [];
+
+                            // Calculate average rating
+                            let avgRating = 0;
+                            if (Array.isArray(productRatings) && productRatings.length > 0) {
+                                avgRating = productRatings.reduce((acc, rating) => acc + rating.rating, 0) / productRatings.length;
                             }
 
-                            // Update the store with calculated rating information
-                            const updatedStore = {
-                                ...product.store,
-                                rating: parseFloat(storeAvgRating.toFixed(1)),
-                                reviews: totalStoreReviews
+                            // Update the product with the average rating
+                            const updatedProduct = {
+                                ...product,
+                                averageRating: parseFloat(avgRating.toFixed(1)),
+                                totalReviews: productRatings.length
                             };
 
-                            setCurrentStore(updatedStore);
+                            setCurrentProduct(updatedProduct);
+                            setReviews(productRatings);
+
+                            if (product.store) {
+                                // Calculate store rating based on all products from the same store
+                                const storeProducts = data.products.filter(p => p.storeId === product.storeId);
+                                let totalStoreRatings = 0;
+                                let totalStoreReviews = 0;
+
+                                storeProducts.forEach(storeProduct => {
+                                    if (storeProduct.rating && Array.isArray(storeProduct.rating)) {
+                                        storeProduct.rating.forEach(rating => {
+                                            totalStoreRatings += rating.rating;
+                                            totalStoreReviews++;
+                                        });
+                                    }
+                                });
+
+                                let storeAvgRating = 0;
+                                if (totalStoreReviews > 0) {
+                                    storeAvgRating = totalStoreRatings / totalStoreReviews;
+                                }
+
+                                // Update the store with calculated rating information
+                                const updatedStore = {
+                                    ...product.store,
+                                    rating: parseFloat(storeAvgRating.toFixed(1)),
+                                    reviews: totalStoreReviews
+                                };
+
+                                setCurrentStore(updatedStore);
+                            }
                         }
                     }
+                } catch (error) {
+                    setCurrentProduct(null);
+                    setCurrentStore(null);
+                    setReviews([]);
                 }
-            } catch (error) {
-                setProducts([]);
-                setCurrentProduct(null);
-                setCurrentStore(null);
-                setReviews([]);
             }
+            getProducts();
         }
-        getProducts();
-    }, [productId]);
+    }, [productId, cachedProducts]);
 
     // Check if product is in wishlist when component loads
     useEffect(() => {
@@ -167,6 +222,9 @@ export default function ProductPage() {
 
             // Submit the report via API
             await submitReport(reportPayload);
+
+            // Close the modal before showing the success message
+            setIsReportModalOpen(false);
 
             // Show success message
             await Swal.fire({
@@ -281,16 +339,6 @@ export default function ProductPage() {
                     currentProduct?.shippingWeight || (currentProduct?.shippingLength && currentProduct?.shippingWidth && currentProduct?.shippingHeight)) && (
                         <p className="text-sm opacity-60 italic">Spesifikasi produk belum tersedia.</p>
                     )}
-            </div>
-        ),
-        "Info Penting": (
-            <div className="py-6">
-                <h4 className="font-semibold mb-2 text-black">Info Penting</h4>
-                <ul className="text-sm opacity-80 list-disc ml-5 text-black">
-                    <li>Barang yang sudah dibeli tidak dapat dikembalikan kecuali cacat.</li>
-                    <li>Pastikan alamat pengiriman sudah benar.</li>
-                    <li>Hubungi customer service untuk pertanyaan lebih lanjut.</li>
-                </ul>
             </div>
         ),
         Ulasan: (
@@ -430,10 +478,14 @@ export default function ProductPage() {
                 <div className="breadcrumbs py-4 text-sm">
                     <ul>
                         <li>
-                            <a>Home</a>
+                            <Link href="/">Home</Link>
                         </li>
                         <li>
-                            <a>{typeof currentProduct?.category === 'object' && currentProduct?.category !== null ? currentProduct.category.name : currentProduct?.category}</a>
+                            <Link href={`/pages/marketplace?category=${typeof currentProduct?.category === 'object' && currentProduct?.category !== null ?
+                                encodeURIComponent(currentProduct.category.name) :
+                                encodeURIComponent(currentProduct?.category)}`}>
+                                {typeof currentProduct?.category === 'object' && currentProduct?.category !== null ? currentProduct.category.name : currentProduct?.category}
+                            </Link>
                         </li>
                         <li className="font-medium">{currentProduct?.name}</li>
                     </ul>
@@ -859,7 +911,7 @@ export default function ProductPage() {
                 {/* Tabs */}
                 <section className="mt-10">
                     <div role="tablist" className="tabs tabs-border text-black">
-                        {["Detail", "Spesifikasi", "Info Penting", "Ulasan"].map((tab) => (
+                        {["Detail", "Spesifikasi", "Ulasan"].map((tab) => (
                             <a
                                 key={tab}
                                 role="tab"
@@ -877,45 +929,53 @@ export default function ProductPage() {
                 </section>
 
                 {/* More products grid */}
-                <section className="mt-10">
-                    <h3 className="mb-4 text-base font-semibold text-black">Produk Lainnya dari Toko ini</h3>
-                    <div className="relative">
-                        {products.filter((product) => product.store?.id === currentStore.id && product.id !== currentProduct.id).length === 0 ? (
-                            <div className="text-gray-500 text-center py-8">This store has no more product.</div>
-                        ) : (
-                            <>
-                                <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden">
-                                    {products
-                                        .filter((product) => product.store?.id === currentStore.id && product.id !== currentProduct.id)
-                                        .slice(0, 10)
-                                        .map((product) => (
-                                            <div key={product.id} className="max-w-[240px] flex-shrink-0 mt-2">
-                                                <ProductCard product={product} />
-                                            </div>
-                                        ))}
-                                </div>
-                                <button
-                                    className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-[#ED775A] text-white p-2 rounded-full shadow hover:bg-[#e76b4c] ml-2"
-                                    onClick={() => {
-                                        const container = document.querySelector('.scroll-container');
-                                        container.scrollBy({ left: -300, behavior: 'smooth' });
-                                    }}
-                                >
-                                    <FaChevronLeft aria-hidden="true" />
-                                </button>
-                                <button
-                                    className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-[#ED775A] text-white p-2 rounded-full shadow hover:bg-[#e76b4c] mr-2"
-                                    onClick={() => {
-                                        const container = document.querySelector('.scroll-container');
-                                        container.scrollBy({ left: 300, behavior: 'smooth' });
-                                    }}
-                                >
-                                    <FaChevronRight aria-hidden="true" />
-                                </button>
-                            </>
-                        )}
-                    </div>
-                </section>
+                {currentStore && currentProduct ? (
+                    <section className="mt-10">
+                        <h3 className="mb-4 text-base font-semibold text-black">Produk Lainnya dari Toko ini</h3>
+                        <div className="relative">
+                            {(cachedProducts || []).filter((product) => product.store?.id === currentStore.id && product.id !== currentProduct.id).length === 0 ? (
+                                <div className="text-gray-500 text-center py-8">This store has no more product.</div>
+                            ) : (
+                                <>
+                                    <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden">
+                                        {(cachedProducts || [])
+                                            .filter((product) => product.store?.id === currentStore?.id && product.id !== currentProduct?.id)
+                                            .slice(0, 10)
+                                            .map((product) => (
+                                                <div key={product.id} className="max-w-[240px] flex-shrink-0 mt-2">
+                                                    <ProductCard product={product} />
+                                                </div>
+                                            ))}
+                                    </div>
+                                    <button
+                                        className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-[#ED775A] text-white p-2 rounded-full shadow hover:bg-[#e76b4c] ml-2"
+                                        onClick={() => {
+                                            const container = document.querySelector('.scroll-container');
+                                            if (container) {
+                                                container.scrollBy({ left: -300, behavior: 'smooth' });
+                                            }
+                                        }}
+                                        aria-label="Scroll left"
+                                    >
+                                        <FaChevronLeft aria-hidden="true" />
+                                    </button>
+                                    <button
+                                        className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-[#ED775A] text-white p-2 rounded-full shadow hover:bg-[#e76b4c] mr-2"
+                                        onClick={() => {
+                                            const container = document.querySelector('.scroll-container');
+                                            if (container) {
+                                                container.scrollBy({ left: 300, behavior: 'smooth' });
+                                            }
+                                        }}
+                                        aria-label="Scroll right"
+                                    >
+                                        <FaChevronRight aria-hidden="true" />
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </section>
+                ) : null}
 
                 {/* CTA banner */}
                 <CTA />

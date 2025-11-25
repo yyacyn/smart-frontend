@@ -8,27 +8,38 @@ import Footer from "../../../components/footer/Footer";
 import { fetchOrders } from "../../../api";
 import { FiCheckCircle, FiClock, FiXCircle, FiPackage, FiCalendar, FiMapPin, FiCreditCard } from "react-icons/fi";
 import Swal from 'sweetalert2';
+import { useGlobalData } from '../../../contexts/GlobalDataContext';
 
 export default function OrderPage() {
     const router = useRouter();
     const { user } = useUser();
     const { getToken } = useAuth();
+    const { cachedOrders, setCachedOrders } = useGlobalData();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [filter, setFilter] = useState("all"); // all, pending, processing, shipped, delivered, completed, cancelled
 
     useEffect(() => {
-        async function getUserOrders() {
+        const getUserOrders = async () => {
             if (!user) return;
             setLoading(true);
             setError("");
             try {
-                // Get user token from useAuth
-                const token = await getToken();
-                // Fetch all orders from backend
-                const response = await fetchOrders(token);
-                const allOrders = response.orders || response || [];
+                // Check if orders are already cached
+                let allOrders = cachedOrders;
+
+                if (!allOrders) {
+                    // Get user token from useAuth
+                    const token = await getToken();
+                    // Fetch all orders from backend
+                    const response = await fetchOrders(token);
+                    allOrders = response.orders || response || [];
+
+                    // Cache the orders for future use
+                    setCachedOrders(allOrders);
+                }
+
                 // Filter orders based on Clerk user.id only
                 const userOrders = allOrders.filter(order =>
                     order.userId === user.id ||
@@ -47,9 +58,9 @@ export default function OrderPage() {
             } finally {
                 setLoading(false);
             }
-        }
+        };
         getUserOrders();
-    }, [user, getToken]);
+    }, [user, getToken, cachedOrders, setCachedOrders]);
 
     // Helper functions
     const getStatusDisplay = (status) => {
@@ -141,19 +152,23 @@ export default function OrderPage() {
         return (
             <div className="min-h-screen bg-gray-50">
                 <Navbar />
-                <div className="container mx-auto px-4 py-8 mt-16 mb-20">
-                    <div className="flex items-center gap-2 mb-6">
-                        <button
-                            onClick={() => router.back()}
-                            className="btn btn-sm btn-ghost text-gray-700 border-none shadow-none hover:bg-gray-100"
-                        >
-                            &larr;
-                        </button>
-                        <h1 className="text-2xl font-bold text-gray-900">Pesanan Saya</h1>
-                    </div>
-                    <div className="flex flex-col items-center justify-center py-20">
-                        <span className="loading loading-spinner loading-lg"></span>
-                        <p className="mt-4 text-gray-500">Memuat pesanan...</p>
+                <div className="pt-10 pb-12">
+                    <div className="container mx-auto px-4 py-8 mt-16 mb-20">
+                        <div className="flex items-center gap-2 mb-6">
+                            <button
+                                onClick={() => router.back()}
+                                className="btn btn-sm btn-ghost text-gray-700 border-none shadow-none hover:bg-gray-100"
+                            >
+                                &larr;
+                            </button>
+                            <h1 className="text-2xl font-bold text-gray-900">Pesanan Saya</h1>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="flex flex-col items-center justify-center py-20">
+                                <span className="loading loading-spinner loading-lg"></span>
+                                <p className="mt-4 text-gray-500">Memuat pesanan...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <Footer />
@@ -166,25 +181,27 @@ export default function OrderPage() {
         return (
             <div className="min-h-screen bg-gray-50">
                 <Navbar />
-                <div className="container mx-auto px-4 py-8 mt-16 mb-20">
-                    <div className="flex items-center gap-2 mb-6">
-                        <button
-                            onClick={() => router.back()}
-                            className="btn btn-sm btn-ghost text-gray-700 border-none shadow-none hover:bg-gray-100"
-                        >
-                            &larr;
-                        </button>
-                        <h1 className="text-2xl font-bold text-gray-900">Pesanan Saya</h1>
-                    </div>
-                    <div className="flex flex-col items-center justify-center py-20">
-                        <FiXCircle className="w-16 h-16 text-red-500" />
-                        <p className="mt-4 text-red-500 text-center">{error}</p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="mt-4 btn bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none"
-                        >
-                            Coba Lagi
-                        </button>
+                <div className="pt-10 pb-12">
+                    <div className="container mx-auto px-4 py-8 mt-16 mb-20">
+                        <div className="flex items-center gap-2 mb-6">
+                            <button
+                                onClick={() => router.back()}
+                                className="btn btn-sm btn-ghost text-gray-700 border-none shadow-none hover:bg-gray-100"
+                            >
+                                &larr;
+                            </button>
+                            <h1 className="text-2xl font-bold text-gray-900">Pesanan Saya</h1>
+                        </div>
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <FiXCircle className="w-16 h-16 text-red-500" />
+                            <p className="mt-4 text-red-500 text-center">{error}</p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="mt-4 btn bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none"
+                            >
+                                Coba Lagi
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <Footer />
@@ -195,17 +212,18 @@ export default function OrderPage() {
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
-            <div className="container mx-auto px-4 py-8 mt-16 mb-20">
-                {/* Header */}
-                <div className="flex items-center gap-2 mb-6">
-                    <button
-                        onClick={() => router.back()}
-                        className="btn btn-sm btn-ghost text-gray-700 border-none shadow-none hover:bg-gray-100"
-                    >
-                        &larr;
-                    </button>
-                    <h1 className="text-2xl font-bold text-gray-900">Pesanan Saya</h1>
-                </div>
+            <div className="pt-10 pb-12">
+                <div className="container mx-auto px-4 py-8 mt-8 mb-20">
+                    {/* Header */}
+                    <div className="flex items-center gap-2 mb-6">
+                        <button
+                            onClick={() => router.back()}
+                            className="btn btn-sm btn-ghost text-gray-700 border-none shadow-none hover:bg-gray-100"
+                        >
+                            &larr;
+                        </button>
+                        <h1 className="text-2xl font-bold text-gray-900">Pesanan Saya</h1>
+                    </div>
 
                 {/* Filter Tabs */}
                 <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -262,7 +280,7 @@ export default function OrderPage() {
                             return (
                                 <div
                                     key={order.id}
-                                    className="bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                                    className="bg-white rounded-lg border border-gray-200 shadow-none hover:scale-101 transition-transform cursor-pointer"
                                     onClick={() => router.push(`/pages/status/${order.id}`)}
                                 >
                                     <div className="p-6">
@@ -367,6 +385,7 @@ export default function OrderPage() {
                     </div>
                 )}
             </div>
+        </div>
             <Footer />
         </div>
     );

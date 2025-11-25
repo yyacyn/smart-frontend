@@ -202,6 +202,9 @@ export default function StorePage() {
             // Submit the report via API
             await submitReport(reportPayload);
 
+            // Close the modal before showing the success message
+            setIsReportModalOpen(false);
+
             // Show success message
             await Swal.fire({
                 icon: 'success',

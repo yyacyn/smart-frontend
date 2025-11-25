@@ -7,6 +7,7 @@ import Navbar from "../../../components/navbar/Navbar";
 import Footer from "../../../components/footer/Footer";
 import { fetchOrderById, fetchOrders, fetchStoreById } from "../../../api";
 import { FiXCircle, FiFileText, FiPrinter } from "react-icons/fi";
+import { useGlobalData } from '../../../contexts/GlobalDataContext';
 
 export default function ReceiptPage() {
     const params = useParams();
@@ -14,6 +15,7 @@ export default function ReceiptPage() {
     const { user } = useUser();
     const { getToken } = useAuth();
     const { id } = params;
+    const { cachedOrders, setCachedOrders } = useGlobalData();
 
     const [order, setOrder] = useState(null);
     const [store, setStore] = useState(null);
@@ -21,16 +23,24 @@ export default function ReceiptPage() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        async function fetchOrderDetails() {
+        const fetchOrderDetails = async () => {
             if (!user) return;
 
             setLoading(true);
             setError("");
 
             try {
-                const token = await getToken();
-                const response = await fetchOrders(token);
-                const orders = response.orders || response;
+                // Check if orders are already cached
+                let orders = cachedOrders;
+
+                if (!orders) {
+                    const token = await getToken();
+                    const response = await fetchOrders(token);
+                    orders = response.orders || response;
+
+                    // Cache the orders for future use
+                    setCachedOrders(orders);
+                }
 
                 // Find the order with the matching ID
                 const orderDetail = orders.find(order => order.id === id);
@@ -41,7 +51,7 @@ export default function ReceiptPage() {
                     // If store information is not available in the order, fetch it separately
                     if (!orderDetail.store && orderDetail.storeId) {
                         try {
-                            const storeResponse = await fetchStoreById(orderDetail.storeId, token);
+                            const storeResponse = await fetchStoreById(orderDetail.storeId, await getToken());
                             setStore(storeResponse.store || storeResponse);
                         } catch (storeErr) {
                             console.error("Error fetching store:", storeErr);
@@ -56,10 +66,10 @@ export default function ReceiptPage() {
             } finally {
                 setLoading(false);
             }
-        }
+        };
 
         fetchOrderDetails();
-    }, [id, user, getToken]);
+    }, [id, user, getToken, cachedOrders, setCachedOrders]);
 
     // Show loading state
     if (loading) {

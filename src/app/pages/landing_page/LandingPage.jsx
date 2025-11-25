@@ -8,7 +8,6 @@ import Footer from "../../components/footer/Footer";
 import ProductCard from "@/app/components/product/Card";
 import { flashSales, recommendedProducts } from "../../data/products";
 import { fetchProducts, fetchCategories } from "../../api";
-import BestSelling from "@/app/components/landing_page/BestSelling";
 import CTA from "@/app/components/CTA";
 import { useGlobalData } from "../../contexts/GlobalDataContext";
 
@@ -30,7 +29,8 @@ export default function LandingPage() {
             );
             setPrecomputedFlashSales(discountedProducts);
 
-            // Use all available products for recommendations
+            // Use all available products for best selling and recommendations
+            setPrecomputedProducts(cachedProducts);
             setRecommendedProductsList(cachedProducts);
         }
     }, [cachedProducts]);
@@ -116,18 +116,7 @@ export default function LandingPage() {
         router.push(`/pages/marketplace?category=${encodeURIComponent(category)}`);
     };
 
-    useEffect(() => {
-        // Filter products to only include those with discounts (mrp > price)
-        if (cachedProducts) {
-            const discountedProducts = cachedProducts.filter(product =>
-                product.mrp != null && product.price != null && product.mrp > product.price
-            );
-            setPrecomputedFlashSales(discountedProducts);
 
-            // Use all available products for recommendations
-            setRecommendedProductsList(cachedProducts);
-        }
-    }, [cachedProducts]);
 
     // useEffect(() => {
     //     setPrecomputedProducts(sampleProducts);
@@ -243,14 +232,6 @@ export default function LandingPage() {
                             <h2 className="text-4xl font-bold text-white drop-shadow-lg">FLASH SALE</h2>
                         </div>
                         <p className="text-xl text-white/90 font-medium">Buruan! Penawaran terbatas waktu dengan diskon fantastis</p>
-                        {/* <div className="flex justify-center mt-4">
-                            <div className="stats shadow-lg bg-white/20 backdrop-blur-sm border border-white/30">
-                                <div className="stat place-items-center">
-                                    <div className="stat-title text-white/80">Berakhir dalam</div>
-                                    <div className="stat-value text-white text-2xl w-30">{countdown}</div>
-                                </div>
-                            </div>
-                        </div> */}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-6 px-1 py-2">
                         {precomputedFlashSales.slice(0, 4).map((product) => (
@@ -275,8 +256,50 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            {/* Best Selling Section */}
             <div className="bg-gradient-to-b from-gray-50 to-white">
-                <BestSelling />
+                <section className="py-20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <h2 className="text-4xl font-bold text-gray-900">Produk Terlaku</h2>
+                            </div>
+                            <p className="text-xl text-gray-600">Produk pilihan yang paling diminati pelanggan SMART</p>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 overflow-x-auto scrollbar-hide px-1 py-2">
+                            {recommendedProductsList.length > 0 ? (
+                                <>
+                                    {recommendedProductsList.slice().sort((a, b) => {
+                                        // Sort by the number of reviewers (length of rating array)
+                                        const aRatingCount = Array.isArray(a.rating) ? a.rating.length : 0;
+                                        const bRatingCount = Array.isArray(b.rating) ? b.rating.length : 0;
+                                        return bRatingCount - aRatingCount;
+                                    }).slice(0, 4).map((product, index) => (
+                                        <ProductCard key={product.id || product.ID || index} product={product} />
+                                    ))}
+                                    <Link href="/pages/marketplace" passHref className="card bg-gradient-to-br from-[#84994F] to-[#476EAE] text-white flex flex-col justify-center items-center space-y-4 transition-all duration-300 hover:-translate-y-1 cursor-pointer" >
+                                        <div className="text-center">
+                                            <div className="text-3xl mb-2">📈</div>
+                                            <span className="text-white font-bold text-lg mx-8 text-center block mb-2">
+                                                Lihat Semua Produk Terlaku
+                                            </span>
+                                            <p className="text-white/80 text-sm">Trending sekarang!</p>
+                                        </div>
+                                        <button className="btn btn-circle bg-white text-[#84994F] hover:bg-white/90 border-none shadow-lg">
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                        </button>
+                                    </Link>
+                                </>
+                            ) : (
+                                <p className="text-gray-500 text-center col-span-full">
+                                    Belum ada produk
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </section>
 
                 {/* Recommendations Section */}
                 <section className="py-20 bg-gradient-to-b from-white to-[#FFE797]/10">
@@ -297,7 +320,6 @@ export default function LandingPage() {
                         </div>
                     </div>
                 </section>
-
             </div>
 
 

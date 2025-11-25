@@ -7,14 +7,16 @@ import { FiSend, FiCheckCircle, FiMessageSquare, FiStar, FiImage, FiFileText, Fi
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { fetchOrderById, fetchOrders, fetchStoreById, postRating } from "../../../api";
+import { fetchOrderById, fetchOrders, fetchStoreById, postRating, fetchProducts } from "../../../api";
 import StoreChat from "../../../components/chat/StoreChat";
+import { useGlobalData } from '../../../contexts/GlobalDataContext';
 
 export default function StatusPage() {
     const router = useRouter();
     const params = useParams();
     const { user } = useUser();
     const orderId = params.id;
+    const { cachedOrders, setCachedOrders } = useGlobalData();
 
     // Order data state
     const [order, setOrder] = useState(null);
@@ -25,25 +27,32 @@ export default function StatusPage() {
     const [reviewing, setReviewing] = useState(false);
     const [review, setReview] = useState("");
     const [rating, setRating] = useState(0);
+    // Product reviews state
+    const [productReviews, setProductReviews] = useState({});
 
 
     const { getToken } = useAuth();
 
-
-
-
     // Fetch order from API
     useEffect(() => {
-        async function fetchOrderDetails() {
+        const fetchOrderDetails = async () => {
             if (!user) return;
 
             setLoading(true);
             setError("");
 
             try {
-                const token = await getToken();
-                const response = await fetchOrders(token);
-                const orders = response.orders || response;
+                // Check if orders are already cached
+                let orders = cachedOrders;
+
+                if (!orders) {
+                    const token = await getToken();
+                    const response = await fetchOrders(token);
+                    orders = response.orders || response;
+
+                    // Cache the orders for future use
+                    setCachedOrders(orders);
+                }
 
                 // Find the order with the matching ID
                 const orderDetail = orders.find(order => order.id === orderId);
@@ -54,7 +63,7 @@ export default function StatusPage() {
                     // If store information is not available in the order, fetch it separately
                     if (!orderDetail.store && orderDetail.storeId) {
                         try {
-                            const storeResponse = await fetchStoreById(orderDetail.storeId, token);
+                            const storeResponse = await fetchStoreById(orderDetail.storeId, await getToken());
                             setStore(storeResponse.store || storeResponse);
                         } catch (storeErr) {
                             console.error("Error fetching store:", storeErr);
@@ -70,11 +79,46 @@ export default function StatusPage() {
             } finally {
                 setLoading(false);
             }
-        }
+        };
 
         fetchOrderDetails();
-    }, [orderId, user, getToken]);
+    }, [orderId, user, getToken, cachedOrders, setCachedOrders]);
 
+    // Fetch product reviews for products in the order
+    useEffect(() => {
+        async function fetchProductReviews() {
+            if (!user || !order || !order.orderItems || order.orderItems.length === 0) return;
+
+            try {
+                const token = await getToken();
+                const response = await fetchProducts();
+                const allProducts = response.products || response;
+
+                // Create a mapping of product ID to its reviews
+                const reviewsMap = {};
+
+                // For each product in the order
+                for (const item of order.orderItems) {
+                    const productId = item.productId;
+                    if (!productId) continue;
+
+                    // Find the product in all products
+                    const product = allProducts.find(p => p.id === productId);
+                    if (product && product.rating && Array.isArray(product.rating)) {
+                        // For now, store all ratings for this product
+                        // In the future, we could enhance this to filter by user when the API provides user IDs in ratings
+                        reviewsMap[productId] = product.rating;
+                    }
+                }
+
+                setProductReviews(reviewsMap);
+            } catch (err) {
+                console.error("Error fetching product reviews:", err);
+            }
+        }
+
+        fetchProductReviews();
+    }, [order, user, getToken]);
 
 
     // Helper functions
@@ -147,8 +191,8 @@ export default function StatusPage() {
         return (
             <div className="min-h-screen bg-gray-50">
                 <Navbar />
-                <div className="w-full px-10 py-8 mt-16">
-                    <div className="max-w-7xl mx-auto">
+                <div className="pt-10 pb-12">
+                    <div className="max-w-7xl mx-auto px-4 py-8 mt-8">
                         <div className="flex items-center gap-2 mb-6">
                             <button
                                 onClick={() => router.back()}
@@ -158,9 +202,11 @@ export default function StatusPage() {
                             </button>
                             <h2 className="text-2xl font-bold text-gray-900">Detail Pesanan</h2>
                         </div>
-                        <div className="flex flex-col items-center justify-center py-20">
-                            <span className="loading loading-spinner loading-lg"></span>
-                            <p className="mt-4 text-gray-500">Memuat detail pesanan...</p>
+                        <div className="space-y-6">
+                            <div className="flex flex-col items-center justify-center py-20">
+                                <span className="loading loading-spinner loading-lg"></span>
+                                <p className="mt-4 text-gray-500">Memuat detail pesanan...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -174,8 +220,8 @@ export default function StatusPage() {
         return (
             <div className="min-h-screen bg-gray-50">
                 <Navbar />
-                <div className="w-full px-10 py-8 mt-16">
-                    <div className="max-w-7xl mx-auto">
+                <div className="pt-10 pb-12">
+                    <div className="max-w-7xl mx-auto px-4 py-8 mt-8">
                         <div className="flex items-center gap-2 mb-6">
                             <button
                                 onClick={() => router.back()}
@@ -185,15 +231,17 @@ export default function StatusPage() {
                             </button>
                             <h2 className="text-2xl font-bold text-gray-900">Detail Pesanan</h2>
                         </div>
-                        <div className="flex flex-col items-center justify-center py-20">
-                            <FiXCircle className="w-16 h-16 text-red-500" />
-                            <p className="mt-4 text-red-500 text-center">{error || "Pesanan tidak ditemukan"}</p>
-                            <button
-                                onClick={() => router.push("/pages/marketplace")}
-                                className="mt-4 btn bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none"
-                            >
-                                Kembali ke Marketplace
-                            </button>
+                        <div className="space-y-6">
+                            <div className="flex flex-col items-center justify-center py-20">
+                                <FiXCircle className="w-16 h-16 text-red-500" />
+                                <p className="mt-4 text-red-500 text-center">{error || "Pesanan tidak ditemukan"}</p>
+                                <button
+                                    onClick={() => router.push("/pages/marketplace")}
+                                    className="mt-4 btn bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none"
+                                >
+                                    Kembali ke Marketplace
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -207,8 +255,8 @@ export default function StatusPage() {
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
-            <div className="w-full px-10 py-8 mt-16">
-                <div className="max-w-7xl mx-auto">
+            <div className="pt-10 pb-12">
+                <div className="max-w-7xl mx-auto px-4 py-8 mt-8">
                     <div className="flex items-center gap-2 mb-6">
                         <button
                             onClick={() => router.back()}
@@ -223,7 +271,7 @@ export default function StatusPage() {
                         {/* Left Section - Transaction Details */}
                         <div className="lg:col-span-2 space-y-6">
                             {/* Order Status */}
-                            <div className="bg-white rounded-lg shadow p-6">
+                            <div className="bg-white rounded-lg shadow-none border border-gray-200 p-6">
                                 <div className="flex items-center gap-3 mb-4">
                                     {statusDisplay.icon}
                                     <span className={`text-lg font-semibold ${statusDisplay.color}`}>{statusDisplay.text}</span>
@@ -247,32 +295,37 @@ export default function StatusPage() {
                             </div>
 
                             {/* Product Details */}
-                            <div className="bg-white rounded-lg shadow p-6">
+                            <div className="bg-white rounded-lg p-6  shadow-none border border-gray-200">
                                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                                     <span className="w-4 h-4 bg-purple-500 rounded"></span>
                                     {order.store?.name || store?.name || "Toko"}
                                 </h3>
                                 <div className="space-y-4">
                                     {order.orderItems && order.orderItems.length > 0 ? (
-                                        order.orderItems.map((item, index) => (
-                                            <div key={item.productId || index} className="flex gap-4">
-                                                <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0">
-                                                    <img
-                                                        src={item.product?.images?.[0] || "/images/default.png"}
-                                                        alt={item.product?.name || "Product"}
-                                                        className="w-full h-full object-cover rounded-lg"
-                                                    />
+                                        order.orderItems.map((item, index) => {
+                                            // Get the user's reviews for this product
+                                            const userReviews = productReviews[item.productId] || [];
+
+                                            return (
+                                                <div key={item.productId || index} className="flex gap-4">
+                                                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0">
+                                                        <img
+                                                            src={item.product?.images?.[0] || "/images/default.png"}
+                                                            alt={item.product?.name || "Product"}
+                                                            className="w-full h-full object-cover rounded-lg"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="font-medium">
+                                                            {item.product?.name || `Produk #${item.productId}`}
+                                                        </h4>
+                                                        <p className="text-sm font-semibold mt-1">
+                                                            {item.quantity || 1} x Rp{(item.product?.price || item.price || 0).toLocaleString("id-ID")}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1">
-                                                    <h4 className="font-medium">
-                                                        {item.product?.name || `Produk #${item.productId}`}
-                                                    </h4>
-                                                    <p className="text-sm font-semibold mt-1">
-                                                        {item.quantity || 1} x Rp{(item.product?.price || item.price || 0).toLocaleString("id-ID")}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))
+                                            );
+                                        })
                                     ) : (
                                         <div className="flex gap-4">
                                             <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0"></div>
@@ -285,7 +338,7 @@ export default function StatusPage() {
                             </div>
 
                             {/* Shipping Info */}
-                            <div className="bg-white rounded-lg shadow p-6">
+                            <div className="bg-white rounded-lg shadow-none border border-gray-200 p-6">
                                 <h3 className="font-semibold text-lg mb-4">Info Pengiriman</h3>
                                 <div className="space-y-3 text-sm">
                                     {order.trackingNumber && (
@@ -313,7 +366,7 @@ export default function StatusPage() {
                             </div>
 
                             {/* Payment Summary */}
-                            <div className="bg-white rounded-lg shadow p-6">
+                            <div className="bg-white rounded-lg shadow-none border border-gray-200 p-6">
                                 <h3 className="font-semibold text-lg mb-4">Rincian Pembayaran</h3>
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between">
@@ -355,7 +408,20 @@ export default function StatusPage() {
 
                             {/* Action Buttons */}
                             <div className="flex flex-col gap-3">
-                                {(order.status === "DELIVERED" || order.status === "delivered" || order.status === "COMPLETED" || order.status === "completed") ? (
+                                {/* Only show "Review Barang" button if there are products without reviews from the current user */}
+                                {((order.status === "DELIVERED" || order.status === "delivered" || order.status === "COMPLETED" || order.status === "completed")
+                                    && order.orderItems
+                                    && order.orderItems.some(item => {
+                                        const userReviews = productReviews[item.productId] || [];
+                                        // Check if any of the reviews belong to the current user
+                                        return !userReviews.some(review =>
+                                            review.user && (
+                                                review.user.name === user.fullName ||
+                                                review.user.name === user.firstName + " " + user.lastName ||
+                                                review.user.name === user.username
+                                            )
+                                        );
+                                    })) ? (
                                     <button
                                         className="btn btn-lg bg-[#476EAE] text-white hover:bg-[#3a5c8e] border-none shadow-none rounded-lg px-8 py-3 text-lg font-bold transition-all duration-300"
                                         onClick={() => setReviewing(true)}
@@ -413,6 +479,9 @@ export default function StatusPage() {
 
                                                     // Update order status in state
                                                     setOrder(prev => ({ ...prev, status: "completed" }));
+
+                                                    // Refresh the page to show the updated reviews
+                                                    window.location.reload();
                                                 } catch (error) {
                                                     console.error("Gagal mengirim ulasan:", error);
                                                     if (error.response?.data?.error) {
@@ -432,52 +501,96 @@ export default function StatusPage() {
 
                         {/* Right Section - Store Chats */}
                         <div className="lg:col-span-1">
-                            <div className="bg-white rounded-lg border shadow-none border-gray-200 h-fit sticky top-6 p-4">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <FiMessageSquare className="w-5 h-5 text-[#ED775A]" />
-                                    <h3 className="font-semibold text-gray-800">Chat dengan Toko</h3>
+                            {/* Store-specific chat sections */}
+                            {order.orderItems && order.orderItems.length > 0 && (
+                                <div className="space-y-4 bg-white">
+                                    {/* Get unique store IDs from the order items, filtering out invalid ones */}
+                                    {(() => {
+                                        const validStoreIds = [...new Set(
+                                            order.orderItems
+                                                .map(item => item.product?.storeId)
+                                                .filter(storeId => storeId && typeof storeId === 'string' && storeId.length > 0)
+                                        )];
+
+                                        if (validStoreIds.length === 0) {
+                                            return (
+                                                <div className="text-gray-500 text-sm text-center py-4">
+                                                    Chat tidak tersedia untuk pesanan ini
+                                                </div>
+                                            );
+                                        }
+
+                                        return validStoreIds.map(storeId => {
+                                            // Find at least one product from the same store to get the store name
+                                            const storeProduct = order.orderItems.find(item => item.product?.storeId === storeId);
+                                            const storeName = storeProduct?.product?.store?.name ||
+                                                (order.store && order.store.id === storeId ? order.store.name :
+                                                    store && store.id === storeId ? store.name :
+                                                        `Toko ${storeId.substring(0, 4)}`);
+
+                                            return (
+                                                <StoreChat
+                                                    key={storeId}
+                                                    storeId={storeId}
+                                                    storeName={storeName}
+                                                    userId={user?.id}
+                                                />
+                                            );
+                                        });
+                                    })()}
                                 </div>
+                            )}
 
-                                {/* Store-specific chat sections */}
-                                {order.orderItems && order.orderItems.length > 0 && (
-                                    <div className="space-y-4">
-                                        {/* Get unique store IDs from the order items, filtering out invalid ones */}
-                                        {(() => {
-                                            const validStoreIds = [...new Set(
-                                                order.orderItems
-                                                    .map(item => item.product?.storeId)
-                                                    .filter(storeId => storeId && typeof storeId === 'string' && storeId.length > 0)
-                                            )];
-
-                                            if (validStoreIds.length === 0) {
-                                                return (
-                                                    <div className="text-gray-500 text-sm text-center py-4">
-                                                        Chat tidak tersedia untuk pesanan ini
-                                                    </div>
-                                                );
-                                            }
-
-                                            return validStoreIds.map(storeId => {
-                                                // Find at least one product from the same store to get the store name
-                                                const storeProduct = order.orderItems.find(item => item.product?.storeId === storeId);
-                                                const storeName = storeProduct?.product?.store?.name ||
-                                                    (order.store && order.store.id === storeId ? order.store.name :
-                                                        store && store.id === storeId ? store.name :
-                                                            `Toko ${storeId.substring(0, 4)}`);
-
-                                                return (
-                                                    <StoreChat
-                                                        key={storeId}
-                                                        storeId={storeId}
-                                                        storeName={storeName}
-                                                        userId={user?.id}
-                                                    />
-                                                );
-                                            });
-                                        })()}
+                            {/* Reviews Section */}
+                            {order.orderItems && order.orderItems.length > 0 && (
+                                <div className="bg-white rounded-lg border shadow-none border-gray-200 h-fit p-4 mt-4">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <FiStar className="w-5 h-5 text-[#ED775A]" />
+                                        <h3 className="font-semibold text-gray-800">Ulasan Produk</h3>
                                     </div>
-                                )}
-                            </div>
+                                    <div className="space-y-4">
+                                        {order.orderItems.map((item, index) => {
+                                            const userReviews = productReviews[item.productId] || [];
+
+                                            return userReviews.length > 0 ? (
+                                                <div key={`review-${item.productId}-${index}`} className="space-y-2">
+                                                    <h4 className="font-medium text-sm text-gray-700">
+                                                        {item.product?.name || `Produk #${item.productId}`}
+                                                    </h4>
+                                                    {userReviews.map((review, reviewIndex) => {
+                                                        // Check if this review was likely posted by the current user
+                                                        const isCurrentUserReview = review.user &&
+                                                            (review.user.name === user.fullName ||
+                                                                review.user.name === user.firstName + " " + user.lastName ||
+                                                                review.user.name === user.username);
+
+                                                        return (
+                                                            <div key={reviewIndex} className={`p-2 rounded ${isCurrentUserReview ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
+                                                                <div className="flex items-center gap-1 mb-1">
+                                                                    {[...Array(5)].map((_, i) => (
+                                                                        <FiStar
+                                                                            key={i}
+                                                                            className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                                                                        />
+                                                                    ))}
+                                                                    {isCurrentUserReview && (
+                                                                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                                            Anda
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {review.review && (
+                                                                    <p className="text-sm text-gray-700">{review.review}</p>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : null;
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

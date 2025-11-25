@@ -16,16 +16,21 @@ import {
     deleteItemFromCart,
 } from "@/lib/features/cart/cartSlice";
 import { fetchCart, uploadCart } from "@/lib/features/cart/cartSlice";
-import { fetchProducts } from "@/lib/features/product/productSlice";
+import { fetchProducts as fetchProductsRedux } from "@/lib/features/product/productSlice";
+import { useGlobalData } from '../../contexts/GlobalDataContext';
 
 export default function CartPage() {
     const router = useRouter();
     const dispatch = useDispatch();
     const { getToken, isSignedIn } = useAuth();
+    const { cachedProducts } = useGlobalData();
 
     // 🔹 Ambil cart dan produk dari Redux
     const { cartItems, isInitialized } = useSelector((state) => state.cart);
-    const products = useSelector((state) => state.product.list || []);
+    const productsRedux = useSelector((state) => state.product.list || []);
+
+    // Use cached products if available, otherwise fall back to Redux products
+    const products = cachedProducts || productsRedux;
 
     const [selectAll, setSelectAll] = useState(false);
     const [selectedItems, setSelectedItems] = useState([]);
@@ -36,7 +41,7 @@ export default function CartPage() {
     // 🔹 Fetch products if not loaded yet (needed to map cartItems -> product details)
     useEffect(() => {
         if (!products || products.length === 0) {
-            dispatch(fetchProducts({}));
+            dispatch(fetchProductsRedux({}));
         }
     }, [dispatch, products?.length]);
 
@@ -73,7 +78,9 @@ export default function CartPage() {
 
     // 🔹 Produk rekomendasi
     useEffect(() => {
-        setRecommendedProducts(products.slice(0, 4));
+        if (products && products.length > 0) {
+            setRecommendedProducts(products.slice(0, 4));
+        }
     }, [products]);
 
     const toggleItemSelection = (id) => {
@@ -114,7 +121,7 @@ export default function CartPage() {
     );
 
     // Show loading spinner while cart or products are loading
-    if (!isInitialized || products.length === 0) {
+    if (!isInitialized || (products && products.length === 0)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center">

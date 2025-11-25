@@ -9,9 +9,30 @@ export default function ProductCard({ product }) {
         ? Math.round((product.mrp - product.price) / (product.mrp) * 100)
         : product.price;
 
-    const ratingArr = Array.isArray(product.rating) ? product.rating : [];
-    const rating = ratingArr.length > 0
-        ? Math.round(ratingArr.reduce((acc, curr) => acc + (typeof curr === 'number' ? curr : 0), 0) / ratingArr.length)
+    const ratingArr = product.rating || [];
+    const validRatings = Array.isArray(ratingArr)
+        ? ratingArr.filter(curr => {
+            // Handle both rating objects and numeric ratings
+            if (typeof curr === 'object' && curr !== null && typeof curr.rating === 'number') {
+                return true;
+            } else if (typeof curr === 'number') {
+                return true;
+            }
+            return false;
+        })
+        : [];
+
+    const rating = validRatings.length > 0
+        ? Math.round(
+            validRatings.reduce((acc, curr) => {
+                if (typeof curr === 'object' && curr !== null && typeof curr.rating === 'number') {
+                    return acc + curr.rating;
+                } else if (typeof curr === 'number') {
+                    return acc + curr;
+                }
+                return acc;
+            }, 0) / validRatings.length
+        )
         : 0;
 
     return (
@@ -53,20 +74,25 @@ export default function ProductCard({ product }) {
                         )}
                         
 
-                        <div className="flex items-center gap-2 ">
+                        <div className="flex items-center gap-2">
                             <div className="rating rating-sm">
-                                {Array(5).fill('').map((_, index) => (
-                                    <input
-                                        key={index}
-                                        type="radio"
-                                        name={`rating-${product.id}`}
-                                        className="mask mask-star-2 bg-orange-400"
-                                        defaultChecked={index + 1 === rating}
-                                    />
-                                ))}
+                                {Array(5).fill('').map((_, index) => {
+                                    const isFilled = index < rating;
+
+                                    return (
+                                        <input
+                                            key={index}
+                                            type="radio"
+                                            name={`rating-${product.id}`}
+                                            className={`mask mask-star-2 ${isFilled ? '!bg-orange-400' : '!bg-gray-400'}`}
+                                            checked={isFilled}
+                                            readOnly
+                                        />
+                                    );
+                                })}
                             </div>
                             <span className="text-xs text-gray-500">
-                                ({ratingArr.length} reviews)
+                                ({validRatings.length} reviews)
                             </span>
                         </div>
 

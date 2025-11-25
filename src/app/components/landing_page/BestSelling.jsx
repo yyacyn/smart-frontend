@@ -8,7 +8,8 @@ const BestSelling = () => {
 
     const displayQuantity = 8
     const { cachedProducts } = useGlobalData();
-    const products = useSelector(state => state.product.list) || (cachedProducts || [])
+    // Prioritize cached products from GlobalDataContext, fallback to Redux state
+    const products = cachedProducts || useSelector(state => state.product.list) || []
 
     return (
         <div>
@@ -26,10 +27,40 @@ const BestSelling = () => {
                         {products.length > 0 ? (
                             <>
                                 {products.slice().sort((a, b) => {
-                                    // Sort by rating count, defaulting to 0 if no ratings exist
-                                    const aRatingCount = Array.isArray(a.rating) ? a.rating.length : 0;
-                                    const bRatingCount = Array.isArray(b.rating) ? b.rating.length : 0;
-                                    return bRatingCount - aRatingCount;
+                                    // Sort by average rating then by rating count, if ratings exist
+                                    const aRatings = Array.isArray(a.rating) ? a.rating : [];
+                                    const bRatings = Array.isArray(b.rating) ? b.rating : [];
+
+                                    // Calculate average ratings
+                                    const aAvgRating = aRatings.length > 0
+                                        ? aRatings.reduce((acc, curr) => {
+                                            if (typeof curr === 'object' && curr.rating !== undefined) {
+                                                return acc + curr.rating;
+                                            } else if (typeof curr === 'number') {
+                                                return acc + curr;
+                                            }
+                                            return acc;
+                                        }, 0) / aRatings.length
+                                        : 0;
+
+                                    const bAvgRating = bRatings.length > 0
+                                        ? bRatings.reduce((acc, curr) => {
+                                            if (typeof curr === 'object' && curr.rating !== undefined) {
+                                                return acc + curr.rating;
+                                            } else if (typeof curr === 'number') {
+                                                return acc + curr;
+                                            }
+                                            return acc;
+                                        }, 0) / bRatings.length
+                                        : 0;
+
+                                    // Primary sort by average rating (descending)
+                                    if (bAvgRating !== aAvgRating) {
+                                        return bAvgRating - aAvgRating;
+                                    }
+
+                                    // Secondary sort by rating count
+                                    return bRatings.length - aRatings.length;
                                 }).slice(0, displayQuantity).map((product, index) => (
                                     <ProductCard key={product.id || product.ID || index} product={product} />
                                 ))}

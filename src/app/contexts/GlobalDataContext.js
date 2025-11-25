@@ -1,11 +1,16 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { fetchProducts, fetchCategories } from '../api';
+import { fetchProducts, fetchCategories, fetchStores } from '../api';
 
 const GlobalDataContext = createContext();
 
 export function GlobalDataProvider({ children }) {
   const [cachedProducts, setCachedProducts] = useState(null);
   const [cachedCategories, setCachedCategories] = useState(null);
+  const [cachedOrders, setCachedOrders] = useState(null);
+  const [cachedCart, setCachedCart] = useState(null);
+  const [cachedWishlist, setCachedWishlist] = useState(null);
+  const [cachedStores, setCachedStores] = useState(null);
+  const [cachedAddresses, setCachedAddresses] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Track loading state for each data type separately
@@ -65,9 +70,19 @@ export function GlobalDataProvider({ children }) {
     <GlobalDataContext.Provider value={{
       cachedProducts,
       cachedCategories,
+      cachedOrders,
+      cachedCart,
+      cachedWishlist,
+      cachedStores,
+      cachedAddresses,
       loading,
       setCachedProducts,
-      setCachedCategories
+      setCachedCategories,
+      setCachedOrders,
+      setCachedCart,
+      setCachedWishlist,
+      setCachedStores,
+      setCachedAddresses
     }}>
       {children}
     </GlobalDataContext.Provider>

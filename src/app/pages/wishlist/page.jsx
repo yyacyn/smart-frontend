@@ -12,13 +12,14 @@ import { FiHeart, FiTrash2, FiShoppingCart, FiGrid, FiList } from "react-icons/f
 import { useAuth } from "@clerk/nextjs";
 import axios from "axios"
 import { fetchProducts as fetchProductsAPI, fetchWishlist, removeFromWishlist, addToWishlist } from "../../api";
+import { useGlobalData } from '../../contexts/GlobalDataContext';
 
 export default function WishlistPage() {
     const router = useRouter();
     const [viewMode, setViewMode] = useState("grid"); // grid or list
     const [searchTerm, setSearchTerm] = useState("");
     const [currentCart, setCurrentCart] = useState({});
-    const [products, setProducts] = useState([]);
+    const { cachedProducts, setCachedProducts } = useGlobalData();
 
     const { getToken } = useAuth();
     const [wishlistItems, setWishlistItems] = useState({});
@@ -49,22 +50,30 @@ export default function WishlistPage() {
         loadWishlist();
     }, [getToken]);
 
-    // Fetch all products to match with wishlist items
+    // Use cached products if available, otherwise fetch them
     useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const response = await axios.get("https://besukma.vercel.app/api/products");
-                setProducts(response.data.products || []);
-            } catch (error) {
-                console.error("Error fetching products:", error);
-                setProducts([]);
-            }
-        };
-        fetchProducts();
-    }, []);
+        if (cachedProducts && cachedProducts.length > 0) {
+            // Use cached products
+            return; // Do nothing since we're using cached data
+        } else {
+            // Fetch products if not cached
+            const fetchProducts = async () => {
+                try {
+                    const response = await axios.get("https://besukma.vercel.app/api/products");
+                    const productsData = response.data.products || [];
+
+                    // Cache the products for future use
+                    setCachedProducts(productsData);
+                } catch (error) {
+                    console.error("Error fetching products:", error);
+                }
+            };
+            fetchProducts();
+        }
+    }, [cachedProducts, setCachedProducts]);
 
     // Map wishlist items to actual product data
-    const wishlistProductData = products.filter(product => wishlistItems && wishlistItems[product.id]);
+    const wishlistProductData = (cachedProducts || []).filter(product => wishlistItems && wishlistItems[product.id]);
 
     const handleRemoveFromWishlist = async (productId) => {
         try {

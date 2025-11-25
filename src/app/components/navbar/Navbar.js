@@ -8,12 +8,14 @@ import { useState, useEffect } from "react";
 import { useUser, useClerk, UserButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { fetchStores } from "../../api";
+import { useGlobalData } from '../../contexts/GlobalDataContext';
 
 export default function Navbar() {
 
     const { user } = useUser();
     const { openSignIn } = useClerk();
     const router = useRouter();
+    const { cachedStores, setCachedStores } = useGlobalData();
 
     const [searchQuery, setSearchQuery] = useState("");
     const [showNotifications, setShowNotifications] = useState(false);
@@ -53,13 +55,23 @@ export default function Navbar() {
 
     // Check if user has a store
     useEffect(() => {
-        async function checkUserStore() {
+        const checkUserStore = async () => {
             if (user?.id) {
                 setIsLoadingStore(true);
                 try {
-                    const storeResponse = await fetchStores();
-                    if (storeResponse?.stores) {
-                        const currentUserStore = storeResponse.stores.find(store => store.userId === user.id);
+                    // Check if stores are already cached
+                    let stores = cachedStores;
+
+                    if (!stores) {
+                        const storeResponse = await fetchStores();
+                        stores = storeResponse?.stores || storeResponse || [];
+
+                        // Cache the stores for future use
+                        setCachedStores(stores);
+                    }
+
+                    if (stores) {
+                        const currentUserStore = stores.find(store => store.userId === user.id);
                         setUserStore(currentUserStore || null);
                     }
                 } catch (error) {
@@ -76,9 +88,9 @@ export default function Navbar() {
                 // User is not logged in, reset store data
                 setUserStore(null);
             }
-        }
+        };
         checkUserStore();
-    }, [user?.id]); // Only runs when user.id changes (login/logout/account change)
+    }, [user?.id, cachedStores, setCachedStores]); // Only runs when user.id changes (login/logout/account change)
 
     // Function to refresh the store data (useful when store data changes via other means)
     const refreshStoreData = async () => {
@@ -86,8 +98,13 @@ export default function Navbar() {
             setIsLoadingStore(true);
             try {
                 const storeResponse = await fetchStores();
-                if (storeResponse?.stores) {
-                    const currentUserStore = storeResponse.stores.find(store => store.userId === user.id);
+                const stores = storeResponse?.stores || storeResponse || [];
+
+                // Update the cache
+                setCachedStores(stores);
+
+                if (stores) {
+                    const currentUserStore = stores.find(store => store.userId === user.id);
                     setUserStore(currentUserStore || null);
                 }
             } catch (error) {

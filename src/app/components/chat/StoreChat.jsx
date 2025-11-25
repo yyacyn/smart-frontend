@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { FiSend, FiImage } from "react-icons/fi";
+import { FiSend, FiImage, FiX } from "react-icons/fi";
 import { fetchStoreById } from "@/app/api";
 
 export default function StoreChat({ storeId, storeName, userId, onMessagesUpdate }) {
@@ -15,6 +15,7 @@ export default function StoreChat({ storeId, storeName, userId, onMessagesUpdate
     const [isSending, setIsSending] = useState(false);
     const [storeInfo, setStoreInfo] = useState({ name: storeName });
     const [storeOwnerId, setStoreOwnerId] = useState(null);
+    const [imageModal, setImageModal] = useState({ isOpen: false, imageUrl: null });
     const messagesContainerRef = useRef(null);
     const pollingIntervalRef = useRef(null);
     const lastMessageTimestampRef = useRef(null);
@@ -275,6 +276,16 @@ export default function StoreChat({ storeId, storeName, userId, onMessagesUpdate
         }
     };
 
+    // Function to open image modal
+    const openImageModal = (imageUrl) => {
+        setImageModal({ isOpen: true, imageUrl });
+    };
+
+    // Function to close image modal
+    const closeImageModal = () => {
+        setImageModal({ isOpen: false, imageUrl: null });
+    };
+
     if (loading) {
         return (
             <div className="p-4 border border-gray-200 rounded-lg h-60 flex items-center justify-center">
@@ -298,99 +309,123 @@ export default function StoreChat({ storeId, storeName, userId, onMessagesUpdate
     }
 
     return (
-        <div className="border border-gray-200 rounded-lg p-3 mb-3">
-            <div className="flex items-center gap-2 mb-2">
-                <FiSend className="w-4 h-4 text-[#ED775A]" />
-                <span className="font-medium text-gray-800">Chat: {storeInfo.name || `Toko ${storeId.substring(0, 4)}`}</span>
-            </div>
-            
-            <div
-                ref={messagesContainerRef}
-                className="border rounded-lg border-gray-200 bg-gray-50 p-3 h-40 overflow-y-auto mb-2"
-            >
-                {messages.map((msg) => (
-                    <div
-                        key={`${storeId}-${msg.id || msg.createdAt || Math.random()}`}
-                        className={`mb-3 flex ${msg.senderId === user?.id ? "justify-end" : "justify-start"}`}
-                    >
-                        <div className={`max-w-xs px-4 py-2 rounded-lg ${msg.senderId === user?.id
-                            ? "bg-[#ED775A] text-white"
-                            : "bg-white text-gray-900 border border-gray-200"
-                            }`}>
-                            {msg.content && <p className="text-sm">{msg.content}</p>}
-                            {Array.isArray(msg.attachments) && msg.attachments.length > 0 && (
-                                <div className="mt-2 flex gap-2">
-                                    {msg.attachments.map((a, i) => (
-                                        <img key={i} src={a} alt={`attachment-${i}`} className="w-16 h-16 object-cover rounded" />
-                                    ))}
-                                </div>
-                            )}
-                            <p className={`text-xs mt-1 ${msg.senderId === user?.id ? "text-orange-100" : "text-gray-500"}`}>
-                                {new Date(msg.createdAt || msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            
-            {/* Image Previews */}
-            {previewImages.length > 0 && (
-                <div className="mb-3 flex flex-wrap gap-2">
-                    {previewImages.map((preview, index) => (
-                        <div key={index} className="relative group">
-                            <img
-                                src={preview}
-                                alt={`Preview ${index}`}
-                                className="w-16 h-16 object-cover rounded border border-gray-300"
-                            />
-                            <button
-                                type="button"
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => removePreviewImage(index)}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
+        <>
+            <div className="border border-gray-200 rounded-lg p-3 mb-3">
+                <div className="flex items-center gap-2 mb-2">
+                    <FiSend className="w-4 h-4 text-[#ED775A]" />
+                    <span className="font-medium text-gray-800">Chat: {storeInfo.name || `Toko ${storeId.substring(0, 4)}`}</span>
+                </div>
+
+                <div
+                    ref={messagesContainerRef}
+                    className="border rounded-lg border-gray-200 bg-gray-50 p-3 h-40 overflow-y-auto mb-2"
+                >
+                    {messages.map((msg) => (
+                        <div
+                            key={`${storeId}-${msg.id || msg.createdAt || Math.random()}`}
+                            className={`mb-3 flex ${msg.senderId === user?.id ? "justify-end" : "justify-start"}`}
+                        >
+                            <div className={`max-w-xs px-4 py-2 rounded-lg ${msg.senderId === user?.id
+                                ? "bg-[#ED775A] text-white"
+                                : "bg-white text-gray-900 border border-gray-200"
+                                }`}>
+                                {msg.content && <p className="text-sm">{msg.content}</p>}
+                                {Array.isArray(msg.attachments) && msg.attachments.length > 0 && (
+                                    <div className="mt-2 flex gap-2">
+                                        {msg.attachments.map((a, i) => (
+                                            <div key={i} className="cursor-pointer" onClick={() => openImageModal(a)}>
+                                                <img src={a} alt={`attachment-${i}`} className="w-16 h-16 object-cover rounded" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <p className={`text-xs mt-1 ${msg.senderId === user?.id ? "text-orange-100" : "text-gray-500"}`}>
+                                    {new Date(msg.createdAt || msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                            </div>
                         </div>
                     ))}
                 </div>
-            )}
-            
-            <div className="flex items-center gap-2">
-                <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    id={`chat-image-upload-store-${storeId}`}
-                    onChange={handleFileChange}
-                />
-                <label htmlFor={`chat-image-upload-store-${storeId}`} className="p-2 bg-gray-100 rounded-full cursor-pointer hover:bg-gray-200">
-                    <FiImage className="w-4 h-4 text-gray-500" />
-                </label>
-                <input
-                    type="text"
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Ketik pesan..."
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#ED775A] text-sm"
-                />
-                <button
-                    onClick={() => {
-                        console.log('Send button clicked');
-                        sendMessage();
-                    }}
-                    disabled={(!messageInput.trim() && files.length === 0) || isSending}
-                    className="p-2 bg-[#ED775A] text-white rounded-full hover:bg-[#d86a4a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                    {isSending ? (
-                        <span className="loading loading-spinner loading-xs" />
-                    ) : (
-                        <FiSend className="w-4 h-4" />
-                    )}
-                </button>
+
+                {/* Image Previews */}
+                {previewImages.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                        {previewImages.map((preview, index) => (
+                            <div key={index} className="relative group">
+                                <img
+                                    src={preview}
+                                    alt={`Preview ${index}`}
+                                    className="w-16 h-16 object-cover rounded border border-gray-300"
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => removePreviewImage(index)}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        id={`chat-image-upload-store-${storeId}`}
+                        onChange={handleFileChange}
+                    />
+                    <label htmlFor={`chat-image-upload-store-${storeId}`} className="p-2 bg-gray-100 rounded-full cursor-pointer hover:bg-gray-200">
+                        <FiImage className="w-4 h-4 text-gray-500" />
+                    </label>
+                    <input
+                        type="text"
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Ketik pesan..."
+                        className="flex-1 px-3 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#ED775A] text-sm"
+                    />
+                    <button
+                        onClick={() => {
+                            console.log('Send button clicked');
+                            sendMessage();
+                        }}
+                        disabled={(!messageInput.trim() && files.length === 0) || isSending}
+                        className="p-2 bg-[#ED775A] text-white rounded-full hover:bg-[#d86a4a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        {isSending ? (
+                            <span className="loading loading-spinner loading-xs" />
+                        ) : (
+                            <FiSend className="w-4 h-4" />
+                        )}
+                    </button>
+                </div>
             </div>
-        </div>
+
+            {/* Image Modal */}
+            {imageModal.isOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4" onClick={closeImageModal}>
+                    <div className="relative max-w-4xl max-h-full">
+                        <button
+                            className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 z-10"
+                            onClick={closeImageModal}
+                        >
+                            <FiX className="w-6 h-6" />
+                        </button>
+                        <img
+                            src={imageModal.imageUrl}
+                            alt="Enlarged view"
+                            className="max-w-full max-h-[90vh] object-contain"
+                            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on the image
+                        />
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
