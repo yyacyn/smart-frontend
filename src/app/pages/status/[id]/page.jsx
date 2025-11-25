@@ -1,13 +1,14 @@
 "use client";
 import React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Navbar from "../../../components/navbar/Navbar";
 import Footer from "../../../components/footer/Footer";
 import { FiSend, FiCheckCircle, FiMessageSquare, FiStar, FiImage, FiFileText, FiClock, FiXCircle } from "react-icons/fi";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { fetchOrderById, fetchOrders, fetchStoreById } from "../../../api";
+import { fetchOrderById, fetchOrders, fetchStoreById, postRating } from "../../../api";
+import StoreChat from "../../../components/chat/StoreChat";
 
 export default function StatusPage() {
     const router = useRouter();
@@ -25,16 +26,11 @@ export default function StatusPage() {
     const [review, setReview] = useState("");
     const [rating, setRating] = useState(0);
 
-    // State for store-specific chat data
-    const [storeChats, setStoreChats] = useState({});
-
-    // Individual refs for message containers
-    const messageInputs = useRef({});
-    const imageFiles = useRef({});
-    const messagesEndRefs = useRef({});
-    const messagesContainerRefs = useRef({});
 
     const { getToken } = useAuth();
+
+
+
 
     // Fetch order from API
     useEffect(() => {
@@ -65,35 +61,6 @@ export default function StatusPage() {
                         }
                     }
 
-                    // Initialize store-specific chat data based on stores in the order
-                    if (orderDetail.orderItems && orderDetail.orderItems.length > 0) {
-                        const storeMap = new Map();
-                        orderDetail.orderItems.forEach(item => {
-                            if (item.product && item.product.storeId) {
-                                if (!storeMap.has(item.product.storeId)) {
-                                    storeMap.set(item.product.storeId, {
-                                        storeId: item.product.storeId,
-                                        storeName: item.product.store?.name || `Toko ${item.product.storeId.substring(0, 4)}`,
-                                        messages: [
-                                            { id: 1, sender: "store", message: `Halo! Terima kasih telah memesan dari ${item.product.store?.name || `Toko ${item.product.storeId.substring(0, 4)}`}.` },
-                                            { id: 2, sender: "user", message: "Terima kasih, mohon info pengiriman." },
-                                            { id: 3, sender: "store", message: "Barang akan segera dikirim. Mohon ditunggu." },
-                                        ],
-                                        messageInput: '',
-                                        imageFile: null
-                                    });
-                                }
-                            }
-                        });
-
-                        // Set initial store chat data
-                        const initialChats = {};
-                        storeMap.forEach((value, key) => {
-                            initialChats[key] = value;
-                        });
-
-                        setStoreChats(initialChats);
-                    }
                 } else {
                     setError("Pesanan tidak ditemukan");
                 }
@@ -107,6 +74,8 @@ export default function StatusPage() {
 
         fetchOrderDetails();
     }, [orderId, user, getToken]);
+
+
 
     // Helper functions
     const getStatusDisplay = (status) => {
@@ -171,27 +140,6 @@ export default function StatusPage() {
         } catch {
             return "-";
         }
-    };
-
-    const sendMessage = () => {
-        if (messageInput.trim() || imageFile) {
-            setMessages([
-                ...messages,
-                {
-                    id: Date.now(),
-                    sender: "user",
-                    message: messageInput,
-                    image: imageFile ? URL.createObjectURL(imageFile) : null,
-                },
-            ]);
-            setMessageInput("");
-            setImageFile(null);
-            setTimeout(() => {
-                if (messagesContainerRef.current) {
-                    messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-                }
-            }, 100);
-        };
     };
 
     // Show loading state
@@ -407,42 +355,23 @@ export default function StatusPage() {
 
                             {/* Action Buttons */}
                             <div className="flex flex-col gap-3">
-                                {(order.status === "DELIVERED" || order.status === "delivered") && !accepted ? (
+                                {(order.status === "DELIVERED" || order.status === "delivered" || order.status === "COMPLETED" || order.status === "completed") ? (
                                     <button
-                                        className="btn btn-lg bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none shadow-lg rounded-lg px-8 py-3 text-lg font-bold transition-all duration-300"
-                                        onClick={() => setAccepted(true)}
-                                    >
-                                        Terima Barang
-                                    </button>
-                                ) : (order.status === "COMPLETED" || order.status === "completed") || accepted ? (
-                                    <button
-                                        className="btn btn-lg bg-[#476EAE] text-white hover:bg-[#3a5c8e] border-none shadow-lg rounded-lg px-8 py-3 text-lg font-bold transition-all duration-300"
+                                        className="btn btn-lg bg-[#476EAE] text-white hover:bg-[#3a5c8e] border-none shadow-none rounded-lg px-8 py-3 text-lg font-bold transition-all duration-300"
                                         onClick={() => setReviewing(true)}
                                     >
                                         Review Barang
                                     </button>
-                                ) : (order.status === "ORDER_PLACED" || order.status === "order_placed" || order.status === "pending") ? (
-                                    <button
-                                        className="btn btn-lg bg-red-500 text-white hover:bg-red-600 border-none shadow-lg rounded-lg px-8 py-3 text-lg font-bold transition-all duration-300"
-                                        onClick={() => {
-                                            if (confirm("Apakah Anda yakin ingin membatalkan pesanan ini?")) {
-                                                // TODO: Add cancel order API call
-                                                alert("Fitur pembatalan pesanan akan segera tersedia.");
-                                            }
-                                        }}
-                                    >
-                                        Batalkan Pesanan
-                                    </button>
                                 ) : null}
                                 {reviewing && (
-                                    <div className="p-4 border rounded-lg bg-gray-50">
+                                    <div className="p-4 border rounded-lg border-gray-200 bg-gray-50">
                                         <h3 className="font-semibold mb-2">Beri Ulasan</h3>
                                         <div className="flex gap-1 mb-2">
                                             {[1, 2, 3, 4, 5].map((star) => (
                                                 <button
                                                     key={star}
                                                     type="button"
-                                                    className={`mask mask-star-2 w-8 h-8 ${rating >= star ? "bg-yellow-400" : "bg-gray-300"}`}
+                                                    className={`mask mask-star-2 w-8 h-8 shadow-none ${rating >= star ? "bg-yellow-400" : "bg-gray-300"}`}
                                                     onClick={() => setRating(star)}
                                                 />
                                             ))}
@@ -455,12 +384,27 @@ export default function StatusPage() {
                                             onChange={e => setReview(e.target.value)}
                                         />
                                         <button
-                                            className="mt-3 btn btn-sm bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none rounded-lg px-6 py-2 font-bold"
+                                            className="mt-3 btn btn-sm bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none rounded-lg px-6 py-2 font-bold shadow-none"
                                             onClick={async () => {
+                                                if (rating === 0) {
+                                                    alert("Silakan berikan rating terlebih dahulu!");
+                                                    return;
+                                                }
+
                                                 try {
-                                                    // TODO: Add review submission API call
-                                                    // const reviewData = { rating, review, orderId: order.id };
-                                                    // await submitReview(reviewData, token);
+                                                    const token = await getToken();
+
+                                                    // Submit rating for each product in the order
+                                                    for (const item of order.orderItems) {
+                                                        const ratingData = {
+                                                            orderId: order.id,
+                                                            productId: item.productId,
+                                                            rating: rating,
+                                                            review: review
+                                                        };
+
+                                                        await postRating(ratingData, token);
+                                                    }
 
                                                     alert("Terima kasih atas ulasan Anda!");
                                                     setReviewing(false);
@@ -470,7 +414,12 @@ export default function StatusPage() {
                                                     // Update order status in state
                                                     setOrder(prev => ({ ...prev, status: "completed" }));
                                                 } catch (error) {
-                                                    alert("Gagal mengirim ulasan. Silakan coba lagi.");
+                                                    console.error("Gagal mengirim ulasan:", error);
+                                                    if (error.response?.data?.error) {
+                                                        alert(`Gagal mengirim ulasan: ${error.response.data.error}`);
+                                                    } else {
+                                                        alert("Gagal mengirim ulasan. Silakan coba lagi.");
+                                                    }
                                                 }
                                             }}
                                         >
@@ -490,114 +439,42 @@ export default function StatusPage() {
                                 </div>
 
                                 {/* Store-specific chat sections */}
-                                {Object.keys(storeChats).length > 0 && (
+                                {order.orderItems && order.orderItems.length > 0 && (
                                     <div className="space-y-4">
-                                        {Object.values(storeChats).map((storeChat) => {
-                                            // Ensure refs exist for this store
-                                            if (!messagesContainerRefs.current[storeChat.storeId]) {
-                                                messagesContainerRefs.current[storeChat.storeId] = React.createRef();
-                                                messagesEndRefs.current[storeChat.storeId] = React.createRef();
+                                        {/* Get unique store IDs from the order items, filtering out invalid ones */}
+                                        {(() => {
+                                            const validStoreIds = [...new Set(
+                                                order.orderItems
+                                                    .map(item => item.product?.storeId)
+                                                    .filter(storeId => storeId && typeof storeId === 'string' && storeId.length > 0)
+                                            )];
+
+                                            if (validStoreIds.length === 0) {
+                                                return (
+                                                    <div className="text-gray-500 text-sm text-center py-4">
+                                                        Chat tidak tersedia untuk pesanan ini
+                                                    </div>
+                                                );
                                             }
 
-                                            const sendMessage = (storeId) => {
-                                                const messageText = messageInputs.current[storeId]?.value || '';
-                                                const imageFile = imageFiles.current[storeId]?.files?.[0] || null;
+                                            return validStoreIds.map(storeId => {
+                                                // Find at least one product from the same store to get the store name
+                                                const storeProduct = order.orderItems.find(item => item.product?.storeId === storeId);
+                                                const storeName = storeProduct?.product?.store?.name ||
+                                                    (order.store && order.store.id === storeId ? order.store.name :
+                                                        store && store.id === storeId ? store.name :
+                                                            `Toko ${storeId.substring(0, 4)}`);
 
-                                                if (messageText.trim() || imageFile) {
-                                                    setStoreChats(prevChats => {
-                                                        const updatedChats = { ...prevChats };
-                                                        const currentChat = { ...updatedChats[storeId] };
-                                                        currentChat.messages = [
-                                                            ...currentChat.messages,
-                                                            {
-                                                                id: Date.now(),
-                                                                sender: "user",
-                                                                message: messageText,
-                                                                image: imageFile ? URL.createObjectURL(imageFile) : null,
-                                                            }
-                                                        ];
-                                                        updatedChats[storeId] = currentChat;
-
-                                                        // Clear input and file
-                                                        messageInputs.current[storeId].value = '';
-                                                        if (imageFiles.current[storeId]) {
-                                                            imageFiles.current[storeId].value = '';
-                                                        }
-
-                                                        return updatedChats;
-                                                    });
-
-                                                    // Auto-scroll to bottom
-                                                    setTimeout(() => {
-                                                        const containerRef = messagesContainerRefs.current[storeId];
-                                                        if (containerRef && containerRef.current) {
-                                                            containerRef.current.scrollTop = containerRef.current.scrollHeight;
-                                                        }
-                                                    }, 100);
-                                                }
-                                            };
-
-                                            const handleKeyPress = (e, storeId) => {
-                                                if (e.key === 'Enter') {
-                                                    sendMessage(storeId);
-                                                }
-                                            };
-
-                                            const handleFileChange = (e, storeId) => {
-                                                // Process file change - it's handled in sendMessage
-                                            };
-
-                                            return (
-                                                <div key={storeChat.storeId} className="border border-gray-200 rounded-lg p-3 mb-3">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <FiMessageSquare className="w-4 h-4 text-[#ED775A]" />
-                                                        <span className="font-medium text-gray-800">Chat: {storeChat.storeName}</span>
-                                                    </div>
-                                                    <div
-                                                        ref={messagesContainerRefs.current[storeChat.storeId]}
-                                                        className="border rounded-lg border-gray-200 bg-gray-50 p-3 h-40 overflow-y-auto mb-2"
-                                                    >
-                                                        {storeChat.messages.map((msg) => (
-                                                            <div key={msg.id} className={`mb-3 flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                                                                <div className={`px-3 py-2 rounded-lg max-w-xs ${msg.sender === "user" ? "bg-[#ED775A] text-white" : "bg-white text-gray-900 border border-gray-200"}`}>
-                                                                    {msg.image && (
-                                                                        <img src={msg.image} alt="chat-img" className="mb-2 rounded-lg max-h-32 object-cover" />
-                                                                    )}
-                                                                    <span className="text-sm">{msg.message}</span>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                        <div ref={messagesEndRefs.current[storeChat.storeId]} />
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <input
-                                                            type="file"
-                                                            accept="image/*"
-                                                            className="hidden"
-                                                            id={`chat-image-upload-${storeChat.storeId}`}
-                                                            ref={el => imageFiles.current[storeChat.storeId] = el}
-                                                            onChange={e => handleFileChange(e, storeChat.storeId)}
-                                                        />
-                                                        <label htmlFor={`chat-image-upload-${storeChat.storeId}`} className="p-2 bg-gray-100 rounded-full cursor-pointer hover:bg-gray-200">
-                                                            <FiImage className="w-4 h-4 text-gray-500" />
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            ref={el => messageInputs.current[storeChat.storeId] = el}
-                                                            onKeyPress={e => handleKeyPress(e, storeChat.storeId)}
-                                                            placeholder="Ketik pesan..."
-                                                            className="flex-1 px-3 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#ED775A] text-sm"
-                                                        />
-                                                        <button
-                                                            onClick={() => sendMessage(storeChat.storeId)}
-                                                            className="p-2 bg-[#ED775A] text-white rounded-full hover:bg-[#d86a4a]"
-                                                        >
-                                                            <FiSend className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                                return (
+                                                    <StoreChat
+                                                        key={storeId}
+                                                        storeId={storeId}
+                                                        storeName={storeName}
+                                                        userId={user?.id}
+                                                    />
+                                                );
+                                            });
+                                        })()}
                                     </div>
                                 )}
                             </div>

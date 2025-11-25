@@ -338,7 +338,7 @@ export default function CheckoutPage() {
                     timer: 2000,
                     showConfirmButton: false
                 });
-                router.push('/pages/profile/orders');
+                router.push(`/pages/order/${user.id}`);
             }
         } catch (error) {
             console.error('Order placement error:', error);

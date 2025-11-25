@@ -142,10 +142,10 @@ export const orderPost = async (orderData, token = null, retries = 3) => {
         return response.data;
     } catch (error) {
         console.error('orderPost error:', error);
-        
+
         // If it's a connection error and we have retries left, try again
         if (retries > 0 && (
-            error.code === 'ECONNRESET' || 
+            error.code === 'ECONNRESET' ||
             error.code === 'NETWORK_ERROR' ||
             error.message?.includes('Connection terminated unexpectedly') ||
             error.message?.includes('Network Error')
@@ -154,7 +154,7 @@ export const orderPost = async (orderData, token = null, retries = 3) => {
             await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
             return orderPost(orderData, token, retries - 1);
         }
-        
+
         throw error;
     }
 };
@@ -215,16 +215,61 @@ export const addAddress = async (addressData, token = null) => {
 // Submit a report (POST)
 export const submitReport = async (reportData, token = null) => {
     const authToken = token || await getClerkToken();
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
+    let headers = {};
+    let data;
+
+    // Check if reportData contains files (FileList, File, or Blob objects)
+    const hasFiles = reportData.attachments &&
+        (reportData.attachments instanceof FileList ||
+         reportData.attachments instanceof File ||
+         reportData.attachments instanceof Blob ||
+         (Array.isArray(reportData.attachments) &&
+          reportData.attachments.some(file => file instanceof File || file instanceof Blob)));
+
+    if (hasFiles) {
+        // Use multipart/form-data for file uploads
+        const formData = new FormData();
+
+        // Add all report fields to formData
+        Object.keys(reportData).forEach(key => {
+            if (key === 'attachments') {
+                // Handle attachments array or single file
+                if (Array.isArray(reportData[key])) {
+                    reportData[key].forEach(file => formData.append('attachments', file));
+                } else if (reportData[key] instanceof FileList) {
+                    Array.from(reportData[key]).forEach(file => formData.append('attachments', file));
+                } else if (reportData[key] instanceof File) {
+                    formData.append('attachments', reportData[key]);
+                } else {
+                    // For backward compatibility with URLs or other attachment formats
+                    formData.append(key, reportData[key]);
+                }
+            } else {
+                formData.append(key, reportData[key]);
+            }
+        });
+
+        // Add token to headers if available
+        if (authToken) {
+            headers.Authorization = `Bearer ${authToken}`;
+        }
+
+        data = formData;
+    } else {
+        // Use JSON for data without files
+        headers = {
+            'Content-Type': 'application/json'
+        };
+        if (authToken) {
+            headers.Authorization = `Bearer ${authToken}`;
+        }
+
+        data = reportData;
     }
 
     const response = await axios.post(
         `${BASE_URL}/api/reports`,
-        reportData,
+        data,
         { headers }
     );
     return response.data;
@@ -372,6 +417,39 @@ export const fetchUsersWithStores = async (token = null) => {
         console.error('Error fetching users with stores:', error);
         throw error;
     }
+};
+
+// Submit a rating (POST)
+export const postRating = async (ratingData, token = null) => {
+    const authToken = token || await getClerkToken();
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    const response = await axios.post(
+        `${BASE_URL}/api/rating`,
+        ratingData,
+        { headers }
+    );
+    return response.data;
+};
+
+// Fetch ratings for a specific product (GET)
+export const fetchProductRatings = async (productId, token = null) => {
+    const authToken = token || await getClerkToken();
+    const headers = {};
+    if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    const response = await axios.get(
+        `${BASE_URL}/api/rating?productId=${productId}`,
+        { headers }
+    );
+    return response.data;
 };
 
 // Fetch specific store by ID (GET) - fetch all stores and filter by ID

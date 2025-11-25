@@ -60,12 +60,40 @@ export default function StorePage() {
                         }
                     }
                 }
-                setCurrentStore(store);
 
                 // Fetch products
                 const prodRes = await fetchProducts();
                 const products = prodRes.products || [];
                 const storeProds = products.filter(p => p.store?.id === storeId);
+
+                // Calculate store rating based on all products from this store
+                let totalRatings = 0;
+                let totalReviews = 0;
+
+                storeProds.forEach(product => {
+                    if (product.rating && Array.isArray(product.rating)) {
+                        product.rating.forEach(rating => {
+                            totalRatings += rating.rating;
+                            totalReviews++;
+                        });
+                    }
+                });
+
+                let storeAvgRating = 0;
+                if (totalReviews > 0) {
+                    storeAvgRating = totalRatings / totalReviews;
+                }
+
+                // Add rating information to the store object
+                const updatedStore = store
+                    ? {
+                        ...store,
+                        rating: parseFloat(storeAvgRating.toFixed(1)),
+                        totalReviews: totalReviews
+                    }
+                    : null;
+
+                setCurrentStore(updatedStore);
                 setStoreProducts(storeProds);
                 setPopularProducts(storeProds.slice(0, 4));
             } catch (err) {
@@ -154,8 +182,10 @@ export default function StorePage() {
 
 
     const handleChatStore = useCallback(() => {
-        alert(`Memulai chat dengan ${currentStore?.name}`);
-    }, [currentStore?.name]);
+        if(currentStore?.id) {
+            router.push(`/pages/chat/${currentStore.id}`);
+        }
+    }, [currentStore?.id, router]);
 
     const handleReportSubmit = useCallback(async (reportData) => {
         try {
@@ -164,7 +194,9 @@ export default function StorePage() {
                 storeId: currentStore?.id,
                 subject: reportData.type,
                 message: reportData.description,
-                category: reportData.type
+                category: reportData.type,
+                // Include target images as attachments
+                attachments: reportData.attachments
             };
 
             // Submit the report via API
@@ -219,6 +251,7 @@ export default function StorePage() {
                     targetType="store"
                     targetId={currentStore?.id}
                     targetName={currentStore?.name}
+                    targetImages={currentStore?.logo ? [currentStore.logo] : []}
                 />
 
                 {/* Store Profile Section */}
@@ -255,6 +288,16 @@ export default function StorePage() {
                                         {currentStore.status && (
                                             <span className={`badge text-xs ml-2 ${currentStore.status === 'approved' ? 'bg-green-100 text-green-700 border-none' : 'bg-yellow-100 text-yellow-700'}`}>{currentStore.status}</span>
                                         )}
+                                    </div>
+                                    {/* Store Rating */}
+                                    <div className="flex items-center gap-1 mb-2">
+                                        <FiStar className="w-4 h-4 text-yellow-500" />
+                                        <span className="font-semibold text-gray-700">
+                                            {currentStore.rating !== undefined ? currentStore.rating.toFixed(1) : '0.0'}
+                                        </span>
+                                        <span className="text-gray-500 text-sm">
+                                            ({currentStore.totalReviews !== undefined ? currentStore.totalReviews : 0} ulasan)
+                                        </span>
                                     </div>
                                     <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-2">
                                         {currentStore.email && (
@@ -335,7 +378,7 @@ export default function StorePage() {
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-gray-900">Produk Terpopuler</h2>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                             {popularProducts.map((product) => (
                                 <ProductCard key={product.id} product={product} />
                             ))}
@@ -384,7 +427,7 @@ export default function StorePage() {
                         </div>
                     ) : sortedProducts.length > 0 ? (
                         <>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                                 {displayedProducts.map((product) => (
                                     <ProductCard key={product.id} product={product} />
                                 ))}

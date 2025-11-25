@@ -1,16 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 
-const ReportModal = ({ isOpen, onClose, onSubmit, targetType, targetId, targetName }) => {
+const ReportModal = ({ isOpen, onClose, onSubmit, targetType, targetId, targetName, targetImages }) => {
     const modalRef = useRef(null);
     const [reportType, setReportType] = useState('');
     const [description, setDescription] = useState('');
-    const [attachments, setAttachments] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
-        setAttachments(files);
-    };
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
@@ -23,19 +17,20 @@ const ReportModal = ({ isOpen, onClose, onSubmit, targetType, targetId, targetNa
         setIsSubmitting(true);
 
         try {
-            // Create FormData for submission if there are attachments
+            // Prepare report data with target images as attachments
             const reportData = {
                 type: reportType,
                 description,
                 targetType,
-                targetId
+                targetId,
+                // Use target images (product images or store logo) as attachments
+                attachments: targetImages || []
             };
 
             await onSubmit(reportData);
             // Reset form
             setReportType('');
             setDescription('');
-            setAttachments([]);
             modalRef.current?.close();
             onClose();
         } catch (error) {
@@ -109,23 +104,6 @@ const ReportModal = ({ isOpen, onClose, onSubmit, targetType, targetId, targetNa
                         ></textarea>
                     </div>
 
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Lampiran
-                        </label>
-                        <input
-                            type="file"
-                            multiple
-                            onChange={handleFileChange}
-                            className="file-input file-input-bordered w-full bg-white border-gray-200"
-                            accept="image/*,.pdf,.doc,.docx"
-                        />
-                        {attachments.length > 0 && (
-                            <div className="mt-2 text-sm text-gray-600">
-                                {attachments.length} file{attachments.length > 1 ? 's' : ''} dipilih
-                            </div>
-                        )}
-                    </div>
 
                     <div className="modal-action">
                         <button

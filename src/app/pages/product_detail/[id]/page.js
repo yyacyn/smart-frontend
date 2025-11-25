@@ -5,13 +5,13 @@ import { useParams } from "next/navigation"
 import { useUser, useClerk } from "@clerk/nextjs";
 import Navbar from "../../../components/navbar/Navbar"
 import Footer from "../../../components/footer/Footer"
-import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare, FiShoppingCart, } from "react-icons/fi"
+import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare, FiShoppingCart, FiMessageCircle } from "react-icons/fi"
 import CTA from "@/app/components/CTA"
 import { useRouter } from "next/navigation";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 // import ProductCard from "../../../components/product/Card"
 import ProductCard from "../../../components/product/Card"
-import { fetchProducts, addToCart as addToCartAPI, fetchCart, submitReport, fetchWishlist, addToWishlist, removeFromWishlist } from "../../../api";
+import { fetchProducts, addToCart as addToCartAPI, fetchCart, submitReport, fetchWishlist, addToWishlist, removeFromWishlist, fetchProductRatings } from "../../../api";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, increaseQuantity } from "@/lib/features/cart/cartSlice";
 import Swal from 'sweetalert2';
@@ -46,15 +46,62 @@ export default function ProductPage() {
                 if (data && data.products) {
                     setProducts(data.products);
                     const product = data.products.find(p => p.id === productId);
-                    setCurrentProduct(product);
-                    if (product && product.store) {
-                        setCurrentStore(product.store);
+                    if (product) {
+                        // Calculate average rating from the product's rating array
+                        const productRatings = product.rating || [];
+
+                        // Calculate average rating
+                        let avgRating = 0;
+                        if (Array.isArray(productRatings) && productRatings.length > 0) {
+                            avgRating = productRatings.reduce((acc, rating) => acc + rating.rating, 0) / productRatings.length;
+                        }
+
+                        // Update the product with the average rating
+                        const updatedProduct = {
+                            ...product,
+                            averageRating: parseFloat(avgRating.toFixed(1)),
+                            totalReviews: productRatings.length
+                        };
+
+                        setCurrentProduct(updatedProduct);
+                        setReviews(productRatings);
+
+                        if (product.store) {
+                            // Calculate store rating based on all products from the same store
+                            const storeProducts = data.products.filter(p => p.storeId === product.storeId);
+                            let totalStoreRatings = 0;
+                            let totalStoreReviews = 0;
+
+                            storeProducts.forEach(storeProduct => {
+                                if (storeProduct.rating && Array.isArray(storeProduct.rating)) {
+                                    storeProduct.rating.forEach(rating => {
+                                        totalStoreRatings += rating.rating;
+                                        totalStoreReviews++;
+                                    });
+                                }
+                            });
+
+                            let storeAvgRating = 0;
+                            if (totalStoreReviews > 0) {
+                                storeAvgRating = totalStoreRatings / totalStoreReviews;
+                            }
+
+                            // Update the store with calculated rating information
+                            const updatedStore = {
+                                ...product.store,
+                                rating: parseFloat(storeAvgRating.toFixed(1)),
+                                reviews: totalStoreReviews
+                            };
+
+                            setCurrentStore(updatedStore);
+                        }
                     }
                 }
             } catch (error) {
                 setProducts([]);
                 setCurrentProduct(null);
                 setCurrentStore(null);
+                setReviews([]);
             }
         }
         getProducts();
@@ -113,7 +160,9 @@ export default function ProductPage() {
                 productId: currentProduct?.id,
                 subject: reportData.type,
                 message: reportData.description,
-                category: reportData.type
+                category: reportData.type,
+                // Include target images as attachments
+                attachments: reportData.attachments
             };
 
             // Submit the report via API
@@ -299,29 +348,71 @@ export default function ProductPage() {
                             <p className="text-gray-400 text-xs mt-1">Be the first to review this product</p>
                         </div>
                     ) : (
-                        reviews.map((review) => (
-                            <article key={review.id} className="rounded-box border border-gray-100 shadow-2xs p-4">
+                        reviews.map((review, index) => (
+                            <article key={`${review.user?.name || 'user'}-${index}-${review.createdAt}`} className="rounded-box border border-gray-100 shadow-2xs p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="avatar placeholder">
-                                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                            <span className="text-xs text-gray-600">{review.user?.name?.[0] || 'U'}</span>
+                                    {review.user?.image ? (
+                                        <div className="avatar">
+                                            <div className="h-10 w-10 rounded-full bg-gray-200">
+                                                <img src={review.user.image} alt={review.user.name} className="rounded-full object-cover" />
+                                            </div>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="avatar placeholder">
+                                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                <span className="text-xs text-gray-600">{review.user?.name?.[0] || 'U'}</span>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="flex-1">
                                         <p className="text-sm font-medium">{review.user?.name || 'Anonymous User'}</p>
-                                        <div className="flex items-center text-warning">
-                                            {Array.from({ length: 5 }).map((_, idx) => (
-                                                <FaStar
-                                                    key={idx}
-                                                    className={idx < review.rating ? 'text-yellow-500' : 'text-gray-300'}
-                                                />
-                                            ))}
+                                        <div className="rating rating-sm mt-1">
+                                            <input
+                                                type="radio"
+                                                name={`review-rating-${index}`}
+                                                className="mask mask-star-2 bg-yellow-400"
+                                                checked={review.rating >= 1}
+                                                readOnly
+                                                disabled
+                                            />
+                                            <input
+                                                type="radio"
+                                                name={`review-rating-${index}`}
+                                                className="mask mask-star-2 bg-yellow-400"
+                                                checked={review.rating >= 2}
+                                                readOnly
+                                                disabled
+                                            />
+                                            <input
+                                                type="radio"
+                                                name={`review-rating-${index}`}
+                                                className="mask mask-star-2 bg-yellow-400"
+                                                checked={review.rating >= 3}
+                                                readOnly
+                                                disabled
+                                            />
+                                            <input
+                                                type="radio"
+                                                name={`review-rating-${index}`}
+                                                className="mask mask-star-2 bg-yellow-400"
+                                                checked={review.rating >= 4}
+                                                readOnly
+                                                disabled
+                                            />
+                                            <input
+                                                type="radio"
+                                                name={`review-rating-${index}`}
+                                                className="mask mask-star-2 bg-yellow-400"
+                                                checked={review.rating >= 5}
+                                                readOnly
+                                                disabled
+                                            />
                                         </div>
                                     </div>
                                     <span className="text-xs opacity-60">{review.createdAt ? new Date(review.createdAt).toLocaleDateString('id-ID') : 'Recently'}</span>
                                 </div>
                                 <p className="mt-3 text-sm">
-                                    {review.comment || 'No comment provided.'}
+                                    {review.review || 'No comment provided.'}
                                 </p>
                             </article>
                         ))
@@ -359,12 +450,13 @@ export default function ProductPage() {
                     targetType="product"
                     targetId={currentProduct?.id}
                     targetName={currentProduct?.name}
+                    targetImages={currentProduct?.images || []}
                     className="text-black"
                 />
                 <div className="grid gap-8 lg:grid-cols-[1.1fr_1.2fr_0.8fr]">
                     {/* Gallery */}
                     <section aria-labelledby="gallery" className="space-y-4">
-                        <div className="aspect-[5/4] w-full overflow-hidden rounded-box ">
+                        <div className="aspect-[5/5] w-full overflow-hidden rounded-box ">
                             <img
                                 alt={currentProduct?.name}
                                 className="h-full w-full object-cover"
@@ -391,23 +483,75 @@ export default function ProductPage() {
                     {/* Product info */}
                     <section className="space-y-4 text-black">
 
-                        <h1 className="text-pretty text-3xl font-semibold leading-tight flex items-center gap-2 justify-between">
-                            <div className="flex items-center gap-4">
+                        <h1 className="text-pretty text-3xl font-semibold leading-tight flex flex-col">
+                            <div className="flex items-center gap-4 justify-between">
                                 {currentProduct?.name}
-                                {discountPercent > 0 && (
-                                    <span className="badge badge-accent text-xs font-semibold text-white bg-[#ED775A] border-none">
-                                        Diskon {discountPercent}%
-                                    </span>
+                                {currentProduct?.userId !== user?.id && currentStore.userId !== user?.id && (
+                                    <button
+                                        className="ml-3 px-3 py-1 rounded border border-red-500 text-red-500 bg-white hover:bg-red-50 text-xs font-semibold self-start mt-1"
+                                        onClick={() => setIsReportModalOpen(true)}
+                                    >
+                                        Report
+                                    </button>
                                 )}
                             </div>
-                            {currentProduct?.userId !== user?.id && currentStore.userId !== user?.id && (
-                                <button
-                                    className="ml-3 px-3 py-1 rounded border border-red-500 text-red-500 bg-white hover:bg-red-50 text-xs font-semibold"
-                                    onClick={() => setIsReportModalOpen(true)}
-                                >
-                                    Report
-                                </button>
+                            {/* Product Tags */}
+                            {currentProduct?.tags && (
+                                <div className="mt-2">
+                                    <span className="badge badge-outline text-xs font-medium mr-2">
+                                        {currentProduct.tags}
+                                    </span>
+                                </div>
                             )}
+                            {/* Product Rating */}
+                            <div className="flex items-center gap-2 mt-4">
+                                <div className="rating rating-sm">
+                                    <input
+                                        type="radio"
+                                        name={`rating-${currentProduct?.id}`}
+                                        className="mask mask-star-2 bg-yellow-400"
+                                        checked={currentProduct?.averageRating >= 1}
+                                        readOnly
+                                        disabled
+                                    />
+                                    <input
+                                        type="radio"
+                                        name={`rating-${currentProduct?.id}`}
+                                        className="mask mask-star-2 bg-yellow-400"
+                                        checked={currentProduct?.averageRating >= 2}
+                                        readOnly
+                                        disabled
+                                    />
+                                    <input
+                                        type="radio"
+                                        name={`rating-${currentProduct?.id}`}
+                                        className="mask mask-star-2 bg-yellow-400"
+                                        checked={currentProduct?.averageRating >= 3}
+                                        readOnly
+                                        disabled
+                                    />
+                                    <input
+                                        type="radio"
+                                        name={`rating-${currentProduct?.id}`}
+                                        className="mask mask-star-2 bg-yellow-400"
+                                        checked={currentProduct?.averageRating >= 4}
+                                        readOnly
+                                        disabled
+                                    />
+                                    <input
+                                        type="radio"
+                                        name={`rating-${currentProduct?.id}`}
+                                        className="mask mask-star-2 bg-yellow-400"
+                                        checked={currentProduct?.averageRating >= 5}
+                                        readOnly
+                                        disabled
+                                    />
+                                </div>
+                                <span className="text-sm text-gray-600">
+                                    {(currentProduct?.averageRating || 0).toFixed(1)}
+                                    {currentProduct?.totalReviews > 0 && ` dari ${currentProduct?.totalReviews} ulasan`}
+                                </span>
+                            </div>
                         </h1>
 
                         {/* <div className="flex gap-2 text-sm text-base-content/70">
@@ -428,6 +572,11 @@ export default function ProductPage() {
                                 <span className="text-base line-through opacity-60">
                                     Rp {currentProduct.mrp.toLocaleString("id-ID")}
                                 </span>
+                                {discountPercent > 0 && (
+                                    <span className="badge badge-accent text-xs font-semibold text-white bg-[#ED775A] border-none">
+                                        Diskon {discountPercent}%
+                                    </span>
+                                )}
                             </div>
                         ) : (
                             <p className="text-2xl font-bold tracking-tight">Rp {currentProduct?.price.toLocaleString("id-ID")}</p>
@@ -480,23 +629,32 @@ export default function ProductPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Link
-                                    href={{
-                                        pathname: `/pages/store/${currentStore.id}`,
-                                        query: {},
-                                    }}
-                                    className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow-none text-sm"
-                                    scroll={false}
-                                    // Pass store info in state for the store page
-                                    as={`/pages/store/${currentStore.id}`}
-                                    onClick={() => {
-                                        if (typeof window !== 'undefined') {
-                                            window.sessionStorage.setItem('storeInfo', JSON.stringify(currentStore));
-                                        }
-                                    }}
-                                >
-                                    Kunjungi Toko
-                                </Link>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => router.push(`/pages/chat/${currentStore.id}`)}
+                                        className="btn btn-sm bg-[#34A853] border-none hover:bg-[#2d924a] shadow-none text-sm text-white"
+                                    >
+                                        <FiMessageCircle className="w-4 h-4 mr-1" />
+                                        Chat Toko
+                                    </button>
+                                    <Link
+                                        href={{
+                                            pathname: `/pages/store/${currentStore.id}`,
+                                            query: {},
+                                        }}
+                                        className="btn btn-sm bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow-none text-sm"
+                                        scroll={false}
+                                        // Pass store info in state for the store page
+                                        as={`/pages/store/${currentStore.id}`}
+                                        onClick={() => {
+                                            if (typeof window !== 'undefined') {
+                                                window.sessionStorage.setItem('storeInfo', JSON.stringify(currentStore));
+                                            }
+                                        }}
+                                    >
+                                        Kunjungi Toko
+                                    </Link>
+                                </div>
                             </div>
                         </section>
 
@@ -627,12 +785,7 @@ export default function ProductPage() {
                                     </button>
                                 </div>
 
-                                <div className="flex flex-row justify-between text-sm opacity-70">
-                                    <div className="rounded-box p-2 text-center flex flex-row items-center gap-1 cursor-pointer hover:text-gray-500">
-                                        <FiMessageSquare className="" />
-                                        <span>Chat</span>
-                                    </div>
-                                    <span className="flex my-2 w-0.5 rounded-2xl bg-gray-800 "></span>
+                                <div className="flex flex-row justify-evenly text-sm opacity-70">
                                     <div
                                         onClick={async () => {
                                             if (!user) {
