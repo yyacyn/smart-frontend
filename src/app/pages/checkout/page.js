@@ -215,21 +215,21 @@ export default function CheckoutPage() {
                 userId: savedAddress.userId || savedAddress.user_id || user.id
             };
 
-            // Update addresses list
-            setAddresses(prev => {
-                const newAddresses = [...prev, addressWithUserId];
-                console.log("Updated addresses list:", newAddresses);
-                return newAddresses;
+            // Refresh addresses to ensure they are in sync with the server
+            setIsAddressesLoading(true);
+            const freshAddresses = await fetchAddresses();
+            const allFreshAddresses = freshAddresses && freshAddresses.addresses ? freshAddresses.addresses : [];
+
+            // Update addresses list with fresh data
+            const userAddresses = allFreshAddresses.filter(address => {
+                return (address && address.userId === user.id) || (address && address.user_id === user.id);
             });
 
-            // Also update the cached addresses
-            setCachedAddresses(prev => {
-                if (prev) {
-                    return [...prev, addressWithUserId];
-                } else {
-                    return [addressWithUserId];
-                }
-            });
+            setAddresses(userAddresses);
+
+            // Update cached addresses as well
+            setCachedAddresses(allFreshAddresses);
+            setIsAddressesLoading(false);
 
             setSelectedAddressId(addressWithUserId.id);
             setShowNewAddressForm(false);
@@ -244,6 +244,7 @@ export default function CheckoutPage() {
         } catch (error) {
             console.error("Error saving address:", error);
             let errorMessage = 'Gagal menyimpan alamat. Silakan coba lagi.';
+            setIsAddressesLoading(false);
 
             // Handle specific error cases
             if (error.response?.data?.error) {

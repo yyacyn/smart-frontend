@@ -412,15 +412,17 @@ export default function StatusPage() {
                                 {((order.status === "DELIVERED" || order.status === "delivered" || order.status === "COMPLETED" || order.status === "completed")
                                     && order.orderItems
                                     && order.orderItems.some(item => {
-                                        const userReviews = productReviews[item.productId] || [];
+                                        const allReviews = productReviews[item.productId] || [];
                                         // Check if any of the reviews belong to the current user
-                                        return !userReviews.some(review =>
+                                        const hasCurrentUserReview = allReviews.some(review =>
                                             review.user && (
                                                 review.user.name === user.fullName ||
                                                 review.user.name === user.firstName + " " + user.lastName ||
                                                 review.user.name === user.username
                                             )
                                         );
+                                        // Show button only if this product hasn't been reviewed by the user yet
+                                        return !hasCurrentUserReview;
                                     })) ? (
                                     <button
                                         className="btn btn-lg bg-[#476EAE] text-white hover:bg-[#3a5c8e] border-none shadow-none rounded-lg px-8 py-3 text-lg font-bold transition-all duration-300"
@@ -460,16 +462,29 @@ export default function StatusPage() {
                                                 try {
                                                     const token = await getToken();
 
-                                                    // Submit rating for each product in the order
+                                                    // Submit rating for each product in the order that hasn't been reviewed yet
                                                     for (const item of order.orderItems) {
-                                                        const ratingData = {
-                                                            orderId: order.id,
-                                                            productId: item.productId,
-                                                            rating: rating,
-                                                            review: review
-                                                        };
+                                                        // Check if the user has already reviewed this product
+                                                        const allReviews = productReviews[item.productId] || [];
+                                                        const hasCurrentUserReview = allReviews.some(review =>
+                                                            review.user && (
+                                                                review.user.name === user.fullName ||
+                                                                review.user.name === user.firstName + " " + user.lastName ||
+                                                                review.user.name === user.username
+                                                            )
+                                                        );
 
-                                                        await postRating(ratingData, token);
+                                                        // Only submit a rating if the user hasn't reviewed this product yet
+                                                        if (!hasCurrentUserReview) {
+                                                            const ratingData = {
+                                                                orderId: order.id,
+                                                                productId: item.productId,
+                                                                rating: rating,
+                                                                review: review
+                                                            };
+
+                                                            await postRating(ratingData, token);
+                                                        }
                                                     }
 
                                                     alert("Terima kasih atas ulasan Anda!");
@@ -546,47 +561,53 @@ export default function StatusPage() {
                                 <div className="bg-white rounded-lg border shadow-none border-gray-200 h-fit p-4 mt-4">
                                     <div className="flex items-center gap-2 mb-4">
                                         <FiStar className="w-5 h-5 text-[#ED775A]" />
-                                        <h3 className="font-semibold text-gray-800">Ulasan Produk</h3>
+                                        <h3 className="font-semibold text-gray-800">Ulasan Produk Anda</h3>
                                     </div>
                                     <div className="space-y-4">
                                         {order.orderItems.map((item, index) => {
-                                            const userReviews = productReviews[item.productId] || [];
+                                            const allReviews = productReviews[item.productId] || [];
+                                            // Filter reviews to only show those by the current user
+                                            const currentUserReviews = allReviews.filter(review =>
+                                                review.user &&
+                                                (review.user.name === user.fullName ||
+                                                    review.user.name === user.firstName + " " + user.lastName ||
+                                                    review.user.name === user.username)
+                                            );
 
-                                            return userReviews.length > 0 ? (
+                                            return currentUserReviews.length > 0 ? (
                                                 <div key={`review-${item.productId}-${index}`} className="space-y-2">
                                                     <h4 className="font-medium text-sm text-gray-700">
                                                         {item.product?.name || `Produk #${item.productId}`}
                                                     </h4>
-                                                    {userReviews.map((review, reviewIndex) => {
-                                                        // Check if this review was likely posted by the current user
-                                                        const isCurrentUserReview = review.user &&
-                                                            (review.user.name === user.fullName ||
-                                                                review.user.name === user.firstName + " " + user.lastName ||
-                                                                review.user.name === user.username);
-
-                                                        return (
-                                                            <div key={reviewIndex} className={`p-2 rounded ${isCurrentUserReview ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
-                                                                <div className="flex items-center gap-1 mb-1">
-                                                                    {[...Array(5)].map((_, i) => (
-                                                                        <FiStar
-                                                                            key={i}
-                                                                            className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                                                                        />
-                                                                    ))}
-                                                                    {isCurrentUserReview && (
-                                                                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                                                            Anda
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                {review.review && (
-                                                                    <p className="text-sm text-gray-700">{review.review}</p>
-                                                                )}
+                                                    {currentUserReviews.map((review, reviewIndex) => (
+                                                        <div key={reviewIndex} className="p-2 rounded bg-blue-50 border border-blue-200">
+                                                            <div className="flex items-center gap-1 mb-1">
+                                                                {[...Array(5)].map((_, i) => (
+                                                                    <FiStar
+                                                                        key={i}
+                                                                        className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                                                                    />
+                                                                ))}
+                                                                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                                    Anda
+                                                                </span>
                                                             </div>
-                                                        );
-                                                    })}
+                                                            {review.review && (
+                                                                <p className="text-sm text-gray-700">{review.review}</p>
+                                                            )}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ) : null;
+                                            ) : (
+                                                <div key={`noreview-${item.productId}-${index}`} className="space-y-2">
+                                                    <h4 className="font-medium text-sm text-gray-700">
+                                                        {item.product?.name || `Produk #${item.productId}`}
+                                                    </h4>
+                                                    <div className="text-xs text-gray-500 italic">
+                                                        Belum memberikan ulasan
+                                                    </div>
+                                                </div>
+                                            );
                                         })}
                                     </div>
                                 </div>
