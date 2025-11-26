@@ -53,7 +53,7 @@ function MarketplaceContent() {
             // Use cached categories if available
             if (Array.isArray(cachedCategories)) {
                 const apiCategories = cachedCategories.map(cat => ({
-                    value: cat.name,
+                    value: cat.id,
                     label: cat.name
                 }));
                 setCategories([{ value: 'all', label: 'Semua Kategori' }, ...apiCategories]);
@@ -72,7 +72,7 @@ function MarketplaceContent() {
             const data = await fetchCategories();
             if (data && data.success && Array.isArray(data.data)) {
                 const apiCategories = data.data.map(cat => ({
-                    value: cat.name,
+                    value: cat.id,
                     label: cat.name
                 }));
                 setCategories([{ value: 'all', label: 'Semua Kategori' }, ...apiCategories]);
@@ -94,6 +94,8 @@ function MarketplaceContent() {
         const searchFromQuery = searchParams.get('search');
         let updates = {};
         if (categoryFromQuery && categoryFromQuery !== filters.category) {
+            // We need to ensure that initialCategory is set correctly to handle the query param
+            // The query param contains the category id, not the name
             updates.category = categoryFromQuery;
         }
         if (typeof discountFromQuery === 'string') {
@@ -117,23 +119,17 @@ function MarketplaceContent() {
             const mrp = typeof product.mrp === "number" ? product.mrp : price;
             const category = product.category || "";
             const rating = Array.isArray(product.rating) ? (
-                product.rating.length > 0 ? Math.round(product.rating.reduce((acc, curr) => acc + (typeof curr === 'number' ? curr : 0), 0) / product.rating.length) : 0
+                product.rating.length > 0 ? Math.round(product.rating.reduce((acc, curr) => acc + (typeof curr === 'object' ? (curr.rating || 0) : typeof curr === 'number' ? curr : 0), 0) / product.rating.length) : 0
             ) : 0;
             // Category mapping for filtering
             let categoryMatch = true;
             if (filters.category !== 'all') {
-                switch (filters.category) {
-                    case 'Elektronik':
-                        categoryMatch = category === 'Electronics';
-                        break;
-                    case 'Kesehatan & Kecantikan':
-                        categoryMatch = category === 'Obat-obatan' || category === 'Kecantikan';
-                        break;
-                    case 'Kerajinan Lokal':
-                        categoryMatch = category === 'Produk Lokal';
-                        break;
-                    default:
-                        categoryMatch = category === filters.category;
+                // Check if product has a category object with an id
+                if (product.category && product.category.id) {
+                    categoryMatch = product.category.id === filters.category;
+                } else {
+                    // Fallback to name comparison if id doesn't match any category
+                    categoryMatch = false;
                 }
             }
             let match = name.toLowerCase().includes(filters.search.toLowerCase()) &&
@@ -146,7 +142,9 @@ function MarketplaceContent() {
                 match = match && product.cod === true;
             }
             if (filters.discount) {
-                match = match && product.mrp != null && product.price != null && product.mrp > product.price;
+                const productMrp = typeof product.mrp === 'number' ? product.mrp : 0;
+                const productPrice = typeof product.price === 'number' ? product.price : 0;
+                match = match && productMrp > 0 && productPrice > 0 && productMrp > productPrice;
             }
             if (filters.gratisOngkir) {
                 match = match && product.gratisOngkir === true;
@@ -162,8 +160,8 @@ function MarketplaceContent() {
                 case 'price-high':
                     return (b.price || 0) - (a.price || 0);
                 case 'rating': {
-                    const aRating = Array.isArray(a.rating) ? (a.rating.length > 0 ? Math.round(a.rating.reduce((acc, curr) => acc + (typeof curr === 'number' ? curr : 0), 0) / a.rating.length) : 0) : 0;
-                    const bRating = Array.isArray(b.rating) ? (b.rating.length > 0 ? Math.round(b.rating.reduce((acc, curr) => acc + (typeof curr === 'number' ? curr : 0), 0) / b.rating.length) : 0) : 0;
+                    const aRating = Array.isArray(a.rating) ? (a.rating.length > 0 ? Math.round(a.rating.reduce((acc, curr) => acc + (typeof curr === 'object' ? (curr.rating || 0) : typeof curr === 'number' ? curr : 0), 0) / a.rating.length) : 0) : 0;
+                    const bRating = Array.isArray(b.rating) ? (b.rating.length > 0 ? Math.round(b.rating.reduce((acc, curr) => acc + (typeof curr === 'object' ? (curr.rating || 0) : typeof curr === 'number' ? curr : 0), 0) / b.rating.length) : 0) : 0;
                     return bRating - aRating;
                 }
                 case 'reviews':
