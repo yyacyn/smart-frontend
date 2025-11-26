@@ -17,6 +17,18 @@ function getStoreName(storeId, products) {
     return product && product.store ? product.store.name : `Toko #${storeId}`;
 }
 
+// Helper to get store bank information by store id
+function getStoreBankInfo(storeId, products) {
+    const product = products.find(p => p.store?.id === storeId);
+    // In a real application, this would be fetched from an API
+    // For now, we return mock bank information
+    return {
+        bank: product?.store?.bankName || "BCA", // e.g., BCA, Mandiri, BNI, BRI
+        accountNumber: product?.store?.bankAccountNumber || "1234567890",
+        accountName: product?.store?.bankHolderName || (product?.store?.name || `Toko #${storeId}`)
+    };
+}
+
 export default function CheckoutPage() {
     const router = useRouter();
     const { user } = useUser();
@@ -609,6 +621,53 @@ export default function CheckoutPage() {
                                             <p className={`text-sm ${paymentMethod === 'transfer' ? 'text-green-600' : 'text-gray-600'}`}>BCA, Mandiri, BNI, BRI</p>
                                         </div>
                                     </label>
+
+                                    {/* Bank Information - Only shown when 'transfer' is selected */}
+                                    {paymentMethod === 'transfer' && (
+                                        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                            <h3 className="font-medium text-gray-900 mb-3">Informasi Transfer Bank</h3>
+
+                                            {/* For each store in the selected items, show their bank details */}
+                                            {selectedItems.map((item, index) => {
+                                                const storeBankInfo = getStoreBankInfo(item.store_id, products);
+
+                                                return (
+                                                    <div key={`${item.id || index}`} className="mb-3 last:mb-0">
+                                                        <p className="text-sm font-medium text-gray-700">{getStoreName(item.store_id, products)}</p>
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-1">
+                                                            <div>
+                                                                <label className="text-xs text-gray-500">Bank</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={storeBankInfo.bank}
+                                                                    className="input input-bordered w-full text-sm bg-white border-gray-200"
+                                                                    readOnly
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs text-gray-500">Nomor Rekening</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={storeBankInfo.accountNumber}
+                                                                    className="input input-bordered w-full text-sm bg-white border-gray-200"
+                                                                    readOnly
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs text-gray-500">Atas Nama</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={storeBankInfo.accountName}
+                                                                    className="input input-bordered w-full text-sm bg-white border-gray-200"
+                                                                    readOnly
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className={`border rounded-lg p-4 ${paymentMethod === 'cod' ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
                                     <label className="flex items-center gap-3 cursor-pointer">
