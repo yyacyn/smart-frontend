@@ -352,7 +352,7 @@ export default function CheckoutPage() {
                     showConfirmButton: false
                 });
                 // Redirect to user's order history page after successful order
-                router.push('/pages/profile/orders');
+                router.push(`/pages/order/${user.id}`);
             } else {
                 await Swal.fire({
                     icon: 'warning',
@@ -360,7 +360,7 @@ export default function CheckoutPage() {
                     text: 'Pesanan berhasil dibuat, tapi tidak dapat menemukan ID pesanan.',
                     timer: 2000,
                     showConfirmButton: false
-                });
+                }); 
                 router.push(`/pages/order/${user.id}`);
             }
         } catch (error) {
