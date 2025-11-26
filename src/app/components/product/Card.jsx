@@ -4,10 +4,10 @@ import Link from "next/link";
 
 export default function ProductCard({ product }) {
     // Calculate discounted price
-    const hasDiscount = product.mrp != null && product.mrp > 0;
+    const hasDiscount = product.mrp != null && product.price != null && product.mrp > 0 && product.mrp > product.price;
     const discountedPrice = hasDiscount
         ? Math.round((product.mrp - product.price) / (product.mrp) * 100)
-        : product.price;
+        : 0;
 
     const ratingArr = product.rating || [];
     const validRatings = Array.isArray(ratingArr)
@@ -56,7 +56,7 @@ export default function ProductCard({ product }) {
                         <div className="badge badge-primary absolute top-2 right-2">
                             {product.category?.name}
                         </div>
-                        {hasDiscount && (
+                        {hasDiscount && discountedPrice > 0 && (
                             <div className="badge badge-warning absolute bottom-2 left-2">
                                 -{discountedPrice}%
                             </div>
