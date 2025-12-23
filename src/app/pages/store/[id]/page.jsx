@@ -9,7 +9,7 @@ import Footer from "../../../components/footer/Footer";
 import ProductCard from "../../../components/product/Card";
 import { fetchProducts, fetchStores, submitReport } from "../../../api";
 import { FiStar, FiMessageCircle, FiFlag, FiMapPin, FiPhone, FiMail, FiClock, FiUsers, FiShoppingBag, FiHeart, FiChevronLeft, FiChevronRight, FiEdit } from "react-icons/fi";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaWhatsapp } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import ReportModal from "../../../components/ReportModal";
 
@@ -95,7 +95,12 @@ export default function StorePage() {
 
                 setCurrentStore(updatedStore);
                 setStoreProducts(storeProds);
-                setPopularProducts(storeProds.slice(0, 4));
+
+                // Sort by number of ratings (most popular)
+                const sortedByPopularity = [...storeProds]
+                    .sort((a, b) => (b.rating?.length || 0) - (a.rating?.length || 0))
+                    .slice(0, 5);
+                setPopularProducts(sortedByPopularity);
             } catch (err) {
                 setCurrentStore(null);
                 setStoreProducts([]);
@@ -181,11 +186,6 @@ export default function StorePage() {
 
 
 
-    const handleChatStore = useCallback(() => {
-        if(currentStore?.id) {
-            router.push(`/pages/chat/${currentStore.id}`);
-        }
-    }, [currentStore?.id, router]);
 
     const handleReportSubmit = useCallback(async (reportData) => {
         try {
@@ -339,10 +339,24 @@ export default function StorePage() {
                                 <div className="flex flex-col sm:flex-row gap-2">
                                     {currentStore.userId !== user?.id && (
                                         <button
-                                            onClick={handleChatStore}
-                                            className="btn bg-[#ED775A] border-none hover:bg-[#eb6b4b] text-white shadow-none"
+                                            onClick={() => {
+                                                // Format the contact number: remove + or replace 0 with 62
+                                                let formattedContact = currentStore.contact || '';
+                                                if (formattedContact.startsWith('+')) {
+                                                    formattedContact = formattedContact.substring(1); // Remove +
+                                                } else if (formattedContact.startsWith('0')) {
+                                                    formattedContact = '62' + formattedContact.substring(1); // Replace 0 with 62
+                                                }
+
+                                                // Create WhatsApp message without product info
+                                                const message = encodeURIComponent('Halo, saya ingin bertanya lebih lanjut tentang toko Anda.');
+
+                                                // Open WhatsApp chat
+                                                window.open(`https://wa.me/${formattedContact}?text=${message}`, '_blank');
+                                            }}
+                                            className="btn bg-green-500 border-none hover:bg-green-600 text-white shadow-none"
                                         >
-                                            <FiMessageCircle className="w-4 h-4" />
+                                            <FaWhatsapp className="w-4 h-4 mr-1"></FaWhatsapp>
                                             Chat Toko
                                         </button>
                                     )}

@@ -18,7 +18,7 @@ export default function OrderPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [filter, setFilter] = useState("all"); // all, pending, processing, shipped, delivered, completed, cancelled
+    const [filter, setFilter] = useState("all"); // all, ORDER_PLACED, PROCESSING, SHIPPED, DELIVERED
 
     useEffect(() => {
         const getUserOrders = async () => {
@@ -134,17 +134,7 @@ export default function OrderPage() {
     // Filter orders based on selected filter
     const filteredOrders = orders.filter(order => {
         if (filter === "all") return true;
-
-        // Map UI filter values to backend status values
-        let backendStatus = filter;
-        if (filter === "pending") backendStatus = "ORDER_PLACED";
-        if (filter === "processing") backendStatus = "PROCESSING";
-        if (filter === "shipped") backendStatus = "SHIPPED";
-        if (filter === "delivered") backendStatus = "DELIVERED";
-        if (filter === "completed") backendStatus = "COMPLETED";
-        if (filter === "cancelled") backendStatus = "CANCELLED";
-
-        return order.status?.toUpperCase() === backendStatus;
+        return order.status?.toUpperCase() === filter.toUpperCase();
     });
 
     // Show loading state
@@ -225,167 +215,167 @@ export default function OrderPage() {
                         <h1 className="text-2xl font-bold text-gray-900">Pesanan Saya</h1>
                     </div>
 
-                {/* Filter Tabs */}
-                <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-                    <button
-                        onClick={() => setFilter("all")}
-                        className={`btn btn-sm ${filter === "all" ? "bg-[#ED775A] text-white border-[#ED775A]" : "btn-outline"} whitespace-nowrap shadow-none`}
-                    >
-                        Semua
-                    </button>
-                    <button
-                        onClick={() => setFilter("pending")}
-                        className={`btn btn-sm ${filter === "pending" ? "bg-[#ED775A] text-white border-[#ED775A]" : "btn-outline"} whitespace-nowrap shadow-none`}
-                    >
-                        Menunggu
-                    </button>
-                    <button
-                        onClick={() => setFilter("processing")}
-                        className={`btn btn-sm ${filter === "processing" ? "bg-[#ED775A] text-white border-[#ED775A]" : "btn-outline"} whitespace-nowrap shadow-none`}
-                    >
-                        Diproses
-                    </button>
-                    <button
-                        onClick={() => setFilter("shipped")}
-                        className={`btn btn-sm ${filter === "shipped" ? "bg-[#ED775A] text-white border-[#ED775A]" : "btn-outline"} whitespace-nowrap shadow-none`}
-                    >
-                        Dikirim
-                    </button>
-                    <button
-                        onClick={() => setFilter("completed")}
-                        className={`btn btn-sm ${filter === "completed" ? "bg-[#ED775A] text-white border-[#ED775A]" : "btn-outline"} whitespace-nowrap shadow-none`}
-                    >
-                        Selesai
-                    </button>
-                </div>
-
-                {/* Orders List */}
-                {filteredOrders.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20">
-                        <FiPackage className="w-16 h-16 text-gray-400" />
-                        <p className="mt-4 text-gray-500 text-center">
-                            {filter === "all" ? "Belum ada pesanan" : `Tidak ada pesanan dengan status "${getStatusDisplay(filter).text}"`}
-                        </p>
+                    {/* Filter Tabs */}
+                    <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
                         <button
-                            onClick={() => router.push("/pages/marketplace")}
-                            className="mt-4 btn bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none shadow-none"
+                            onClick={() => setFilter("all")}
+                            className={`btn btn-sm ${filter === "all" ? "bg-[#ED775A] text-white border-[#ED775A]" : "btn-outline"} whitespace-nowrap shadow-none`}
                         >
-                            Mulai Berbelanja
+                            Semua
+                        </button>
+                        <button
+                            onClick={() => setFilter("ORDER_PLACED")}
+                            className={`btn btn-sm ${filter === "ORDER_PLACED" ? "bg-[#ED775A] text-white border-[#ED775A]" : "btn-outline"} whitespace-nowrap shadow-none`}
+                        >
+                            Menunggu
+                        </button>
+                        <button
+                            onClick={() => setFilter("PROCESSING")}
+                            className={`btn btn-sm ${filter === "PROCESSING" ? "bg-[#ED775A] text-white border-[#ED775A]" : "btn-outline"} whitespace-nowrap shadow-none`}
+                        >
+                            Diproses
+                        </button>
+                        <button
+                            onClick={() => setFilter("SHIPPED")}
+                            className={`btn btn-sm ${filter === "SHIPPED" ? "bg-[#ED775A] text-white border-[#ED775A]" : "btn-outline"} whitespace-nowrap shadow-none`}
+                        >
+                            Dikirim
+                        </button>
+                        <button
+                            onClick={() => setFilter("DELIVERED")}
+                            className={`btn btn-sm ${filter === "DELIVERED" ? "bg-[#ED775A] text-white border-[#ED775A]" : "btn-outline"} whitespace-nowrap shadow-none`}
+                        >
+                            Selesai
                         </button>
                     </div>
-                ) : (
-                    <div className="space-y-4">
-                        {filteredOrders.map((order) => {
-                            const statusDisplay = getStatusDisplay(order.status);
-                            return (
-                                <div
-                                    key={order.id}
-                                    className="bg-white rounded-lg border border-gray-200 shadow-none hover:scale-101 transition-transform cursor-pointer"
-                                    onClick={() => router.push(`/pages/status/${order.id}`)}
-                                >
-                                    <div className="p-6">
-                                        {/* Order Header */}
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-                                            <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                                                <div className={`px-3 py-1 rounded-full border ${statusDisplay.bgColor.replace('oklch', '')}`}>
-                                                    <div className="flex items-center gap-2">
-                                                        {statusDisplay.icon}
-                                                        <span className={`text-sm font-medium ${statusDisplay.color}`}>
-                                                            {statusDisplay.text}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-sm text-gray-600">Order #{order.id}</p>
-                                                <p className="text-xs text-gray-500 flex items-center gap-1 justify-end">
-                                                    <FiCalendar className="w-3 h-3" />
-                                                    {formatDate(order.createdAt || order.created_at)}
-                                                </p>
-                                            </div>
-                                        </div>
 
-                                        {/* Store Name */}
-                                        {order.store?.name && (
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <div className="w-3 h-3 bg-purple-500 rounded"></div>
-                                                <span className="font-medium text-gray-800">{order.store.name}</span>
-                                            </div>
-                                        )}
-
-                                        {/* Order Items */}
-                                        <div className="space-y-3 mb-4">
-                                            {order.orderItems && order.orderItems.length > 0 ? (
-                                                order.orderItems.slice(0, 2).map((item, index) => (
-                                                    <div key={item.productId || index} className="flex gap-3">
-                                                        <div className="w-12 h-12 bg-gray-200 rounded flex-shrink-0">
-                                                            <img
-                                                                src={item.product?.images?.[0] || "/images/default.png"}
-                                                                alt={item.product?.name || "Product"}
-                                                                className="w-full h-full object-cover rounded"
-                                                            />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-medium text-sm text-gray-900 truncate">
-                                                                {item.product?.name || `Produk #${item.productId}`}
-                                                            </p>
-                                                            <p className="text-xs text-gray-500">
-                                                                Qty: {item.quantity || 1} × Rp{(item.product?.price || item.price || 0).toLocaleString("id-ID")}
-                                                            </p>
+                    {/* Orders List */}
+                    {filteredOrders.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <FiPackage className="w-16 h-16 text-gray-400" />
+                            <p className="mt-4 text-gray-500 text-center">
+                                {filter === "all" ? "Belum ada pesanan" : `Tidak ada pesanan dengan status "${getStatusDisplay(filter).text}"`}
+                            </p>
+                            <button
+                                onClick={() => router.push("/pages/marketplace")}
+                                className="mt-4 btn bg-[#ED775A] text-white hover:bg-[#d86a4a] border-none shadow-none"
+                            >
+                                Mulai Berbelanja
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {filteredOrders.map((order) => {
+                                const statusDisplay = getStatusDisplay(order.status);
+                                return (
+                                    <div
+                                        key={order.id}
+                                        className="bg-white rounded-lg border border-gray-200 shadow-none hover:scale-101 transition-transform cursor-pointer"
+                                        onClick={() => router.push(`/pages/status/${order.id}`)}
+                                    >
+                                        <div className="p-6">
+                                            {/* Order Header */}
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                                                <div className="flex items-center gap-3 mb-2 sm:mb-0">
+                                                    <div className={`px-3 py-1 rounded-full border ${statusDisplay.bgColor.replace('oklch', '')}`}>
+                                                        <div className="flex items-center gap-2">
+                                                            {statusDisplay.icon}
+                                                            <span className={`text-sm font-medium ${statusDisplay.color}`}>
+                                                                {statusDisplay.text}
+                                                            </span>
                                                         </div>
                                                     </div>
-                                                ))
-                                            ) : (
-                                                <div className="flex gap-3">
-                                                    <div className="w-12 h-12 bg-gray-200 rounded flex-shrink-0"></div>
-                                                    <div className="flex-1">
-                                                        <p className="font-medium text-sm text-gray-500">Tidak ada produk</p>
-                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm text-gray-600">Order #{order.id}</p>
+                                                    <p className="text-xs text-gray-500 flex items-center gap-1 justify-end">
+                                                        <FiCalendar className="w-3 h-3" />
+                                                        {formatDate(order.createdAt || order.created_at)}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Store Name */}
+                                            {order.store?.name && (
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="w-3 h-3 bg-purple-500 rounded"></div>
+                                                    <span className="font-medium text-gray-800">{order.store.name}</span>
                                                 </div>
                                             )}
-                                            {order.orderItems && order.orderItems.length > 2 && (
-                                                <p className="text-xs text-gray-500 ml-15">
-                                                    +{order.orderItems.length - 2} produk lainnya
-                                                </p>
-                                            )}
-                                        </div>
 
-                                        {/* Order Summary */}
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-gray-100">
-                                            <div className="flex items-center gap-4 mb-2 sm:mb-0">
-                                                {order.paymentMethod && (
-                                                    <div className="flex items-center gap-1 text-xs text-gray-600">
-                                                        <FiCreditCard className="w-3 h-3" />
-                                                        <span className="capitalize">
-                                                            {order.paymentMethod === 'BANK_TRANSFER' ? 'Bank Transfer' :
-                                                             order.paymentMethod === 'COD' ? 'Cash on Delivery' :
-                                                             order.paymentMethod === 'EWALLET' ? 'E-Wallet' :
-                                                             order.paymentMethod?.toLowerCase().split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Metode Pembayaran Tidak Diketahui'}
-                                                        </span>
+                                            {/* Order Items */}
+                                            <div className="space-y-3 mb-4">
+                                                {order.orderItems && order.orderItems.length > 0 ? (
+                                                    order.orderItems.slice(0, 2).map((item, index) => (
+                                                        <div key={item.productId || index} className="flex gap-3">
+                                                            <div className="w-12 h-12 bg-gray-200 rounded flex-shrink-0">
+                                                                <img
+                                                                    src={item.product?.images?.[0] || "/images/default.png"}
+                                                                    alt={item.product?.name || "Product"}
+                                                                    className="w-full h-full object-cover rounded"
+                                                                />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-medium text-sm text-gray-900 truncate">
+                                                                    {item.product?.name || `Produk #${item.productId}`}
+                                                                </p>
+                                                                <p className="text-xs text-gray-500">
+                                                                    Qty: {item.quantity || 1} × Rp{(item.product?.price || item.price || 0).toLocaleString("id-ID")}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="flex gap-3">
+                                                        <div className="w-12 h-12 bg-gray-200 rounded flex-shrink-0"></div>
+                                                        <div className="flex-1">
+                                                            <p className="font-medium text-sm text-gray-500">Tidak ada produk</p>
+                                                        </div>
                                                     </div>
                                                 )}
-                                                {order.address?.city && (
-                                                    <div className="flex items-center gap-1 text-xs text-gray-600">
-                                                        <FiMapPin className="w-3 h-3" />
-                                                        <span>{order.address.city}</span>
-                                                    </div>
+                                                {order.orderItems && order.orderItems.length > 2 && (
+                                                    <p className="text-xs text-gray-500 ml-15">
+                                                        +{order.orderItems.length - 2} produk lainnya
+                                                    </p>
                                                 )}
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-xs text-gray-600">Total Belanja</p>
-                                                <p className="font-bold text-lg text-[#ED775A]">
-                                                    Rp{(order.total || 0).toLocaleString("id-ID")}
-                                                </p>
+
+                                            {/* Order Summary */}
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-gray-100">
+                                                <div className="flex items-center gap-4 mb-2 sm:mb-0">
+                                                    {order.paymentMethod && (
+                                                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                            <FiCreditCard className="w-3 h-3" />
+                                                            <span className="capitalize">
+                                                                {order.paymentMethod === 'BANK_TRANSFER' ? 'Bank Transfer' :
+                                                                    order.paymentMethod === 'COD' ? 'Cash on Delivery' :
+                                                                        order.paymentMethod === 'EWALLET' ? 'E-Wallet' :
+                                                                            order.paymentMethod?.toLowerCase().split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Metode Pembayaran Tidak Diketahui'}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {order.address?.city && (
+                                                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                            <FiMapPin className="w-3 h-3" />
+                                                            <span>{order.address.city}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs text-gray-600">Total Belanja</p>
+                                                    <p className="font-bold text-lg text-[#ED775A]">
+                                                        Rp{(order.total || 0).toLocaleString("id-ID")}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
             <Footer />
         </div>
     );

@@ -38,8 +38,8 @@ export default function ProductCard({ product }) {
     return (
         <div>
             <Link href={`/pages/product_detail/${product.id}`}>
-                <div className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-300">
-                    <figure className="relative w-full h-64 overflow-hidden rounded-t-lg">
+                <div className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-200">
+                    <figure className="relative w-full h-40 overflow-hidden rounded-t-lg">
                         <Image
                             width={500}
                             height={500}
@@ -53,29 +53,29 @@ export default function ProductCard({ product }) {
                             alt={product.name || "Product image"}
                             className="w-full h-full object-cover"
                         />
-                        <div className="badge badge-primary absolute top-2 right-2">
+                        <div className="badge badge-primary absolute top-1.5 right-1.5 text-[10px] py-0.5 px-1.5">
                             {product.category?.name}
                         </div>
                         {hasDiscount && discountedPrice > 0 && (
-                            <div className="badge badge-warning absolute bottom-2 left-2">
+                            <div className="badge badge-error absolute top-1.5 left-1.5 text-[10px] py-0.5 px-1.5 font-bold">
                                 -{discountedPrice}%
                             </div>
                         )}
                     </figure>
 
-                    <div className="card-body px-3 py-3">
-                        <h2 className="card-title text-sm md:text-base font-semibold text-gray-800 truncate">
+                    <div className="card-body px-2 py-2">
+                        <h2 className="card-title text-xs font-semibold text-gray-800 truncate leading-tight">
                             {product.name}
                         </h2>
                         {product.store && product.store.name && (
-                            <h3 className="text-sm text-gray-500 truncate mb-1">
+                            <h3 className="text-[10px] text-gray-500 truncate mb-0.5">
                                 {product.store.name}
                             </h3>
                         )}
-                        
 
-                        <div className="flex items-center gap-2">
-                            <div className="rating rating-sm">
+
+                        <div className="flex items-center gap-1">
+                            <div className="rating rating-xs">
                                 {Array(5).fill('').map((_, index) => {
                                     const isFilled = index < rating;
 
@@ -84,29 +84,33 @@ export default function ProductCard({ product }) {
                                             key={index}
                                             type="radio"
                                             name={`rating-${product.id}`}
-                                            className={`mask mask-star-2 ${isFilled ? '!bg-orange-400' : '!bg-gray-400'}`}
+                                            className={`mask mask-star-2`}
+                                            style={{
+                                                backgroundColor: isFilled ? '#fb923c' : '#d7d7d7ff',
+                                                opacity: 1
+                                            }}
                                             checked={isFilled}
                                             readOnly
                                         />
                                     );
                                 })}
                             </div>
-                            <span className="text-xs text-gray-500">
-                                ({validRatings.length} reviews)
+                            <span className="text-[9px] text-gray-500">
+                                ({validRatings.length})
                             </span>
                         </div>
 
                         {product.price !== product.mrp ? (
-                            <div className="">
-                                <span className="text-gray-400 line-through mr-2">
+                            <div className="mt-1">
+                                <span className="text-gray-400 line-through text-[10px] mr-1">
                                     Rp {(typeof product.mrp === "number" ? product.mrp : 0).toLocaleString("id-ID")}
                                 </span>
-                                <span className="text-gray-600 font-bold">
+                                <span className="text-gray-900 font-bold text-sm">
                                     Rp {(typeof product.price === "number" ? product.price : 0).toLocaleString("id-ID")}
                                 </span>
                             </div>
                         ) : (
-                            <p className="text-gray-600 mt-2 font-bold">
+                            <p className="text-gray-900 mt-1 font-bold text-sm">
                                 Rp {(typeof product.price === "number" ? product.price : 0).toLocaleString("id-ID")}
                             </p>
                         )}

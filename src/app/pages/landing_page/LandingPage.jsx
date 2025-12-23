@@ -10,6 +10,7 @@ import { flashSales, recommendedProducts } from "../../data/products";
 import { fetchProducts, fetchCategories } from "../../api";
 import CTA from "@/app/components/CTA";
 import { useGlobalData } from "../../contexts/GlobalDataContext";
+import { FiZap, FiShoppingBag, FiShoppingCart, FiTrendingUp, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 export default function LandingPage() {
     const router = useRouter();
@@ -130,38 +131,115 @@ export default function LandingPage() {
         <div className="min-h-screen bg-white">
             <Navbar />
 
-            {/* Hero Section */}
-            <section className="bg-gradient-to-br from-[#ED775A]/90 to-[#ED775A] py-16 mt-16">
-                <div className="max-w-7xl mx-auto px-4 my-5 sm:px-6 lg:px-8">
-                    <div className="flex flex-col lg:flex-row gap-8">
-                        <div
-                            className="hero bg-cover bg-center rounded-xl lg:w-[70%] min-h-96 shadow-2xl  overflow-hidden"
-                            style={{ backgroundImage: "url('/images/hero_imgs.png')" }}
-                        >
-                            <div className="hero-content text-center p-0 bg-gradient-to-r backdrop-blur-sm w-full h-full flex items-center justify-start">
-                                <div className="max-w-md text-left p-8">
-                                    <h1 className="text-5xl font-bold text-white drop-shadow-lg mb-4">SMART</h1>
-                                    <p className="py-6 text-white/90 text-lg font-medium">
-                                        Platform jual beli online terpercaya untuk masyarakat Sukmajaya.
-                                        Temukan produk lokal berkualitas dari penjual terverifikasi!
-                                    </p>
-                                    <Link href="/pages/marketplace" className="btn btn-lg bg-white text-[#ED775A] hover:bg-white/90 border-none shadow-lg">
-                                        Mulai Belanja Sekarang
+            {/* Hero Section - Modern Design */}
+            <section className="bg-gradient-to-br h-screen flex items-center from-indigo-50 via-white to-orange-50 py-12">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex flex-col lg:flex-row items-center gap-8">
+                        {/* Hero Content */}
+                        <div className="flex-1 w-full max-w-2xl relative z-10">
+                            <div className="space-y-4">
+                                <h1 className="text-5xl lg:text-6xl font-bold">
+                                    <span className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 bg-clip-text text-transparent">
+                                        Belanja Hemat,
+                                    </span>
+                                    <br />
+                                    <span className="text-slate-900">Ekonomi Lokal Kuat</span>
+                                </h1>
+                                <p className="text-lg text-slate-600 max-w-xl">
+                                    Platform jual beli online terpercaya untuk masyarakat Sukmajaya. Temukan produk lokal berkualitas dari penjual terverifikasi!
+                                </p>
+                                <div className="flex flex-wrap gap-3 pt-4">
+                                    <Link href="/pages/marketplace" className="btn bg-[#ED775A] shadow-none hover:bg-[#d86a4a] text-white border-none">
+                                        <FiShoppingBag className="w-5 h-5" />
+                                        Mulai Belanja
+                                    </Link>
+                                    <Link href="/pages/addstore" className="btn btn-outline border-[#ED775A] text-[#ED775A] shadow-none hover:bg-[#ED775A] hover:text-white hover:border-[#ED775A]">
+                                        Buka Toko
                                     </Link>
                                 </div>
+
                             </div>
                         </div>
-                        <div
-                            className="card bg-cover bg-center shadow-2xl lg:w-[30%] text-white  rounded-xl overflow-hidden"
-                            style={{ backgroundImage: "url('/images/heros_imgs1.png')" }}
-                        >
-                            <div className="card-body bg-gradient-to-br items-center text-center p-6 justify-between">
-                                <h2 className="card-title text-2xl mb-4">Promo Spesial!</h2>
-                                <div className="card-actions">
-                                    <Link href="/pages/marketplace?discount=true" className="btn bg-white text-[#ED775A] hover:bg-white/90 shadow-none border-none">
-                                        Lihat Promo
-                                    </Link>
+
+                        {/* Hero Visual - Horizontal Scrolling Products */}
+                        <div className="flex-1 w-full lg:max-w-none relative z-10">
+                            <div className="relative">
+                                {/* Main Visual - Horizontal Scrolling */}
+                                <div className="bg-white rounded-xl p-3 shadow-2xl border border-slate-100 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-orange-100 to-transparent rounded-bl-full opacity-50"></div>
+                                    <div className="space-y-2">
+                                        {/* Promo Banner */}
+                                        <div className="relative bg-gradient-to-r from-[#ED775A] to-[#FFB347] rounded-lg p-4 text-white overflow-hidden">
+                                            <div className="relative z-10 flex justify-between items-center">
+                                                <div className="text-white font-bold text-lg">
+                                                    Promo Spesial
+                                                </div>
+                                                <Link href="/pages/marketplace?discount=true" className="btn btn-sm bg-white text-[#ED775A] border-none hover:bg-orange-50 hover:shadow-none shadow-none">
+                                                    Lihat Promo
+                                                </Link>
+                                            </div>
+                                            <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-white/10 rounded-full"></div>
+                                        </div>
+
+                                        {/* Horizontal Scrolling Products - Bigger */}
+                                        <div className="relative flex-1">
+                                            <div className="overflow-x-auto scrollbar-hide pb-2 h-full" style={{ minHeight: '270px' }}>
+                                                {precomputedFlashSales.length > 0 ? (
+                                                    <div className="flex gap-3" id="hero-products-scroll">
+                                                        {precomputedFlashSales.slice(0, 3).map((product, idx) => (
+                                                            <div key={idx}>
+                                                                <Link href={`/pages/product_detail/${product.id}`} className="bg-slate-50 p-3 rounded-xl flex-shrink-0 w-[180px] cursor-pointer hover:bg-orange-50 transition-colors border border-slate-100 flex flex-col">
+                                                                    <div className="w-full h-32 bg-white rounded-lg flex items-center justify-center mb-2 overflow-hidden relative">
+                                                                        <img src={product.images?.[0] || '/images/default.png'} alt={product.name} className="w-full h-full object-cover" />
+                                                                    </div>
+                                                                    <div className="flex-1 flex flex-col">
+                                                                        <p className="font-bold text-slate-800 text-sm truncate leading-tight mb-2">
+                                                                            {product.name || 'Produk'}
+                                                                        </p>
+                                                                        <div className="mt-auto">
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <p className="text-[#ED775A] font-bold text-base leading-none">
+                                                                                    Rp {(product.price || 0).toLocaleString("id-ID")}
+                                                                                </p>
+                                                                                {product.mrp > product.price && (
+                                                                                    <span className="badge badge-error badge-sm py-0 px-1.5 text-[9px] font-bold">
+                                                                                        -{Math.round(((product.mrp - product.price) / product.mrp) * 100)}%
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            {product.mrp > product.price && (
+                                                                                <p className="text-gray-400 text-xs line-through">
+                                                                                    Rp {product.mrp.toLocaleString("id-ID")}
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </Link>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex gap-3" id="hero-products-scroll">
+                                                        {/* Loading skeleton for Hero Products */}
+                                                        {Array.from({ length: 5 }).map((_, idx) => (
+                                                            <div key={idx} className="bg-slate-50 p-3 rounded-xl flex-shrink-0 w-[180px] border border-slate-100 flex flex-col animate-pulse">
+                                                                <div className="w-full h-32 bg-slate-200 rounded-lg mb-2"></div>
+                                                                <div className="flex-1 flex flex-col space-y-2">
+                                                                    <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                                                                    <div className="h-4 bg-slate-200 rounded w-1/2 mt-auto"></div>
+                                                                    <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                {/* Background decoration */}
+                                <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-orange-200/30 to-blue-200/30 rounded-full blur-2xl"></div>
                             </div>
                         </div>
                     </div>
@@ -169,12 +247,12 @@ export default function LandingPage() {
             </section>
 
             {/* Categories Section */}
-            <section className="py-16 bg-gradient-to-b from-white to-gray-50 mt-5">
+            <section className="py-8 bg-gradient-to-b from-white to-gray-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Cari berdasarkan Kategori</h2>
-                        <p className="text-xl text-gray-600">Temukan produk lokal berkualitas dari berbagai kategori</p>
-                        <div className="flex justify-center mt-6 space-x-2">
+                    <div className="text-center mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Cari berdasarkan Kategori</h2>
+                        <p className="text-sm text-gray-600">Temukan produk lokal berkualitas dari berbagai kategori</p>
+                        <div className="flex justify-center mt-4 space-x-2">
                             <button className="btn btn-circle bg-[#ED775A] hover:bg-[#ED775A]/80 text-white border-none shadow-none scroll-left">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
@@ -188,10 +266,13 @@ export default function LandingPage() {
                         </div>
                     </div>
                     <div className="relative">
-                        <div className="flex scrollbar-hide gap-6 pb-4 scroll-container overflow-x-hidden ">
+                        <div className="flex scrollbar-hide gap-4 pb-2 scroll-container overflow-x-hidden ">
                             {categoriesLoading ? (
-                                <div className="text-center text-gray-500 w-full py-8">
-                                    <p>Loading categories...</p>
+                                <div className="flex gap-4 pb-2">
+                                    {/* Loading skeleton for Categories */}
+                                    {Array.from({ length: 5 }).map((_, idx) => (
+                                        <div key={idx} className="card bg-slate-200 mx-1 my-2 w-[200px] min-w-[200px] h-[280px] flex-shrink-0 border border-gray-200 animate-pulse"></div>
+                                    ))}
                                 </div>
                             ) : categories.length > 0 ? (
                                 categories.map((category, index) => (
@@ -199,7 +280,7 @@ export default function LandingPage() {
                                         key={category.id || index}
                                         href={`/pages/marketplace?category=${encodeURIComponent(category.name)}`}
                                         target="_blank"
-                                        className="card bg-white mx-1 my-3 hover:cursor-pointer w-[280px] min-w-[280px] flex-shrink-0 hover:-translate-y-2 transition-all duration-500 border border-gray-200 h-[380px]"
+                                        className="card bg-white mx-1 my-2 hover:cursor-pointer w-[200px] min-w-[200px] h-[280px] flex-shrink-0 hover:-translate-y-1 transition-all duration-300 border border-gray-200"
                                     >
                                         <figure className="relative overflow-hidden h-full w-full">
                                             <img
@@ -209,8 +290,8 @@ export default function LandingPage() {
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                                         </figure>
-                                        <div className="card-body text-center py-4">
-                                            <h3 className="card-title justify-center text-lg font-bold text-[#84994F]">{category.name}</h3>
+                                        <div className="card-body text-center py-1.5">
+                                            <h3 className="card-title justify-center text-sm font-bold text-[#84994F]">{category.name}</h3>
                                         </div>
                                     </Link>
                                 ))
@@ -225,48 +306,73 @@ export default function LandingPage() {
             </section>
 
             {/* Flash Sale Section */}
-            <section className="py-16 bg-gradient-to-r from-[#ED775A] to-[#FFE797]">
+            <section className="py-10 bg-gradient-to-r from-[#ED775A] to-[#FFE797]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <div className="flex items-center justify-center gap-4 mb-4">
-                            <h2 className="text-4xl font-bold text-white drop-shadow-lg">FLASH SALE</h2>
+                    <div className="text-center mb-8">
+                        <div className="flex items-center justify-center gap-3 mb-3">
+                            <h2 className="text-3xl font-bold text-white drop-shadow-lg">FLASH SALE</h2>
                         </div>
-                        <p className="text-xl text-white/90 font-medium">Buruan! Penawaran terbatas waktu dengan diskon fantastis</p>
+                        <p className="text-base text-white/90 font-medium">Buruan! Penawaran terbatas waktu dengan diskon fantastis</p>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-6 px-1 py-2">
-                        {precomputedFlashSales.slice(0, 4).map((product) => (
-                            <ProductCard
-                                key={product.id || product.ID}
-                                product={product}
-                            />
-                        ))}
-                        <div className="card bg-gradient-to-br from-white to-[#FFE797]/30 border border-white/50 flex flex-col justify-center items-center space-y-4 transition-all duration-300 hover:-translate-y-1">
-                            <div className="text-center">
-                                <div className="text-3xl mb-2">🛍️</div>
-                                <span className="text-[#ED775A] font-bold text-lg mx-8 text-center block mb-2">
-                                    Lihat Semua Produk Flash Sale
-                                </span>
-                                <p className="text-gray-600 text-sm">Jangan sampai terlewat!</p>
-                            </div>
-                            <Link href="/pages/marketplace?discount=true" className="btn btn-primary">
-                                Lihat Semua
-                            </Link>
-                        </div>
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-4 px-1 py-2">
+                        {precomputedFlashSales.length > 0 ? (
+                            <>
+                                {precomputedFlashSales.slice(0, 5).map((product) => (
+                                    <ProductCard
+                                        key={product.id || product.ID}
+                                        product={product}
+                                    />
+                                ))}
+                                <Link href="/pages/marketplace?discount=true" className="card bg-gradient-to-br from-white to-[#FFE797]/30 border border-white/50 flex flex-col justify-center items-center space-y-2 transition-all duration-300 hover:-translate-y-1 p-3">
+                                    <div className="text-center">
+                                        <FiShoppingCart className="text-2xl mb-1 mx-auto text-[#ED775A]" />
+                                        <span className="text-[#ED775A] font-bold text-xs text-center block mb-1">
+                                            Lihat Semua Produk Flash Sale
+                                        </span>
+                                    </div>
+                                    <button className="btn btn-primary btn-xs">
+                                        Lihat Semua
+                                    </button>
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                {Array.from({ length: 5 }).map((_, idx) => (
+                                    <div key={idx} className="card bg-white border border-gray-200 flex flex-col animate-pulse">
+                                        <div className="bg-slate-200 h-24 w-full"></div>
+                                        <div className="p-2 flex flex-col space-y-2">
+                                            <div className="h-3 bg-slate-200 rounded w-11/12"></div>
+                                            <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+                                            <div className="h-3 bg-slate-200 rounded w-1/2 mt-2"></div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div className="card bg-gradient-to-br from-white to-[#FFE797]/30 border border-white/50 flex flex-col justify-center items-center space-y-2 transition-all duration-300 p-3 animate-pulse">
+                                    <div className="text-center">
+                                        <div className="bg-slate-200 h-6 w-6 rounded-full mx-auto mb-1"></div>
+                                        <div className="bg-slate-200 h-3 rounded w-3/4 mx-auto mb-1"></div>
+                                    </div>
+                                    <div className="btn btn-primary btn-xs bg-slate-200 border-slate-200">
+                                        <div className="bg-slate-300 h-3 w-8 rounded"></div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </section>
 
             {/* Best Selling Section */}
             <div className="bg-gradient-to-b from-gray-50 to-white">
-                <section className="py-20">
+                <section className="py-12">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-16">
-                            <div className="flex items-center justify-center gap-3 mb-4">
-                                <h2 className="text-4xl font-bold text-gray-900">Produk Terlaku</h2>
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                                <h2 className="text-2xl font-bold text-gray-900">Produk Terlaku</h2>
                             </div>
-                            <p className="text-xl text-gray-600">Produk pilihan yang paling diminati pelanggan SMART</p>
+                            <p className="text-sm text-gray-600">Produk pilihan yang paling diminati pelanggan SMART</p>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 overflow-x-auto scrollbar-hide px-1 py-2">
+                        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4 overflow-x-auto scrollbar-hide px-1 py-2">
                             {recommendedProductsList.length > 0 ? (
                                 <>
                                     {recommendedProductsList.slice().sort((a, b) => {
@@ -274,49 +380,81 @@ export default function LandingPage() {
                                         const aRatingCount = Array.isArray(a.rating) ? a.rating.length : 0;
                                         const bRatingCount = Array.isArray(b.rating) ? b.rating.length : 0;
                                         return bRatingCount - aRatingCount;
-                                    }).slice(0, 4).map((product, index) => (
+                                    }).slice(0, 5).map((product, index) => (
                                         <ProductCard key={product.id || product.ID || index} product={product} />
                                     ))}
-                                    <Link href="/pages/marketplace" passHref className="card bg-gradient-to-br from-[#84994F] to-[#476EAE] text-white flex flex-col justify-center items-center space-y-4 transition-all duration-300 hover:-translate-y-1 cursor-pointer" >
+                                    <Link href="/pages/marketplace" passHref className="card bg-gradient-to-br from-[#84994F] to-[#476EAE] text-white flex flex-col justify-center items-center space-y-2 transition-all duration-300 hover:-translate-y-1 cursor-pointer p-3" >
                                         <div className="text-center">
-                                            <div className="text-3xl mb-2">📈</div>
-                                            <span className="text-white font-bold text-lg mx-8 text-center block mb-2">
+                                            <FiTrendingUp className="text-2xl mb-1 mx-auto" />
+                                            <span className="text-white font-bold text-xs text-center block mb-1">
                                                 Lihat Semua Produk Terlaku
                                             </span>
-                                            <p className="text-white/80 text-sm">Trending sekarang!</p>
                                         </div>
-                                        <button className="btn btn-circle bg-white text-[#84994F] hover:bg-white/90 border-none shadow-lg">
-                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                                            </svg>
+                                        <button className="btn btn-primary btn-xs">
+                                            Lihat Semua
                                         </button>
                                     </Link>
                                 </>
                             ) : (
-                                <p className="text-gray-500 text-center col-span-full">
-                                    Belum ada produk
-                                </p>
+                                <>
+                                    {Array.from({ length: 5 }).map((_, idx) => (
+                                        <div key={idx} className="card bg-white border border-gray-200 flex flex-col animate-pulse">
+                                            <div className="bg-slate-200 h-24 w-full"></div>
+                                            <div className="p-2 flex flex-col space-y-2">
+                                                <div className="h-3 bg-slate-200 rounded w-11/12"></div>
+                                                <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+                                                <div className="h-3 bg-slate-200 rounded w-1/2 mt-2"></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div className="card bg-gradient-to-br from-[#84994F] to-[#476EAE] text-white flex flex-col justify-center items-center space-y-2 transition-all duration-300 p-3 animate-pulse">
+                                        <div className="text-center">
+                                            <div className="bg-slate-200 h-6 w-6 rounded-full mx-auto mb-1"></div>
+                                            <div className="bg-slate-200 h-3 rounded w-3/4 mx-auto mb-1"></div>
+                                        </div>
+                                        <div className="btn btn-circle btn-xs bg-slate-200 border-slate-200">
+                                            <div className="bg-slate-300 h-2 w-2 rounded-full"></div>
+                                        </div>
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
                 </section>
 
                 {/* Recommendations Section */}
-                <section className="py-20 bg-gradient-to-b from-white to-[#FFE797]/10">
+                <section className="py-12 bg-gradient-to-b from-white to-[#FFE797]/10">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-16">
-                            <div className="flex items-center justify-center gap-3 mb-4">
-                                <h2 className="text-4xl font-bold text-gray-900">Rekomendasi Untukmu</h2>
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                                <h2 className="text-2xl font-bold text-gray-900">Rekomendasi Untukmu</h2>
                             </div>
-                            <p className="text-xl text-gray-600">Dipilih khusus berdasarkan preferensi dan minat Anda</p>
+                            <p className="text-sm text-gray-600">Dipilih khusus berdasarkan preferensi dan minat Anda</p>
                         </div>
-                        <div className="grid grid-cols-2 grid-rows-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-                            {recommendedProductsList.slice(0, 10).map((product) => (
-                                <ProductCard
-                                    key={product.id || product.ID}
-                                    product={product}
-                                />
-                            ))}
+                        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                            {recommendedProductsList.length > 0 ? (
+                                <>
+                                    {recommendedProductsList.slice(0, 10).map((product) => (
+                                        <ProductCard
+                                            key={product.id || product.ID}
+                                            product={product}
+                                        />
+                                    ))}
+                                </>
+                            ) : (
+                                <>
+                                    {Array.from({ length: 6 }).map((_, idx) => (
+                                        <div key={idx} className="card bg-white border border-gray-200 flex flex-col animate-pulse">
+                                            <div className="bg-slate-200 h-24 w-full"></div>
+                                            <div className="p-2 flex flex-col space-y-2">
+                                                <div className="h-3 bg-slate-200 rounded w-11/12"></div>
+                                                <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+                                                <div className="h-3 bg-slate-200 rounded w-1/2 mt-2"></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
                         </div>
                     </div>
                 </section>

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { useStoreRefresh } from "../../hooks/useStoreRefresh";
 import { createStore } from "../../api";
@@ -8,6 +9,7 @@ import Navbar from "../../components/navbar/Navbar";
 import Footer from "../../components/footer/Footer";
 
 export default function AddStorePage() {
+    const router = useRouter();
     const [storeInfo, setStoreInfo] = useState({
         name: "",
         username: "",
@@ -49,14 +51,14 @@ export default function AddStorePage() {
             refreshStore();
             Swal.fire({
                 icon: "success",
-                title: "Store created successfully! Please wait for admin approval.",
+                title: "Toko berhasil dibuat! Mohon tunggu persetujuan admin.",
                 showConfirmButton: false,
                 timer: 1800
             });
         } catch (err) {
             Swal.fire({
                 icon: "error",
-                title: "Failed to create store",
+                title: "Gagal membuat toko",
                 text: err?.response?.data?.message || err.message,
             });
         }
@@ -68,14 +70,18 @@ export default function AddStorePage() {
             <div className="pt-10 pb-12">
                 <div className="max-w-2xl mx-auto px-4">
                     <div className="mt-10 flex py-5">
-                        {/* ...existing code... */}
+                        <button
+                            onClick={() => router.back()}
+                            className="btn btn-sm btn-ghost shadow-none border-none text-gray-700 hover:bg-gray-100"
+                        >&larr; Kembali
+                        </button>
                     </div>
                     <div className="bg-white rounded-lg shadow-lg p-8">
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Store Logo */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Store Logo
+                                    Logo Toko
                                 </label>
                                 <div className="flex items-center justify-center">
                                     <label
@@ -91,7 +97,7 @@ export default function AddStorePage() {
                                         ) : (
                                             <>
                                                 {/* ...icon... */}
-                                                <span className="text-sm text-gray-500">Upload Logo</span>
+                                                <span className="text-sm text-gray-500">Unggah Logo</span>
                                             </>
                                         )}
                                         <input
@@ -108,13 +114,13 @@ export default function AddStorePage() {
                             {/* Username */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Username
+                                    Nama Pengguna
                                 </label>
                                 <input
                                     name="username"
                                     type="text"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent"
-                                    placeholder="Enter your store username"
+                                    placeholder="Masukkan nama pengguna toko Anda"
                                     value={storeInfo.username}
                                     onChange={onChangeHandler}
                                     required
@@ -124,13 +130,13 @@ export default function AddStorePage() {
                             {/* Name */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Name
+                                    Nama Toko
                                 </label>
                                 <input
                                     name="name"
                                     type="text"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent"
-                                    placeholder="Enter your store name"
+                                    placeholder="Masukkan nama toko Anda"
                                     value={storeInfo.name}
                                     onChange={onChangeHandler}
                                     required
@@ -139,13 +145,13 @@ export default function AddStorePage() {
                             {/* Description */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Description
+                                    Deskripsi
                                 </label>
                                 <textarea
                                     name="description"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent resize-none"
                                     rows={4}
-                                    placeholder="Enter your store description"
+                                    placeholder="Masukkan deskripsi toko Anda"
                                     value={storeInfo.description}
                                     onChange={onChangeHandler}
                                     required
@@ -160,7 +166,7 @@ export default function AddStorePage() {
                                     name="email"
                                     type="email"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent"
-                                    placeholder="Enter your store email"
+                                    placeholder="Masukkan email toko Anda"
                                     value={storeInfo.email}
                                     onChange={onChangeHandler}
                                     required
@@ -169,13 +175,13 @@ export default function AddStorePage() {
                             {/* Contact Number */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Contact Number
+                                    Nomor Kontak
                                 </label>
                                 <input
                                     name="contact"
                                     type="tel"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent"
-                                    placeholder="Enter your store contact number"
+                                    placeholder="6281234567890"
                                     value={storeInfo.contact}
                                     onChange={onChangeHandler}
                                     required
@@ -184,13 +190,13 @@ export default function AddStorePage() {
                             {/* Address */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Address
+                                    Alamat
                                 </label>
                                 <textarea
                                     name="address"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ED775A] focus:border-transparent resize-none"
                                     rows={3}
-                                    placeholder="Enter your store address"
+                                    placeholder="Masukkan alamat toko Anda"
                                     value={storeInfo.address}
                                     onChange={onChangeHandler}
                                     required
@@ -202,7 +208,7 @@ export default function AddStorePage() {
                                     type="submit"
                                     className="w-full bg-[#ED775A] text-white font-bold py-4 px-6 rounded-lg hover:bg-[#d86a4a] transition-colors duration-300 text-lg"
                                 >
-                                    Create Store
+                                    Buat Toko
                                 </button>
                             </div>
                         </form>

@@ -8,10 +8,10 @@ import Footer from "../../../components/footer/Footer"
 import { FiMinus, FiPlus, FiStar, FiMessageSquare, FiChevronUp, FiShare, FiShoppingCart, FiMessageCircle } from "react-icons/fi"
 import CTA from "@/app/components/CTA"
 import { useRouter } from "next/navigation";
-import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
+import { FaStar, FaChevronLeft, FaChevronRight, FaWhatsapp } from "react-icons/fa"
 // import ProductCard from "../../../components/product/Card"
 import ProductCard from "../../../components/product/Card"
-import { fetchProducts, addToCart as addToCartAPI, fetchCart, submitReport, fetchWishlist, addToWishlist, removeFromWishlist, fetchProductRatings } from "../../../api";
+import { fetchProducts, addToCart as addToCartAPI, fetchCart, submitReport, fetchWishlist, fetchProductRatings } from "../../../api";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, increaseQuantity } from "@/lib/features/cart/cartSlice";
 import Swal from 'sweetalert2';
@@ -25,7 +25,7 @@ export default function ProductPage() {
     const router = useRouter();
     const dispatch = useDispatch();
     const cartItems = useSelector((state) => state.cart.items || state.cart.cartItems);
-    const { cachedProducts } = useGlobalData();
+    const { cachedProducts, cachedWishlist, addToWishlistContext, removeFromWishlistContext } = useGlobalData();
     const params = useParams();
     const productId = params.id;
 
@@ -164,30 +164,10 @@ export default function ProductPage() {
 
     // Check if product is in wishlist when component loads
     useEffect(() => {
-        const loadWishlist = async () => {
-            if (user && productId && session) {
-                try {
-                    // Get token from Clerk session
-                    const token = await session.getToken();
-                    if (token) {
-                        const wishlistData = await fetchWishlist(token);
-                        // Convert the fetched wishlist to the expected format
-                        const wishlistProductIds = {};
-                        if (Array.isArray(wishlistData) && wishlistData.length > 0) {
-                            wishlistData.forEach(item => {
-                                wishlistProductIds[item.productId] = true;
-                            });
-                        }
-                        // Check if current product is in wishlist
-                        setIsWishlisted(!!wishlistProductIds[productId]);
-                    }
-                } catch (error) {
-                    console.error('Error getting token:', error);
-                }
-            }
-        };
-        loadWishlist();
-    }, [user, session, productId]);
+        if (cachedWishlist !== undefined && cachedWishlist !== null && productId) {
+            setIsWishlisted(!!cachedWishlist[productId]);
+        }
+    }, [cachedWishlist, productId]);
 
 
     const handleRatingChange = (r) => {
@@ -683,10 +663,26 @@ export default function ProductPage() {
                                 </div>
                                 <div className="flex gap-2">
                                     <button
-                                        onClick={() => router.push(`/pages/chat/${currentStore.id}`)}
-                                        className="btn btn-sm bg-[#34A853] border-none hover:bg-[#2d924a] shadow-none text-sm text-white"
+                                        onClick={() => {
+                                            // Format the contact number: remove + or replace 0 with 62
+                                            let formattedContact = currentStore.contact || '';
+                                            if (formattedContact.startsWith('+')) {
+                                                formattedContact = formattedContact.substring(1); // Remove +
+                                            } else if (formattedContact.startsWith('0')) {
+                                                formattedContact = '62' + formattedContact.substring(1); // Replace 0 with 62
+                                            }
+
+                                            // Create WhatsApp message with product info
+                                            const productName = encodeURIComponent(currentProduct.name);
+                                            const productPrice = currentProduct.price.toLocaleString("id-ID");
+                                            const message = encodeURIComponent(`Halo, saya tertarik dengan produk ${productName} (Rp. ${productPrice}). Bisa dibantu?`);
+
+                                            // Open WhatsApp chat
+                                            window.open(`https://wa.me/${formattedContact}?text=${message}`, '_blank');
+                                        }}
+                                        className="btn btn-sm bg-green-500 border-none hover:bg-green-600 shadow-none text-sm text-white"
                                     >
-                                        <FiMessageCircle className="w-4 h-4 mr-1" />
+                                        <FaWhatsapp className="w-4 h-4 mr-1"></FaWhatsapp>
                                         Chat Toko
                                     </button>
                                     <Link
@@ -846,44 +842,52 @@ export default function ProductPage() {
                                             }
 
                                             try {
-                                                // Get token from Clerk session
-                                                let token = null;
-                                                try {
-                                                    token = await session.getToken();
-                                                } catch (error) {
-                                                    console.error('Error getting Clerk token:', error);
-                                                }
-                                                if (!token) {
-                                                    throw new Error('Authentication token not available');
+                                                // Show loading indicator
+                                                Swal.fire({
+                                                    title: 'Memproses...',
+                                                    text: isWishlisted ? 'Menghapus dari wishlist...' : 'Menambahkan ke wishlist...',
+                                                    allowOutsideClick: false,
+                                                    allowEscapeKey: false,
+                                                    showConfirmButton: false,
+                                                    didOpen: () => {
+                                                        Swal.showLoading();
+                                                    }
+                                                });
+
+                                                let success = false;
+                                                if (isWishlisted) {
+                                                    success = await removeFromWishlistContext(currentProduct.id);
+                                                    if (success) {
+                                                        setIsWishlisted(false);
+                                                    }
+                                                } else {
+                                                    success = await addToWishlistContext(currentProduct.id);
+                                                    if (success) {
+                                                        setIsWishlisted(true);
+                                                    }
                                                 }
 
-                                                if (isWishlisted) {
-                                                    await removeFromWishlist(currentProduct.id, token);
-                                                    setIsWishlisted(false);
+                                                Swal.close();
+                                                if (success) {
                                                     await Swal.fire({
                                                         icon: 'success',
-                                                        title: 'Berhasil',
-                                                        text: 'Produk berhasil dihapus dari wishlist!',
+                                                        title: isWishlisted ? 'Berhasil Dihapus' : 'Berhasil Ditambahkan',
+                                                        text: isWishlisted
+                                                            ? 'Produk berhasil dihapus dari wishlist!'
+                                                            : 'Produk berhasil ditambahkan ke wishlist!',
                                                         timer: 2000,
                                                         showConfirmButton: false
                                                     });
                                                 } else {
-                                                    await addToWishlist(currentProduct.id, token);
-                                                    setIsWishlisted(true);
-                                                    await Swal.fire({
-                                                        icon: 'success',
-                                                        title: 'Berhasil',
-                                                        text: 'Produk berhasil ditambahkan ke wishlist!',
-                                                        timer: 2000,
-                                                        showConfirmButton: false
-                                                    });
+                                                    throw new Error('Operasi wishlist gagal');
                                                 }
                                             } catch (error) {
                                                 console.error('Error updating wishlist:', error);
+                                                Swal.close();
                                                 await Swal.fire({
                                                     icon: 'error',
                                                     title: 'Gagal',
-                                                    text: error?.response?.data?.error || 'Gagal memperbarui wishlist.',
+                                                    text: error?.message || 'Gagal memperbarui wishlist.',
                                                 });
                                             }
                                         }}
