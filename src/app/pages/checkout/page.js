@@ -313,7 +313,7 @@ export default function CheckoutPage() {
 
             // Validate selectedItems before processing
             console.log('Selected items before processing:', selectedItems);
-            
+
             // Filter out items with undefined/null IDs and validate data
             const validItems = selectedItems.filter(item => {
                 if (!item.id) {
@@ -348,7 +348,7 @@ export default function CheckoutPage() {
                 paymentMethod: paymentMethodMap[paymentMethod] || 'BANK_TRANSFER' // Use BANK_TRANSFER as fallback
                 // Don't send userId, storeId, couponCode if null - let backend handle it
             };
-            
+
             // Only add couponCode if it's not empty
             if (couponCode && couponCode.trim() !== '') {
                 orderData.couponCode = couponCode.trim();
@@ -373,7 +373,7 @@ export default function CheckoutPage() {
                     text: 'Pesanan berhasil dibuat, tapi tidak dapat menemukan ID pesanan.',
                     timer: 2000,
                     showConfirmButton: false
-                }); 
+                });
                 router.push(`/pages/order/${user.id}`);
             }
         } catch (error) {
@@ -405,13 +405,13 @@ export default function CheckoutPage() {
     const isFormValid = selectedAddressId && selectedAddressId !== "new" ?
         true : // If existing address selected, form is valid
         (shippingAddress.name &&
-        shippingAddress.phone.length >= 10 &&
-        shippingAddress.phone.length <= 12 &&
-        shippingAddress.address &&
-        shippingAddress.city &&
-        shippingAddress.postalCode.length === 5 &&
-        !phoneError &&
-        !postalError);
+            shippingAddress.phone.length >= 10 &&
+            shippingAddress.phone.length <= 12 &&
+            shippingAddress.address &&
+            shippingAddress.city &&
+            shippingAddress.postalCode.length === 5 &&
+            !phoneError &&
+            !postalError);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -426,7 +426,7 @@ export default function CheckoutPage() {
                     <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+                <div className="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_400px]">
                     {/* Main Content */}
                     <div className="space-y-6">
                         {/* Shipping Address */}
@@ -499,7 +499,7 @@ export default function CheckoutPage() {
                                             Simpan
                                         </button>
                                     </div>
-                                    <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap *</label>
                                             <input
@@ -628,7 +628,7 @@ export default function CheckoutPage() {
                     </div>
 
                     {/* Order Summary */}
-                    <div className="bg-white rounded-lg border-1 border-gray-200 p-6 h-fit sticky top-20">
+                    <div className="bg-white rounded-lg border-1 border-gray-200 p-4 md:p-6 h-fit lg:sticky lg:top-20">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Ringkasan Pesanan</h2>
 
                         {/* Order Items */}
@@ -681,8 +681,8 @@ export default function CheckoutPage() {
                             onClick={handlePlaceOrder}
                             disabled={!isFormValid || isProcessing}
                             className={`w-full btn ${!isFormValid || isProcessing
-                                    ? 'bg-gray-400 text-gray-400 border-gray-400 cursor-not-allowed'
-                                    : 'bg-[#ED775A] border-none hover:bg-[#eb6b4b] text-white shadow-none'
+                                ? 'bg-gray-400 text-gray-400 border-gray-400 cursor-not-allowed'
+                                : 'bg-[#ED775A] border-none hover:bg-[#eb6b4b] text-white shadow-none'
                                 }`}
                         >
                             {isProcessing ? (

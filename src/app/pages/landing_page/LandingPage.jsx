@@ -132,28 +132,28 @@ export default function LandingPage() {
             <Navbar />
 
             {/* Hero Section - Modern Design */}
-            <section className="bg-gradient-to-br h-screen flex items-center from-indigo-50 via-white to-orange-50 py-12">
+            <section className="bg-gradient-to-br min-h-screen flex items-center from-indigo-50 via-white to-orange-50 py-8 md:py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col lg:flex-row items-center gap-8">
+                    <div className="flex flex-col lg:flex-row items-center gap-6 md:gap-8">
                         {/* Hero Content */}
                         <div className="flex-1 w-full max-w-2xl relative z-10">
-                            <div className="space-y-4">
-                                <h1 className="text-5xl lg:text-6xl font-bold">
+                            <div className="space-y-3 md:space-y-4">
+                                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">
                                     <span className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 bg-clip-text text-transparent">
                                         Belanja Hemat,
                                     </span>
                                     <br />
                                     <span className="text-slate-900">Ekonomi Lokal Kuat</span>
                                 </h1>
-                                <p className="text-lg text-slate-600 max-w-xl">
+                                <p className="text-sm sm:text-base md:text-lg text-slate-600 max-w-xl">
                                     Platform jual beli online terpercaya untuk masyarakat Sukmajaya. Temukan produk lokal berkualitas dari penjual terverifikasi!
                                 </p>
-                                <div className="flex flex-wrap gap-3 pt-4">
-                                    <Link href="/pages/marketplace" className="btn bg-[#ED775A] shadow-none hover:bg-[#d86a4a] text-white border-none">
-                                        <FiShoppingBag className="w-5 h-5" />
+                                <div className="flex flex-wrap gap-2 md:gap-3 pt-2 md:pt-4">
+                                    <Link href="/pages/marketplace" className="btn btn-sm md:btn-md bg-[#ED775A] shadow-none hover:bg-[#d86a4a] text-white border-none">
+                                        <FiShoppingBag className="w-4 h-4 md:w-5 md:h-5" />
                                         Mulai Belanja
                                     </Link>
-                                    <Link href="/pages/addstore" className="btn btn-outline border-[#ED775A] text-[#ED775A] shadow-none hover:bg-[#ED775A] hover:text-white hover:border-[#ED775A]">
+                                    <Link href="/pages/addstore" className="btn btn-sm md:btn-md btn-outline border-[#ED775A] text-[#ED775A] shadow-none hover:bg-[#ED775A] hover:text-white hover:border-[#ED775A]">
                                         Buka Toko
                                     </Link>
                                 </div>
@@ -165,50 +165,50 @@ export default function LandingPage() {
                         <div className="flex-1 w-full lg:max-w-none relative z-10">
                             <div className="relative">
                                 {/* Main Visual - Horizontal Scrolling */}
-                                <div className="bg-white rounded-xl p-3 shadow-2xl border border-slate-100 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-orange-100 to-transparent rounded-bl-full opacity-50"></div>
-                                    <div className="space-y-2">
+                                <div className="bg-white rounded-lg md:rounded-xl p-1.5 md:p-3 shadow-xl md:shadow-2xl border border-slate-100 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-12 h-12 md:w-20 md:h-20 bg-gradient-to-bl from-orange-100 to-transparent rounded-bl-full opacity-50"></div>
+                                    <div className="space-y-1.5 md:space-y-2">
                                         {/* Promo Banner */}
-                                        <div className="relative bg-gradient-to-r from-[#ED775A] to-[#FFB347] rounded-lg p-4 text-white overflow-hidden">
+                                        <div className="relative bg-gradient-to-r from-[#ED775A] to-[#FFB347] rounded-md md:rounded-lg p-2 md:p-4 text-white overflow-hidden">
                                             <div className="relative z-10 flex justify-between items-center">
-                                                <div className="text-white font-bold text-lg">
+                                                <div className="text-white font-bold text-xs md:text-lg">
                                                     Promo Spesial
                                                 </div>
-                                                <Link href="/pages/marketplace?discount=true" className="btn btn-sm bg-white text-[#ED775A] border-none hover:bg-orange-50 hover:shadow-none shadow-none">
+                                                <Link href="/pages/marketplace?discount=true" className="btn btn-xs md:btn-sm bg-white text-[#ED775A] border-none hover:bg-orange-50 hover:shadow-none shadow-none">
                                                     Lihat Promo
                                                 </Link>
                                             </div>
-                                            <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-white/10 rounded-full"></div>
+                                            <div className="absolute -bottom-4 -right-4 md:-bottom-8 md:-right-8 w-12 h-12 md:w-24 md:h-24 bg-white/10 rounded-full"></div>
                                         </div>
 
-                                        {/* Horizontal Scrolling Products - Bigger */}
+                                        {/* Horizontal Scrolling Products - Compact on Mobile */}
                                         <div className="relative flex-1">
-                                            <div className="overflow-x-auto scrollbar-hide pb-2 h-full" style={{ minHeight: '270px' }}>
+                                            <div className="overflow-x-auto scrollbar-hide pb-1 md:pb-2 h-full" style={{ minHeight: '120px' }}>
                                                 {precomputedFlashSales.length > 0 ? (
-                                                    <div className="flex gap-3" id="hero-products-scroll">
+                                                    <div className="flex gap-1.5 md:gap-3" id="hero-products-scroll">
                                                         {precomputedFlashSales.slice(0, 3).map((product, idx) => (
                                                             <div key={idx}>
-                                                                <Link href={`/pages/product_detail/${product.id}`} className="bg-slate-50 p-3 rounded-xl flex-shrink-0 w-[180px] cursor-pointer hover:bg-orange-50 transition-colors border border-slate-100 flex flex-col">
-                                                                    <div className="w-full h-32 bg-white rounded-lg flex items-center justify-center mb-2 overflow-hidden relative">
+                                                                <Link href={`/pages/product_detail/${product.id}`} className="bg-slate-50 p-1.5 md:p-3 rounded-md md:rounded-xl flex-shrink-0 w-[100px] sm:w-[130px] md:w-[180px] cursor-pointer hover:bg-orange-50 transition-colors border border-slate-100 flex flex-col">
+                                                                    <div className="w-full h-16 sm:h-20 md:h-32 bg-white rounded-md flex items-center justify-center mb-1 md:mb-2 overflow-hidden relative">
                                                                         <img src={product.images?.[0] || '/images/default.png'} alt={product.name} className="w-full h-full object-cover" />
                                                                     </div>
                                                                     <div className="flex-1 flex flex-col">
-                                                                        <p className="font-bold text-slate-800 text-sm truncate leading-tight mb-2">
+                                                                        <p className="font-bold text-slate-800 text-[10px] sm:text-xs md:text-sm truncate leading-tight mb-0.5 md:mb-2">
                                                                             {product.name || 'Produk'}
                                                                         </p>
                                                                         <div className="mt-auto">
-                                                                            <div className="flex items-center gap-2 mb-1">
-                                                                                <p className="text-[#ED775A] font-bold text-base leading-none">
+                                                                            <div className="flex items-center gap-0.5 md:gap-2 mb-0.5 md:mb-1">
+                                                                                <p className="text-[#ED775A] font-bold text-[10px] sm:text-xs md:text-base leading-none">
                                                                                     Rp {(product.price || 0).toLocaleString("id-ID")}
                                                                                 </p>
                                                                                 {product.mrp > product.price && (
-                                                                                    <span className="badge badge-error badge-sm py-0 px-1.5 text-[9px] font-bold">
+                                                                                    <span className="badge badge-error badge-xs py-0 px-1 text-[8px] md:text-[9px] font-bold">
                                                                                         -{Math.round(((product.mrp - product.price) / product.mrp) * 100)}%
                                                                                     </span>
                                                                                 )}
                                                                             </div>
                                                                             {product.mrp > product.price && (
-                                                                                <p className="text-gray-400 text-xs line-through">
+                                                                                <p className="text-gray-400 text-[9px] md:text-xs line-through">
                                                                                     Rp {product.mrp.toLocaleString("id-ID")}
                                                                                 </p>
                                                                             )}
@@ -219,15 +219,15 @@ export default function LandingPage() {
                                                         ))}
                                                     </div>
                                                 ) : (
-                                                    <div className="flex gap-3" id="hero-products-scroll">
+                                                    <div className="flex gap-1.5 md:gap-3" id="hero-products-scroll">
                                                         {/* Loading skeleton for Hero Products */}
-                                                        {Array.from({ length: 5 }).map((_, idx) => (
-                                                            <div key={idx} className="bg-slate-50 p-3 rounded-xl flex-shrink-0 w-[180px] border border-slate-100 flex flex-col animate-pulse">
-                                                                <div className="w-full h-32 bg-slate-200 rounded-lg mb-2"></div>
-                                                                <div className="flex-1 flex flex-col space-y-2">
-                                                                    <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                                                                    <div className="h-4 bg-slate-200 rounded w-1/2 mt-auto"></div>
-                                                                    <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+                                                        {Array.from({ length: 3 }).map((_, idx) => (
+                                                            <div key={idx} className="bg-slate-50 p-1.5 md:p-3 rounded-md md:rounded-xl flex-shrink-0 w-[100px] sm:w-[130px] md:w-[180px] border border-slate-100 flex flex-col animate-pulse">
+                                                                <div className="w-full h-16 sm:h-20 md:h-32 bg-slate-200 rounded-md mb-1 md:mb-2"></div>
+                                                                <div className="flex-1 flex flex-col space-y-1 md:space-y-2">
+                                                                    <div className="h-2 md:h-4 bg-slate-200 rounded w-3/4"></div>
+                                                                    <div className="h-2 md:h-4 bg-slate-200 rounded w-1/2 mt-auto"></div>
+                                                                    <div className="h-2 md:h-3 bg-slate-200 rounded w-1/3"></div>
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -247,11 +247,11 @@ export default function LandingPage() {
             </section>
 
             {/* Categories Section */}
-            <section className="py-8 bg-gradient-to-b from-white to-gray-50">
+            <section className="py-6 md:py-8 bg-gradient-to-b from-white to-gray-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Cari berdasarkan Kategori</h2>
-                        <p className="text-sm text-gray-600">Temukan produk lokal berkualitas dari berbagai kategori</p>
+                    <div className="text-center mb-4 md:mb-6">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Cari berdasarkan Kategori</h2>
+                        <p className="text-xs md:text-sm text-gray-600">Temukan produk lokal berkualitas dari berbagai kategori</p>
                         <div className="flex justify-center mt-4 space-x-2">
                             <button className="btn btn-circle bg-[#ED775A] hover:bg-[#ED775A]/80 text-white border-none shadow-none scroll-left">
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -306,15 +306,15 @@ export default function LandingPage() {
             </section>
 
             {/* Flash Sale Section */}
-            <section className="py-10 bg-gradient-to-r from-[#ED775A] to-[#FFE797]">
+            <section className="py-6 md:py-10 bg-gradient-to-r from-[#ED775A] to-[#FFE797]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-8">
-                        <div className="flex items-center justify-center gap-3 mb-3">
-                            <h2 className="text-3xl font-bold text-white drop-shadow-lg">FLASH SALE</h2>
+                    <div className="text-center mb-4 md:mb-8">
+                        <div className="flex items-center justify-center gap-2 md:gap-3 mb-2 md:mb-3">
+                            <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">FLASH SALE</h2>
                         </div>
-                        <p className="text-base text-white/90 font-medium">Buruan! Penawaran terbatas waktu dengan diskon fantastis</p>
+                        <p className="text-sm md:text-base text-white/90 font-medium">Buruan! Penawaran terbatas waktu dengan diskon fantastis</p>
                     </div>
-                    <div className="grid grid-cols-3 md:grid-cols-6 gap-4 px-1 py-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 md:gap-4 px-1 py-2">
                         {precomputedFlashSales.length > 0 ? (
                             <>
                                 {precomputedFlashSales.slice(0, 5).map((product) => (
@@ -364,15 +364,15 @@ export default function LandingPage() {
 
             {/* Best Selling Section */}
             <div className="bg-gradient-to-b from-gray-50 to-white">
-                <section className="py-12">
+                <section className="py-6 md:py-12">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-8">
+                        <div className="text-center mb-4 md:mb-8">
                             <div className="flex items-center justify-center gap-2 mb-2">
-                                <h2 className="text-2xl font-bold text-gray-900">Produk Terlaku</h2>
+                                <h2 className="text-xl md:text-2xl font-bold text-gray-900">Produk Terlaku</h2>
                             </div>
-                            <p className="text-sm text-gray-600">Produk pilihan yang paling diminati pelanggan SMART</p>
+                            <p className="text-xs md:text-sm text-gray-600">Produk pilihan yang paling diminati pelanggan SMART</p>
                         </div>
-                        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4 overflow-x-auto scrollbar-hide px-1 py-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4 overflow-x-auto scrollbar-hide px-1 py-2">
                             {recommendedProductsList.length > 0 ? (
                                 <>
                                     {recommendedProductsList.slice().sort((a, b) => {
@@ -423,15 +423,15 @@ export default function LandingPage() {
                 </section>
 
                 {/* Recommendations Section */}
-                <section className="py-12 bg-gradient-to-b from-white to-[#FFE797]/10">
+                <section className="py-6 md:py-12 bg-gradient-to-b from-white to-[#FFE797]/10">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-8">
+                        <div className="text-center mb-4 md:mb-8">
                             <div className="flex items-center justify-center gap-2 mb-2">
-                                <h2 className="text-2xl font-bold text-gray-900">Rekomendasi Untukmu</h2>
+                                <h2 className="text-xl md:text-2xl font-bold text-gray-900">Rekomendasi Untukmu</h2>
                             </div>
-                            <p className="text-sm text-gray-600">Dipilih khusus berdasarkan preferensi dan minat Anda</p>
+                            <p className="text-xs md:text-sm text-gray-600">Dipilih khusus berdasarkan preferensi dan minat Anda</p>
                         </div>
-                        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
                             {recommendedProductsList.length > 0 ? (
                                 <>
                                     {recommendedProductsList.slice(0, 10).map((product) => (
@@ -462,12 +462,12 @@ export default function LandingPage() {
 
 
             {/* Information Section */}
-            <section className="py-24 bg-gradient-to-br from-white via-[#FFE797]/5 to-[#84994F]/5">
+            <section className="py-12 md:py-24 bg-gradient-to-br from-white via-[#FFE797]/5 to-[#84994F]/5">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-left mb-12">
+                    <div className="text-left mb-6 md:mb-12">
                         {/* ...existing information content... */}
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Nikmati Mudah dan Nyaman Berjualan Online di SMART</h2>
-                        <p className="text-md text-gray-700 leading-relaxed mb-8">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Nikmati Mudah dan Nyaman Berjualan Online di SMART</h2>
+                        <p className="text-sm md:text-base text-gray-700 leading-relaxed mb-4 md:mb-8">
                             SMART adalah platform jual beli online khusus untuk wilayah Sukmajaya. Tujuan kami adalah memudahkan masyarakat Sukmajaya dalam melakukan transaksi jual beli secara digital, sekaligus mendukung pertumbuhan ekonomi lokal dengan mempertemukan penjual dan pembeli dalam satu ekosistem online yang terintegrasi.
                         </p>
                         <p className="text-md text-gray-700 leading-relaxed mb-8">

@@ -6,18 +6,22 @@ import { useSearchParams } from "next/navigation"
 import Navbar from "../../components/navbar/Navbar"
 import Footer from "../../components/footer/Footer"
 import ProductCard from "../../components/product/Card"
+import StoreCard from "../../components/store/StoreCard"
 import { FiFilter } from "react-icons/fi";
 import { AiOutlineFrown } from "react-icons/ai";
 import { flashSales, recommendedProducts } from "../../data/products";
-import { fetchProducts, fetchCategories } from "../../api";
+import { fetchProducts, fetchCategories, fetchStores } from "../../api";
 import { useGlobalData } from "../../contexts/GlobalDataContext";
 
 function MarketplaceContent() {
     const searchParams = useSearchParams();
     const initialCategory = searchParams.get('category') || 'all';
     const [products, setProducts] = useState([])
+    const [stores, setStores] = useState([])
     const [filteredProducts, setFilteredProducts] = useState([])
+    const [filteredStores, setFilteredStores] = useState([])
     const [productsLoading, setProductsLoading] = useState(true)
+    const [storesLoading, setStoresLoading] = useState(true)
     const [filters, setFilters] = useState({
         search: '',
         category: initialCategory,
@@ -27,7 +31,9 @@ function MarketplaceContent() {
         sortBy: 'name',
         cod: false,
         discount: false,
-        gratisOngkir: false
+        gratisOngkir: false,
+        showProducts: true,
+        showStores: true
     })
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [currentPage, setCurrentPage] = useState(1)
@@ -47,6 +53,54 @@ function MarketplaceContent() {
             setProductsLoading(false);
         }
     }, [cachedProducts]);
+
+    // Fetch stores
+    useEffect(() => {
+        async function loadStores() {
+            setStoresLoading(true);
+            try {
+                const storeRes = await fetchStores();
+                const storesList = storeRes.stores || [];
+
+                // Calculate rating for each store based on products
+                const storesWithRatings = storesList.map(store => {
+                    const storeProducts = products.filter(p => p.store?.id === store.id);
+                    let totalRatings = 0;
+                    let totalReviews = 0;
+
+                    storeProducts.forEach(product => {
+                        if (product.rating && Array.isArray(product.rating)) {
+                            product.rating.forEach(rating => {
+                                totalRatings += rating.rating;
+                                totalReviews++;
+                            });
+                        }
+                    });
+
+                    const avgRating = totalReviews > 0 ? totalRatings / totalReviews : 0;
+
+                    return {
+                        ...store,
+                        rating: parseFloat(avgRating.toFixed(1)),
+                        totalReviews: totalReviews
+                    };
+                });
+
+                setStores(storesWithRatings);
+                setFilteredStores(storesWithRatings);
+            } catch (error) {
+                console.error('Error fetching stores:', error);
+                setStores([]);
+                setFilteredStores([]);
+            } finally {
+                setStoresLoading(false);
+            }
+        }
+
+        if (products.length > 0) {
+            loadStores();
+        }
+    }, [products]);
 
     useEffect(() => {
         if (cachedCategories !== undefined && cachedCategories !== null) {
@@ -85,6 +139,7 @@ function MarketplaceContent() {
             setCategoriesLoading(false);
         }
     };
+
 
 
     // Sync category, discount, and search filter with query param whenever it changes
@@ -174,12 +229,51 @@ function MarketplaceContent() {
         setFilteredProducts(filtered)
     }, [filters, products])
 
+    // Filter stores
+    useEffect(() => {
+        if (!stores || stores.length === 0) return;
+
+        let filtered = stores.filter(store => {
+            const name = store.name || "";
+            const username = store.username || "";
+            const description = store.description || "";
+            const address = store.address || "";
+            const rating = store.rating || 0;
+
+            // Search in name, username, description, or address
+            const searchMatch = filters.search === '' ||
+                name.toLowerCase().includes(filters.search.toLowerCase()) ||
+                username.toLowerCase().includes(filters.search.toLowerCase()) ||
+                description.toLowerCase().includes(filters.search.toLowerCase()) ||
+                address.toLowerCase().includes(filters.search.toLowerCase());
+
+            const ratingMatch = rating >= filters.rating;
+
+            return searchMatch && ratingMatch;
+        });
+
+        // Apply sorting
+        filtered.sort((a, b) => {
+            switch (filters.sortBy) {
+                case 'rating':
+                    return (b.rating || 0) - (a.rating || 0);
+                case 'reviews':
+                    return (b.totalReviews || 0) - (a.totalReviews || 0);
+                default:
+                    return (a.name || "").localeCompare(b.name || "");
+            }
+        });
+
+        setFilteredStores(filtered);
+    }, [filters, stores]);
+
     const handleFilterChange = (key, value) => {
         setFilters(prev => ({
             ...prev,
             [key]: value
         }))
     }
+
 
     const resetFilters = () => {
         setFilters({
@@ -312,6 +406,34 @@ function MarketplaceContent() {
                                 </div>
                             </div>
 
+
+                            {/* Display Type Filter */}
+                            <div className="mb-6">
+                                <label className="block text-sm text-gray-700 mb-2 font-semibold">
+                                    Tampilkan
+                                </label>
+                                <div className="checkbox-group flex flex-col gap-2">
+                                    <label className="cursor-pointer flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            className="checkbox checkbox-sm border-gray-400 text-black"
+                                            checked={filters.showProducts}
+                                            onChange={e => handleFilterChange('showProducts', e.target.checked)}
+                                        />
+                                        <span className="text-sm">Produk</span>
+                                    </label>
+                                    <label className="cursor-pointer flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            className="checkbox checkbox-sm border-gray-400 text-black"
+                                            checked={filters.showStores}
+                                            onChange={e => handleFilterChange('showStores', e.target.checked)}
+                                        />
+                                        <span className="text-sm">Toko</span>
+                                    </label>
+                                </div>
+                            </div>
+
                             {/* Penawaran Filter */}
                             <div className="">
                                 <label className="block text-sm text-gray-700 mb-2 font-semibold">
@@ -322,28 +444,10 @@ function MarketplaceContent() {
                                         <input
                                             type="checkbox"
                                             className="checkbox checkbox-sm border-gray-400 text-black"
-                                            checked={filters.cod}
-                                            onChange={e => handleFilterChange('cod', e.target.checked)}
-                                        />
-                                        <span className="text-sm">COD</span>
-                                    </label>
-                                    <label className="cursor-pointer flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            className="checkbox checkbox-sm border-gray-400 text-black"
                                             checked={filters.discount}
                                             onChange={e => handleFilterChange('discount', e.target.checked)}
                                         />
                                         <span className="text-sm">Diskon</span>
-                                    </label>
-                                    <label className="cursor-pointer flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            className="checkbox checkbox-sm border-gray-400 text-black"
-                                            checked={filters.gratisOngkir}
-                                            onChange={e => handleFilterChange('gratisOngkir', e.target.checked)}
-                                        />
-                                        <span className="text-sm">Gratis Ongkir</span>
                                     </label>
                                 </div>
                             </div>
@@ -356,7 +460,13 @@ function MarketplaceContent() {
                             {/* Results Header */}
                             <div className="flex justify-between items-center w-2/3">
                                 <p className="text-gray-600">
-                                    Menampilkan {filteredProducts.length} dari {products.length} produk
+                                    Menampilkan {
+                                        (filters.showProducts ? filteredProducts.length : 0) +
+                                        (filters.showStores ? filteredStores.length : 0)
+                                    } hasil
+                                    {filters.showProducts && filters.showStores && ` (${filteredProducts.length} produk, ${filteredStores.length} toko)`}
+                                    {filters.showProducts && !filters.showStores && ` dari ${products.length} produk`}
+                                    {!filters.showProducts && filters.showStores && ` dari ${stores.length} toko`}
                                 </p>
                             </div>
                             {/* Sort */}
@@ -378,25 +488,65 @@ function MarketplaceContent() {
                             </div>
 
                         </div>
-                        {/* Products Grid */}
-                        {productsLoading ? (
+                        {/* Products and Stores Grid */}
+                        {(productsLoading || storesLoading) ? (
                             <div className="flex justify-center items-center h-64 w-full">
                                 <div className="loading loading-spinner loading-lg text-[#ED775A]"></div>
                             </div>
-                        ) : filteredProducts.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                                {currentProducts.map((product) => (
-                                    <ProductCard key={product.id || product.ID} product={product} />
-                                ))}
-                            </div>
                         ) : (
-                            <div className="text-center py-12">
-                                <div className="text-gray-400 mb-4">
-                                    <AiOutlineFrown className="w-16 h-16 mx-auto" />
-                                </div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada produk ditemukan</h3>
-                                <p className="text-gray-500">Coba ubah filter atau kata kunci pencarian Anda</p>
-                            </div>
+                            <>
+                                {/* Products Section */}
+                                {filters.showProducts && filteredProducts.length > 0 && (
+                                    <div className="mb-8">
+                                        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                            Produk ({filteredProducts.length})
+                                        </h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                                            {currentProducts.map((product) => (
+                                                <ProductCard key={product.id || product.ID} product={product} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Stores Section */}
+                                {filters.showStores && filteredStores.length > 0 && (
+                                    <div className="mb-8">
+                                        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                            Toko ({filteredStores.length})
+                                        </h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                                            {filteredStores.map((store) => (
+                                                <StoreCard key={store.id} store={store} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* No Results */}
+                                {(
+                                    (filters.showProducts && filteredProducts.length === 0 && filters.showStores && filteredStores.length === 0) ||
+                                    (!filters.showProducts && filters.showStores && filteredStores.length === 0) ||
+                                    (filters.showProducts && !filters.showStores && filteredProducts.length === 0) ||
+                                    (!filters.showProducts && !filters.showStores)
+                                ) && (
+                                        <div className="text-center py-12">
+                                            <div className="text-gray-400 mb-4">
+                                                <AiOutlineFrown className="w-16 h-16 mx-auto" />
+                                            </div>
+                                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                                {!filters.showProducts && !filters.showStores
+                                                    ? "Pilih setidaknya satu jenis tampilan (Produk atau Toko)"
+                                                    : "Tidak ada hasil ditemukan"}
+                                            </h3>
+                                            <p className="text-gray-500">
+                                                {filters.showProducts || filters.showStores
+                                                    ? "Coba ubah filter atau kata kunci pencarian Anda"
+                                                    : "Centang 'Produk' atau 'Toko' untuk melihat hasil"}
+                                            </p>
+                                        </div>
+                                    )}
+                            </>
                         )}
 
                         {/* Pagination

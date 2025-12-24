@@ -322,7 +322,7 @@ export default function ProductPage() {
             </div>
         ),
         Ulasan: (
-            <section className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr] text-black">
+            <section className="mt-6 grid gap-6 grid-cols-1 lg:grid-cols-[280px_1fr] text-black">
                 {/* Filter */}
                 <aside className="rounded-box border p-4 border-gray-100 shadow-2xs">
                     <h4 className="mb-4 text-sm font-semibold">Filter Ulasan</h4>
@@ -485,7 +485,7 @@ export default function ProductPage() {
                     targetImages={currentProduct?.images || []}
                     className="text-black"
                 />
-                <div className="grid gap-8 lg:grid-cols-[1.1fr_1.2fr_0.8fr]">
+                <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1.1fr_1.2fr_0.8fr]">
                     {/* Gallery */}
                     <section aria-labelledby="gallery" className="space-y-4">
                         <div className="aspect-[5/5] w-full overflow-hidden rounded-box ">
@@ -495,7 +495,7 @@ export default function ProductPage() {
                                 src={Array.isArray(currentProduct?.images) && currentProduct.images.length > 0 ? currentProduct.images[selectedImageIdx] : "/images/default.png"}
                             />
                         </div>
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                             {Array.isArray(currentProduct?.images) && currentProduct.images.slice(0, 4).map((img, i) => (
                                 <button
                                     key={i}

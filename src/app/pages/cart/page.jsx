@@ -137,7 +137,7 @@ export default function CartPage() {
             <Navbar />
 
             <div className="container mx-auto px-4 py-8 mt-15 mb-20 text-black">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => router.back()}
@@ -145,11 +145,11 @@ export default function CartPage() {
                         >
                             &larr;
                         </button>
-                        <h1 className="text-2xl font-bold text-gray-900">
+                        <h1 className="text-xl md:text-2xl font-bold text-gray-900">
                             Keranjang Belanja
                         </h1>
                     </div>
-                    <div className="w-64">
+                    <div className="w-full md:w-64">
                         <input
                             type="text"
                             placeholder="Cari produk di keranjang..."
@@ -177,7 +177,7 @@ export default function CartPage() {
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
+                    <div className="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_350px]">
                         {/* Cart Items */}
                         <div className="bg-white rounded-lg border-1 border-gray-200">
                             <div className="p-4 border-b border-gray-200">
@@ -202,42 +202,84 @@ export default function CartPage() {
                                 ) : (
                                     filteredCartItems.map((item) => (
                                         <div key={item.id} className="p-4">
-                                            <div className="flex items-start gap-4">
+                                            <div className="flex flex-col sm:flex-row items-start gap-4">
                                                 {/* Checkbox */}
                                                 <input
                                                     type="checkbox"
-                                                    className="checkbox checkbox-sm border-gray-400 mt-4 text-black"
+                                                    className="checkbox checkbox-sm border-gray-400 sm:mt-4 text-black"
                                                     checked={selectedItems.includes(item.id)}
                                                     onChange={() => toggleItemSelection(item.id)}
                                                 />
 
-                                                {/* Image */}
-                                                <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                                                    <img
-                                                        src={item.image || item.images?.[0]}
-                                                        alt={item.name || "Produk"}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
+                                                <div className="flex gap-4 flex-1 w-full">
+                                                    {/* Image */}
+                                                    <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                                                        <img
+                                                            src={item.image || item.images?.[0]}
+                                                            alt={item.name || "Produk"}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
 
-                                                {/* Detail */}
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="font-semibold text-gray-900 mb-1 truncate">
-                                                        {item.name || item.nama_produk}
-                                                    </h3>
-                                                    <p className="text-xs text-gray-500 mb-1">
-                                                        {item.store?.name || `Toko #${item.store_id}`}
-                                                    </p>
+                                                    {/* Detail */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-semibold text-gray-900 mb-1 truncate">
+                                                            {item.name || item.nama_produk}
+                                                        </h3>
+                                                        <p className="text-xs text-gray-500 mb-1">
+                                                            {item.store?.name || `Toko #${item.store_id}`}
+                                                        </p>
 
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <span className="font-bold text-[#ED775A] text-lg">
-                                                            Rp {calculatePrice(item).toLocaleString("id-ID")}
-                                                        </span>
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <span className="font-bold text-[#ED775A] text-base sm:text-lg">
+                                                                Rp {calculatePrice(item).toLocaleString("id-ID")}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Quantity & Delete - Mobile */}
+                                                        <div className="flex flex-row items-center justify-between sm:hidden gap-3">
+                                                            <div className="flex items-center bg-gray-50 rounded-full border border-gray-200 overflow-hidden">
+                                                                <button
+                                                                    onClick={() =>
+                                                                        dispatch(
+                                                                            decreaseQuantity({ productId: item.id })
+                                                                        )
+                                                                    }
+                                                                    className="px-3 py-2 hover:bg-gray-100 text-gray-600 disabled:opacity-40"
+                                                                    disabled={item.quantity <= 1}
+                                                                >
+                                                                    <FiMinus className="w-4 h-4" />
+                                                                </button>
+                                                                <span className="w-12 text-center font-medium text-gray-800 text-sm">
+                                                                    {item.quantity}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        dispatch(
+                                                                            increaseQuantity({ productId: item.id })
+                                                                        )
+                                                                    }
+                                                                    className="px-3 py-2 hover:bg-gray-100 text-gray-600 disabled:opacity-40"
+                                                                >
+                                                                    <FiPlus className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+
+                                                            <button
+                                                                onClick={() =>
+                                                                    dispatch(deleteItemFromCart({ productId: item.id }))
+                                                                }
+                                                                className="text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors rounded-full p-2"
+                                                                title="Hapus produk"
+                                                            >
+                                                                <FiTrash2 className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                {/* Quantity & Delete */}
-                                                <div className="flex flex-row items-center justify-between mt-auto h-full mb-2 gap-3">
+                                                {/* Quantity & Delete - Desktop */}
+                                                <div className="hidden sm:flex flex-row items-center justify-between mt-auto h-full mb-2 gap-3">
                                                     <div className="flex items-center bg-gray-50 rounded-full border border-gray-200 overflow-hidden">
                                                         <button
                                                             onClick={() =>
@@ -283,7 +325,7 @@ export default function CartPage() {
                         </div>
 
                         {/* Ringkasan Pesanan */}
-                        <div className="bg-white rounded-lg border-1 border-gray-200 p-6 h-fit sticky top-20">
+                        <div className="bg-white rounded-lg border-1 border-gray-200 p-4 md:p-6 h-fit lg:sticky lg:top-20">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">
                                 Ringkasan Pesanan
                             </h2>
@@ -340,7 +382,7 @@ export default function CartPage() {
                         <h2 className="text-2xl font-bold text-gray-900 mb-6">
                             Kamu Mungkin Juga Suka
                         </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                             {recommendedProducts.map((product) => (
                                 <ProductCard key={product.id} product={product} />
                             ))}
