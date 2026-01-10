@@ -10,6 +10,9 @@ import CTA from "../../components/CTA";
 import { sampleProducts, cartItems as initialCartItems } from "../../data/products";
 import { stores } from "../../data/store";
 import { FiTrash2, FiMinus, FiPlus, FiShoppingBag } from "react-icons/fi";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCart, addToCart as addToCartAPI, fetchProducts } from "../../api";
+import { addToCart, removeFromCart, deleteItemFromCart, increaseQuantity, decreaseQuantity } from "@/lib/features/cart/cartSlice";
 
 
 // Helper to get store name by id
@@ -20,27 +23,134 @@ function getStoreName(store_id) {
 
 export default function CartPage() {
     const router = useRouter();
-    const [cartItems, setCartItems] = useState(initialCartItems);
+    const dispatch = useDispatch();
+    const cartState = useSelector((state) => state.cart);
+    const cartItems = cartState.cartItems || cartState.items || {};
     const [selectedItems, setSelectedItems] = useState([]);
     const [selectAll, setSelectAll] = useState(false);
     const [recommendedProducts, setRecommendedProducts] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [flattenedCartItems, setFlattenedCartItems] = useState([]);
 
     useEffect(() => {
         setRecommendedProducts(sampleProducts.slice(0, 4));
-    }, []);
+
+        // Flatten the cart items - being extremely defensive to avoid objects in the result
+        const flattened = [];
+        if (cartItems && typeof cartItems === 'object') {
+            Object.entries(cartItems).forEach(([key, value]) => {
+                if (typeof value === 'number') {
+                    // Simple structure: {some_unique_key: quantity}
+                    flattened.push({
+                        id: key,
+                        productId: key,
+                        quantity: value
+                    });
+                } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    // If value is an object (like {variantId: quantity}), flatten it
+                    Object.entries(value).forEach(([innerKey, innerValue]) => {
+                        if (typeof innerValue === 'number') {
+                            // Create a composite key: productId_variantId
+                            flattened.push({
+                                id: `${key}_${innerKey}`,
+                                productId: key,
+                                variantId: innerKey,
+                                quantity: innerValue
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        setFlattenedCartItems(flattened);
+    }, [cartItems]);
 
     const updateQuantity = (id, newQuantity) => {
         if (newQuantity < 1) return;
-        setCartItems(items =>
-            items.map(item =>
-                item.id === id ? { ...item, quantity: Math.min(newQuantity, item.stok) } : item
-            )
-        );
+
+        // Parse the ID to see if it's in the format productId_variantId
+        const parts = id.split('_');
+        if (parts.length >= 2) {
+            // It's a product with variant: productId_variantId
+            const productId = parts[0];
+            const variantId = parts.slice(1).join('_'); // In case the variantId itself has underscores
+            const combinedId = `${productId}_${variantId}`;
+
+            // Get current quantity from cart state
+            const currentProductCart = cartItems[productId];
+            let currentQty = 0;
+
+            if (typeof currentProductCart === 'object' && currentProductCart !== null) {
+                // Nested structure: {productId: {variantId: quantity}}
+                currentQty = currentProductCart[variantId] || 0;
+            } else if (typeof currentProductCart === 'number') {
+                // Simple structure: {productId: quantity}
+                currentQty = currentProductCart;
+            } else {
+                // Fallback: check if the combined ID exists directly
+                currentQty = cartItems[combinedId] || 0;
+            }
+
+            const diff = newQuantity - currentQty;
+
+            if (diff > 0) {
+                // Increasing quantity
+                dispatch(increaseQuantity({
+                    productId: combinedId,
+                    quantity: diff
+                }));
+            } else if (diff < 0) {
+                // Decreasing quantity
+                dispatch(decreaseQuantity({
+                    productId: combinedId,
+                    quantity: Math.abs(diff)
+                }));
+            }
+        } else {
+            // Simple product ID without variant
+            const productId = id;
+            const currentQty = typeof cartItems[productId] === 'object'
+                ? Object.values(cartItems[productId]).reduce((sum, qty) => sum + qty, 0)
+                : cartItems[productId] || 0;
+
+            const diff = newQuantity - currentQty;
+
+            if (diff > 0) {
+                // Increasing quantity
+                dispatch(increaseQuantity({
+                    productId: productId,
+                    quantity: diff
+                }));
+            } else if (diff < 0) {
+                // Decreasing quantity
+                dispatch(decreaseQuantity({
+                    productId: productId,
+                    quantity: Math.abs(diff)
+                }));
+            }
+        }
     };
 
     const removeItem = (id) => {
-        setCartItems(items => items.filter(item => item.id !== id));
+        // Parse the ID to see if it's in the format productId_variantId
+        const parts = id.split('_');
+        if (parts.length >= 2) {
+            // It's a product with variant: productId_variantId
+            const productId = parts[0];
+            const variantId = parts.slice(1).join('_'); // In case the variantId itself has underscores
+            const combinedId = `${productId}_${variantId}`;
+
+            // Dispatch with the combined ID
+            dispatch(deleteItemFromCart({
+                productId: combinedId
+            }));
+        } else {
+            // Simple product ID without variant
+            dispatch(deleteItemFromCart({
+                productId: id
+            }));
+        }
+
         setSelectedItems(selected => selected.filter(itemId => itemId !== id));
     };
 
@@ -51,7 +161,7 @@ export default function CartPage() {
                 ? selected.filter(itemId => itemId !== id)
                 : [...selected, id];
 
-            setSelectAll(newSelected.length === cartItems.length);
+            setSelectAll(newSelected.length === flattenedCartItems.length);
             return newSelected;
         });
     };
@@ -59,22 +169,55 @@ export default function CartPage() {
     const toggleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-        setSelectedItems(newSelectAll ? cartItems.map(item => item.id) : []);
+        setSelectedItems(newSelectAll ? flattenedCartItems.map(item => item.id) : []);
+    };
+
+    // This would require fetching product details by ID
+    // For now, I'll create a function that will fetch product details
+    const [productDetails, setProductDetails] = useState({});
+
+    useEffect(() => {
+        // Fetch product details for items in cart
+        const uniqueProductIds = [...new Set(flattenedCartItems.map(item => item.productId))];
+        if (uniqueProductIds.length > 0) {
+            const fetchProductDetails = async () => {
+                try {
+                    const productsResponse = await fetchProducts();
+                    const products = productsResponse.products || productsResponse;
+
+                    const detailsMap = {};
+                    products.forEach(product => {
+                        detailsMap[product.id] = product;
+                    });
+
+                    setProductDetails(detailsMap);
+                } catch (error) {
+                    console.error("Error fetching product details:", error);
+                }
+            };
+
+            fetchProductDetails();
+        }
+    }, [flattenedCartItems.length]); // Only trigger when the number of cart items changes
+
+    const getProductDetail = (productId) => {
+        return productDetails[productId] || {};
     };
 
     const calculatePrice = (item) => {
-        return item.harga;
+        const product = getProductDetail(item.productId);
+        // Use the product price from the fetched product details
+        // Ensure we return a number
+        return typeof product.price === 'number' ? product.price : 0;
     };
 
-    // Filtered cart items based on search
-    const filteredCartItems = cartItems.filter(item => {
-        const term = searchTerm.trim().toLowerCase();
-        if (!term) return true;
-        return (
-            item.nama_produk.toLowerCase().includes(term) ||
-            (item.variant && item.variant.toLowerCase().includes(term))
-        );
-    });
+    // Since we're now using Redux state instead of the sample data, we need to fetch product info
+    // This is more complex as we need to map product IDs to actual product data
+    // For now, let's create a simplified version that works with the flattened structure
+
+    // In a real implementation, you'd want to fetch product data to match with cart items
+    // For now, I'll skip filtering by name since we don't have the actual product names in the cart state
+    const filteredCartItems = flattenedCartItems;
 
     const selectedItemsData = filteredCartItems.filter(item => selectedItems.includes(item.id));
     const totalItems = selectedItemsData.reduce((sum, item) => sum + item.quantity, 0);
@@ -103,7 +246,7 @@ export default function CartPage() {
                     </div>
                 </div>
 
-                {cartItems.length === 0 ? (
+                {flattenedCartItems.length === 0 ? (
                     <div className="text-center py-16">
                         <FiShoppingBag className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                         <h2 className="text-xl font-semibold text-gray-900 mb-2">Keranjang Kosong</h2>
@@ -125,89 +268,86 @@ export default function CartPage() {
                                         checked={selectAll}
                                         onChange={toggleSelectAll}
                                     />
-                                    <span className="font-medium text-gray-900">Pilih Semua ({cartItems.length} produk)</span>
+                                    <span className="font-medium text-gray-900">Pilih Semua ({flattenedCartItems.length} produk)</span>
                                 </label>
                             </div>
 
                             {/* Cart Items List */}
                             <div className="divide-y divide-gray-200">
                                 {filteredCartItems.length === 0 ? (
-                                    <div className="p-8 text-center text-gray-500">Tidak ada produk yang cocok dengan pencarian.</div>
+                                    <div className="p-8 text-center text-gray-500">Tidak ada produk dalam keranjang.</div>
                                 ) : (
-                                    filteredCartItems.map((item) => (
-                                        <div key={item.id} className="p-4">
-                                            <div className="flex items-start gap-4">
-                                                {/* Checkbox */}
-                                                <input
-                                                    type="checkbox"
-                                                    className="checkbox checkbox-sm border-gray-400 mt-4 text-black"
-                                                    checked={selectedItems.includes(item.id)}
-                                                    onChange={() => toggleItemSelection(item.id)}
-                                                />
+                                    filteredCartItems.map((item) => {
+                                        // For simplicity, just split the ID to get the product ID
+                                        // If it contains an underscore, take the first part as the product ID
+                                        const productId = item.id.includes('_') ? item.id.split('_')[0] : item.id;
+                                        const product = getProductDetail(productId);
 
-                                                {/* Product Image */}
-                                                <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                                                    <img
-                                                        src={item.image}
-                                                        alt={item.nama_produk}
-                                                        className="w-full h-full object-cover"
+                                        return (
+                                            <div key={item.id} className="p-4">
+                                                <div className="flex items-start gap-4">
+                                                    {/* Checkbox */}
+                                                    <input
+                                                        type="checkbox"
+                                                        className="checkbox checkbox-sm border-gray-400 mt-4 text-black"
+                                                        checked={selectedItems.includes(item.id)}
+                                                        onChange={() => toggleItemSelection(item.id)}
                                                     />
-                                                </div>
 
-                                                {/* Product Details */}
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="font-semibold text-gray-900 mb-1 truncate">{item.nama_produk}</h3>
-                                                    <p className="text-xs text-gray-500 mb-1">{getStoreName(item.store_id)}</p>
-                                                    <p className="text-sm text-gray-500 mb-2">Varian: {item.variant}</p>
-                                                    {/* Price */}
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <span className="font-bold text-[#ED775A] text-lg">
-                                                            Rp {calculatePrice(item).toLocaleString("id-ID")}
-                                                        </span>
-                                                        {item.originalPrice && (
-                                                            <>
-                                                                <span className="text-sm line-through text-gray-400">
-                                                                    Rp {item.originalPrice.toLocaleString("id-ID")}
-                                                                </span>
-                                                                <span className="bg-red-100 text-red-600 text-xs px-2 py-1 rounded">
-                                                                    -{item.discount}%
-                                                                </span>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-row items-center justify-between mt-auto h-full mb-2 gap-3">
-                                                    {/* Quantity Controls */}
-                                                    <div className="flex items-center bg-gray-50 rounded-full border border-gray-200 overflow-hidden">
-                                                        <button
-                                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                            className="px-3 py-1 hover:bg-gray-100 text-gray-600 disabled:opacity-40"
-                                                            disabled={item.quantity <= 1}
-                                                        >
-                                                            <FiMinus className="w-3 h-3" />
-                                                        </button>
-                                                        <span className="w-10 text-center font-medium text-gray-800 text-sm">{item.quantity}</span>
-                                                        <button
-                                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                            className="px-3 py-1 hover:bg-gray-100 text-gray-600 disabled:opacity-40"
-                                                            disabled={item.quantity >= item.stok}
-                                                        >
-                                                            <FiPlus className="w-3 h-3" />
-                                                        </button>
+                                                    {/* Product Image */}
+                                                    <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                                                        <img
+                                                            src={Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : "/images/default.png"}
+                                                            alt={product.name}
+                                                            className="w-full h-full object-cover"
+                                                        />
                                                     </div>
 
-                                                    {/* Remove Button */}
-                                                    <button
-                                                        onClick={() => removeItem(item.id)}
-                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors rounded-full p-2"
-                                                        title="Hapus produk"
-                                                    >
-                                                        <FiTrash2 className="w-4 h-4" />
-                                                    </button>
+                                                    {/* Product Details */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-semibold text-gray-900 mb-1 truncate">{typeof product.name === 'string' ? product.name : 'Nama Produk Tidak Tersedia'}</h3>
+                                                        <p className="text-xs text-gray-500 mb-1">{product.storeId ? getStoreName(product.storeId) : 'Toko tidak ditemukan'}</p>
+                                                        {/* For now, don't show variant information */}
+                                                        {/* Price */}
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <span className="font-bold text-[#ED775A] text-lg">
+                                                                Rp {calculatePrice(item).toLocaleString("id-ID")}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-row items-center justify-between mt-auto h-full mb-2 gap-3">
+                                                        {/* Quantity Controls */}
+                                                        <div className="flex items-center bg-gray-50 rounded-full border border-gray-200 overflow-hidden">
+                                                            <button
+                                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                                className="px-3 py-1 hover:bg-gray-100 text-gray-600 disabled:opacity-40"
+                                                                disabled={item.quantity <= 1}
+                                                            >
+                                                                <FiMinus className="w-3 h-3" />
+                                                            </button>
+                                                            <span className="w-10 text-center font-medium text-gray-800 text-sm">{item.quantity}</span>
+                                                            <button
+                                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                                className="px-3 py-1 hover:bg-gray-100 text-gray-600 disabled:opacity-40"
+                                                                disabled={false}
+                                                            >
+                                                                <FiPlus className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Remove Button */}
+                                                        <button
+                                                            onClick={() => removeItem(item.id)}
+                                                            className="text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors rounded-full p-2"
+                                                            title="Hapus produk"
+                                                        >
+                                                            <FiTrash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
@@ -218,8 +358,12 @@ export default function CartPage() {
 
                             <div className="space-y-3 mb-4">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Total Barang ({totalItems})</span>
-                                    <span className="font-medium">Rp {subtotal.toLocaleString("id-ID")}</span>
+                                    <span className="text-gray-600">Total Barang ({flattenedCartItems.reduce((sum, item) => sum + (typeof item.quantity === 'number' ? item.quantity : 0), 0)})</span>
+                                    <span className="font-medium">Rp {flattenedCartItems.reduce((sum, item) => {
+                                        const product = getProductDetail(item.productId);
+                                        const price = typeof product.price === 'number' ? product.price : 0;
+                                        return sum + (price * (typeof item.quantity === 'number' ? item.quantity : 0));
+                                    }, 0).toLocaleString("id-ID")}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Ongkos Kirim</span>
@@ -229,7 +373,11 @@ export default function CartPage() {
                                     <div className="flex justify-between">
                                         <span className="font-semibold text-gray-900">Total</span>
                                         <span className="font-bold text-xl text-[#ED775A]">
-                                            Rp {(subtotal + 12000).toLocaleString("id-ID")}
+                                            Rp {(flattenedCartItems.reduce((sum, item) => {
+                                                const product = getProductDetail(item.productId);
+                                                const price = typeof product.price === 'number' ? product.price : 0;
+                                                return sum + (price * (typeof item.quantity === 'number' ? item.quantity : 0));
+                                            }, 0) + 12000).toLocaleString("id-ID")}
                                         </span>
                                     </div>
                                 </div>
@@ -238,7 +386,11 @@ export default function CartPage() {
 
                             <button
                                 className={`w-full btn mb-3 ${selectedItems.length === 0 ? 'bg-gray-400 text-white border-none cursor-not-allowed' : 'bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow-none text-white'}`}
-                                hidden={selectedItems.length === 0}
+                                onClick={() => {
+                                    // Create a string of selected item IDs for the checkout URL
+                                    const selectedProductIds = selectedItems.join(',');
+                                    router.push(`/pages/checkout/?cartItems=${selectedProductIds}`);
+                                }}
                             >
                                 Checkout ({selectedItems.length})
                             </button>

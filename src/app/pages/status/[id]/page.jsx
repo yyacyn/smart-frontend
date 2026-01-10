@@ -42,36 +42,59 @@ export default function StatusPage() {
             setError("");
 
             try {
-                // Check if orders are already cached
-                let orders = cachedOrders;
+                // Try to fetch the specific order by ID
+                const token = await getToken();
 
-                if (!orders) {
-                    const token = await getToken();
-                    const response = await fetchOrders(token);
-                    orders = response.orders || response;
+                // Attempt to fetch the specific order directly
+                try {
+                    const orderResponse = await fetchOrderById(orderId, token);
+                    const orderDetail = orderResponse.order || orderResponse;
 
-                    // Cache the orders for future use
-                    setCachedOrders(orders);
-                }
+                    if (orderDetail) {
+                        setOrder(orderDetail);
 
-                // Find the order with the matching ID
-                const orderDetail = orders.find(order => order.id === orderId);
-
-                if (orderDetail) {
-                    setOrder(orderDetail);
-
-                    // If store information is not available in the order, fetch it separately
-                    if (!orderDetail.store && orderDetail.storeId) {
-                        try {
-                            const storeResponse = await fetchStoreById(orderDetail.storeId, await getToken());
-                            setStore(storeResponse.store || storeResponse);
-                        } catch (storeErr) {
-                            console.error("Error fetching store:", storeErr);
+                        // If store information is not available in the order, fetch it separately
+                        if (!orderDetail.store && orderDetail.storeId) {
+                            try {
+                                const storeResponse = await fetchStoreById(orderDetail.storeId, await getToken());
+                                setStore(storeResponse.store || storeResponse);
+                            } catch (storeErr) {
+                                console.error("Error fetching store:", storeErr);
+                            }
                         }
+                    } else {
+                        setError("Pesanan tidak ditemukan");
+                    }
+                } catch (specificOrderErr) {
+                    // If direct fetch fails, fall back to fetching all orders and finding by ID
+                    let orders = cachedOrders;
+
+                    if (!orders) {
+                        const response = await fetchOrders(token);
+                        orders = response.orders || response;
+
+                        // Cache the orders for future use
+                        setCachedOrders(orders);
                     }
 
-                } else {
-                    setError("Pesanan tidak ditemukan");
+                    // Find the order with the matching ID
+                    const orderDetail = orders.find(order => order.id === orderId);
+
+                    if (orderDetail) {
+                        setOrder(orderDetail);
+
+                        // If store information is not available in the order, fetch it separately
+                        if (!orderDetail.store && orderDetail.storeId) {
+                            try {
+                                const storeResponse = await fetchStoreById(orderDetail.storeId, await getToken());
+                                setStore(storeResponse.store || storeResponse);
+                            } catch (storeErr) {
+                                console.error("Error fetching store:", storeErr);
+                            }
+                        }
+                    } else {
+                        setError("Pesanan tidak ditemukan");
+                    }
                 }
             } catch (err) {
                 console.error("Error fetching orders:", err);
@@ -322,6 +345,22 @@ export default function StatusPage() {
                                                         <p className="text-sm font-semibold mt-1">
                                                             {item.quantity || 1} x Rp{(item.product?.price || item.price || 0).toLocaleString("id-ID")}
                                                         </p>
+                                                        {item.variant && (
+                                                            <p className="text-xs text-gray-600 mt-1">
+                                                                Varian: {item.variant.variant}
+                                                            </p>
+                                                        )}
+                                                        {item.variantId && !item.variant && item.product?.variants && (
+                                                            // If we have variantId but no variant object, find the variant by ID
+                                                            (() => {
+                                                                const variant = item.product.variants.find(v => v.id === item.variantId);
+                                                                return variant ? (
+                                                                    <p className="text-xs text-gray-600 mt-1">
+                                                                        Varian: {variant.variant}
+                                                                    </p>
+                                                                ) : null;
+                                                            })()
+                                                        )}
                                                     </div>
                                                 </div>
                                             );

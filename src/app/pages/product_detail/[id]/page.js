@@ -35,7 +35,7 @@ export default function ProductPage() {
     const [currentStore, setCurrentStore] = useState(null);
     const [selectedRatings, setSelectedRatings] = useState([]);
     const colors = ["Merah", "Kuning", "Hitam", "Putih"];
-    const [selectedColor, setSelectedColor] = useState(colors[0]);
+    const [selectedVariant, setSelectedVariant] = useState(null);
     const [isWishlisted, setIsWishlisted] = useState(false);
     const [reviews, setReviews] = useState([]); // Add reviews state
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -63,6 +63,14 @@ export default function ProductPage() {
 
                 setCurrentProduct(updatedProduct);
                 setReviews(productRatings);
+
+                // Set the first variant as selected if variants exist
+                if (product.variants && product.variants.length > 0) {
+                    setSelectedVariant(product.variants[0]);
+                } else {
+                    // If no variants exist, set to null or a default value
+                    setSelectedVariant(null);
+                }
 
                 if (product.store) {
                     // Calculate store rating based on all products from the same store
@@ -120,6 +128,14 @@ export default function ProductPage() {
 
                             setCurrentProduct(updatedProduct);
                             setReviews(productRatings);
+
+                            // Set the first variant as selected if variants exist
+                            if (product.variants && product.variants.length > 0) {
+                                setSelectedVariant(product.variants[0]);
+                            } else {
+                                // If no variants exist, set to null or a default value
+                                setSelectedVariant(null);
+                            }
 
                             if (product.store) {
                                 // Calculate store rating based on all products from the same store
@@ -461,10 +477,8 @@ export default function ProductPage() {
                             <Link href="/">Home</Link>
                         </li>
                         <li>
-                            <Link href={`/pages/marketplace?category=${typeof currentProduct?.category === 'object' && currentProduct?.category !== null ?
-                                encodeURIComponent(currentProduct.category.name) :
-                                encodeURIComponent(currentProduct?.category)}`}>
-                                {typeof currentProduct?.category === 'object' && currentProduct?.category !== null ? currentProduct.category.name : currentProduct?.category}
+                            <Link href={`/pages/marketplace?category=${encodeURIComponent(currentProduct?.category?.name)}`}>
+                                {currentProduct?.category?.name}
                             </Link>
                         </li>
                         <li className="font-medium">{currentProduct?.name}</li>
@@ -528,10 +542,10 @@ export default function ProductPage() {
                                 )}
                             </div>
                             {/* Product Tags */}
-                            {currentProduct?.tags && (
-                                <div className="mt-2">
+                            {currentProduct?.category?.name && (
+                                <div className="mb-1">
                                     <span className="badge badge-outline text-xs font-medium mr-2">
-                                        {currentProduct.tags}
+                                        {currentProduct.category.name}
                                     </span>
                                 </div>
                             )}
@@ -615,28 +629,38 @@ export default function ProductPage() {
                         )}
 
                         <div className="space-y-3">
-                            <div className="space-y-3">
+                            {currentProduct?.variants && currentProduct.variants.length > 0 ? (
+                                <div className="space-y-3">
+                                    <div className="text-sm">
+                                        <span className="font-medium">Pilih varian:</span>{" "}
+                                        <span className="opacity-80">{selectedVariant ? selectedVariant.variant : 'Tidak ada varian'}</span>
+                                    </div>
+
+                                    {/* variant options */}
+                                    <div className="flex flex-wrap gap-2 text-xs">
+                                        {currentProduct.variants.map((variant) => (
+                                            <button
+                                                key={variant.id}
+                                                type="button"
+                                                className={`px-4 py-2 rounded-md border ${
+                                                    selectedVariant && selectedVariant.id === variant.id
+                                                        ? 'border-[#ED775A] bg-[#ED775A] text-white'
+                                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                                                }`}
+                                                onClick={() => setSelectedVariant(variant)}
+                                                disabled={variant.stock <= 0}
+                                            >
+                                                {variant.variant} {variant.stock <= 0 ? '(Stok Habis)' : `(Stok: ${variant.stock})`}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
                                 <div className="text-sm">
-                                    <span className="font-medium">Pilih warna:</span>{" "}
-                                    <span className="opacity-80">{selectedColor}</span>
+                                    <span className="font-medium">Varian:</span>{" "}
+                                    <span className="opacity-80">Tidak ada varian (Produk ini tidak memiliki varian)</span>
                                 </div>
-
-                                {/* color options */}
-                                <div className="tabs tabs-box bg-white rounded-none mb-5 ">
-                                    {colors.map((color) => (
-                                        <input
-                                            key={color}
-                                            type="radio"
-                                            name="var_tabs"
-                                            aria-label={color}
-                                            checked={selectedColor === color}
-                                            onChange={() => setSelectedColor(color)}
-                                            className="tab shadow-none mt-3 [--tab-bg:#F0F0F0]"
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
+                            )}
                         </div>
 
                         {/* Store Info */}
@@ -738,7 +762,11 @@ export default function ProductPage() {
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-sm font-medium">Varian Terpilih</p>
-                                        <p className="text-xs opacity-70">{selectedColor}</p>
+                                        <p className="text-xs opacity-70">
+                                            {currentProduct?.variants && currentProduct.variants.length > 0
+                                                ? (selectedVariant ? selectedVariant.variant : 'Tidak ada varian yang dipilih')
+                                                : 'Tidak ada varian'}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -747,15 +775,38 @@ export default function ProductPage() {
                                         className="btn join-item bg-gray-50 border-gray-300 shadow-none text-black"
                                         aria-label="kurangi"
                                         onClick={() => setQty((q) => Math.max(1, q - 1))}
+                                        disabled={qty <= 1}
                                     >
                                         <FiMinus />
                                     </button>
                                     <input
                                         className="input join-item border-gray-300 w-16 text-center border  bg-gray-50 text-black"
                                         value={qty}
-                                        onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
+                                        onChange={(e) => {
+                                            const value = Math.max(1, Number(e.target.value) || 1);
+                                            // Only apply stock limit if there's a selected variant with stock
+                                            if (selectedVariant && selectedVariant.stock && value > selectedVariant.stock) {
+                                                setQty(selectedVariant.stock);
+                                            } else {
+                                                setQty(value);
+                                            }
+                                        }}
+                                        max={selectedVariant && selectedVariant.stock ? selectedVariant.stock : undefined}
                                     />
-                                    <button className="btn join-item border-gray-300 border shadow-none bg-gray-50 text-black" aria-label="tambah" onClick={() => setQty((q) => q + 1)}>
+                                    <button
+                                        className="btn join-item border-gray-300 border shadow-none bg-gray-50 text-black"
+                                        aria-label="tambah"
+                                        onClick={() => {
+                                            // Only increment if there's a selected variant with sufficient stock
+                                            if (selectedVariant && selectedVariant.stock && qty < selectedVariant.stock) {
+                                                setQty((q) => q + 1);
+                                            } else if (!selectedVariant || !selectedVariant.stock) {
+                                                // If no variant or no stock limit, just increment
+                                                setQty((q) => q + 1);
+                                            }
+                                        }}
+                                        disabled={selectedVariant && selectedVariant.stock ? qty >= selectedVariant.stock : false}
+                                    >
                                         <FiPlus />
                                     </button>
                                 </div>
@@ -767,6 +818,11 @@ export default function ProductPage() {
                                             Rp {(qty * (currentProduct?.price || 0)).toLocaleString("id-ID")}
                                         </span>
                                     </div>
+                                    {selectedVariant && selectedVariant.stock !== undefined && selectedVariant.stock < qty && (
+                                        <div className="text-xs text-red-500 mt-1">
+                                            Stok tersedia: {selectedVariant.stock}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-row w-full gap-2">
@@ -774,49 +830,87 @@ export default function ProductPage() {
                                         className="btn w-3/4 bg-[#ED775A] border-none hover:bg-[#eb6b4b] shadow-none text-sm"
                                         onClick={() => {
                                             // Open checkout page in a new tab with product ID and quantity
-                                            window.open(`/pages/checkout/?productId=${currentProduct.id}&qty=${qty}`, '_blank');
+                                            // If product has variants, include the selected variant ID
+                                            let url = `/pages/checkout/?productId=${currentProduct.id}&qty=${qty}`;
+                                            if (currentProduct.variants && currentProduct.variants.length > 0 && selectedVariant) {
+                                                url += `&variantId=${selectedVariant.id}`;
+                                            }
+                                            window.open(url, '_blank');
                                         }}
+                                        disabled={currentProduct.variants && currentProduct.variants.length > 0 && !selectedVariant}
                                     >
                                         Checkout
                                     </button>
                                     <button className="btn bg-white w-1/4 shadow-none text-[#ED775A] border hover:bg-gray-100 border-[#ED775A] hover:border-[#eb6b4b] hover:text-[#ED775A]"
                                         onClick={async () => {
+                                            // If product has variants, ensure a variant is selected
+                                            if (currentProduct.variants && currentProduct.variants.length > 0 && !selectedVariant) {
+                                                await Swal.fire({
+                                                    icon: 'warning',
+                                                    title: 'Varian Belum Dipilih',
+                                                    text: 'Silakan pilih varian produk terlebih dahulu.',
+                                                });
+                                                return;
+                                            }
+
                                             try {
                                                 // Fetch current cart from backend to ensure we have the latest state
                                                 const currentCartResponse = await fetchCart();
                                                 const currentCart = currentCartResponse.cart || {};
 
                                                 // Calculate the new cart state based on current backend state
-                                                const currentProductQty = currentCart[currentProduct.id] || 0;
-                                                const newProductQty = currentProductQty + qty;
+                                                let cartItemKey;
+                                                let cartItemText;
+
+                                                // Use a combination of productId and variantId as the key if variants exist
+                                                if (currentProduct.variants && currentProduct.variants.length > 0 && selectedVariant) {
+                                                    cartItemKey = `${currentProduct.id}_${selectedVariant.id}`;
+                                                    cartItemText = `${currentProduct.name} (${qty} pcs) - ${selectedVariant.variant}`;
+                                                } else {
+                                                    // Use just the product ID if no variants exist
+                                                    cartItemKey = `${currentProduct.id}`;
+                                                    cartItemText = `${currentProduct.name} (${qty} pcs)`;
+                                                }
+
+                                                const currentCartItemQty = currentCart[cartItemKey] || 0;
+                                                const newCartItemQty = currentCartItemQty + qty;
 
                                                 // Prepare the updated cart to send to backend
                                                 const updatedCart = {
                                                     ...currentCart,
-                                                    [currentProduct.id]: newProductQty
+                                                    [cartItemKey]: newCartItemQty
                                                 };
 
                                                 // Send updated cart to backend
                                                 await addToCartAPI({ cart: updatedCart });
 
                                                 // Then update Redux state to match
-                                                if (currentProductQty > 0) {
-                                                    // Product exists, increase quantity by qty amount
-                                                    for (let i = 0; i < qty; i++) {
-                                                        dispatch(increaseQuantity({ productId: currentProduct.id }));
-                                                    }
-                                                } else {
-                                                    // Product doesn't exist, add new item
-                                                    dispatch(addToCart({
-                                                        productId: currentProduct.id,
+                                                if (currentCartItemQty > 0) {
+                                                    // Item exists, increase quantity by qty amount
+                                                    dispatch(increaseQuantity({
+                                                        productId: cartItemKey,
                                                         quantity: qty
                                                     }));
+                                                } else {
+                                                    // Item doesn't exist, add new item
+                                                    const cartItemData = {
+                                                        productId: cartItemKey,
+                                                        quantity: qty,
+                                                        product: currentProduct
+                                                    };
+
+                                                    // Include variant info only if variants exist
+                                                    if (currentProduct.variants && currentProduct.variants.length > 0 && selectedVariant) {
+                                                        cartItemData.variant = selectedVariant;
+                                                    }
+
+                                                    dispatch(addToCart(cartItemData));
                                                 }
 
                                                 await Swal.fire({
                                                     icon: 'success',
                                                     title: 'Berhasil',
-                                                    text: `${currentProduct.name} (${qty} pcs) berhasil ditambahkan ke keranjang!`,
+                                                    text: `${cartItemText} berhasil ditambahkan ke keranjang!`,
                                                     timer: 2000,
                                                     showConfirmButton: false
                                                 });
@@ -828,6 +922,7 @@ export default function ProductPage() {
                                                 });
                                             }
                                         }}
+                                        disabled={currentProduct.variants && currentProduct.variants.length > 0 && !selectedVariant}
                                     >
                                         <FiShoppingCart className="w-5" />
                                     </button>

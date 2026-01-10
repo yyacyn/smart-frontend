@@ -322,6 +322,22 @@ export default function OrderPage() {
                                                                 <p className="text-xs text-gray-500">
                                                                     Qty: {item.quantity || 1} × Rp{(item.product?.price || item.price || 0).toLocaleString("id-ID")}
                                                                 </p>
+                                                                {item.variant && (
+                                                                    <p className="text-xs text-gray-600">
+                                                                        Varian: {item.variant.variant}
+                                                                    </p>
+                                                                )}
+                                                                {item.variantId && !item.variant && item.product?.variants && (
+                                                                    // If we have variantId but no variant object, find the variant by ID
+                                                                    (() => {
+                                                                        const variant = item.product.variants.find(v => v.id === item.variantId);
+                                                                        return variant ? (
+                                                                            <p className="text-xs text-gray-600">
+                                                                                Varian: {variant.variant}
+                                                                            </p>
+                                                                        ) : null;
+                                                                    })()
+                                                                )}
                                                             </div>
                                                         </div>
                                                     ))

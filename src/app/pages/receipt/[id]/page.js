@@ -30,35 +30,59 @@ export default function ReceiptPage() {
             setError("");
 
             try {
-                // Check if orders are already cached
-                let orders = cachedOrders;
+                // Try to fetch the specific order by ID
+                const token = await getToken();
 
-                if (!orders) {
-                    const token = await getToken();
-                    const response = await fetchOrders(token);
-                    orders = response.orders || response;
+                // Attempt to fetch the specific order directly
+                try {
+                    const orderResponse = await fetchOrderById(id, token);
+                    const orderDetail = orderResponse.order || orderResponse;
 
-                    // Cache the orders for future use
-                    setCachedOrders(orders);
-                }
+                    if (orderDetail) {
+                        setOrder(orderDetail);
 
-                // Find the order with the matching ID
-                const orderDetail = orders.find(order => order.id === id);
-
-                if (orderDetail) {
-                    setOrder(orderDetail);
-
-                    // If store information is not available in the order, fetch it separately
-                    if (!orderDetail.store && orderDetail.storeId) {
-                        try {
-                            const storeResponse = await fetchStoreById(orderDetail.storeId, await getToken());
-                            setStore(storeResponse.store || storeResponse);
-                        } catch (storeErr) {
-                            console.error("Error fetching store:", storeErr);
+                        // If store information is not available in the order, fetch it separately
+                        if (!orderDetail.store && orderDetail.storeId) {
+                            try {
+                                const storeResponse = await fetchStoreById(orderDetail.storeId, await getToken());
+                                setStore(storeResponse.store || storeResponse);
+                            } catch (storeErr) {
+                                console.error("Error fetching store:", storeErr);
+                            }
                         }
+                    } else {
+                        setError("Pesanan tidak ditemukan");
                     }
-                } else {
-                    setError("Pesanan tidak ditemukan");
+                } catch (specificOrderErr) {
+                    // If direct fetch fails, fall back to fetching all orders and finding by ID
+                    let orders = cachedOrders;
+
+                    if (!orders) {
+                        const response = await fetchOrders(token);
+                        orders = response.orders || response;
+
+                        // Cache the orders for future use
+                        setCachedOrders(orders);
+                    }
+
+                    // Find the order with the matching ID
+                    const orderDetail = orders.find(order => order.id === id);
+
+                    if (orderDetail) {
+                        setOrder(orderDetail);
+
+                        // If store information is not available in the order, fetch it separately
+                        if (!orderDetail.store && orderDetail.storeId) {
+                            try {
+                                const storeResponse = await fetchStoreById(orderDetail.storeId, await getToken());
+                                setStore(storeResponse.store || storeResponse);
+                            } catch (storeErr) {
+                                console.error("Error fetching store:", storeErr);
+                            }
+                        }
+                    } else {
+                        setError("Pesanan tidak ditemukan");
+                    }
                 }
             } catch (err) {
                 console.error("Error fetching orders:", err);
@@ -283,7 +307,25 @@ export default function ReceiptPage() {
                                                 order.orderItems.map((item, index) => (
                                                     <tr key={item.productId || index}>
                                                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                            {item.product?.name || `Produk #${item.productId}`}
+                                                            <div>
+                                                                {item.product?.name || `Produk #${item.productId}`}
+                                                                {item.variant && (
+                                                                    <div className="text-xs text-gray-500">
+                                                                        Varian: {item.variant.variant}
+                                                                    </div>
+                                                                )}
+                                                                {item.variantId && !item.variant && item.product?.variants && (
+                                                                    // If we have variantId but no variant object, find the variant by ID
+                                                                    (() => {
+                                                                        const variant = item.product.variants.find(v => v.id === item.variantId);
+                                                                        return variant ? (
+                                                                            <div className="text-xs text-gray-500">
+                                                                                Varian: {variant.variant}
+                                                                            </div>
+                                                                        ) : null;
+                                                                    })()
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                                             {item.quantity || 1}

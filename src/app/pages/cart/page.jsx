@@ -66,10 +66,38 @@ export default function CartPage() {
     useEffect(() => {
         if (Array.isArray(products) && products.length > 0 && cartItems && typeof cartItems === 'object') {
             const array = [];
-            for (const [id, qty] of Object.entries(cartItems)) {
-                const product = products.find((p) => String(p.id) === String(id));
-                if (product) array.push({ ...product, quantity: qty });
+
+            for (const [productId, qtyOrVariants] of Object.entries(cartItems)) {
+                const product = products.find((p) => String(p.id) === String(productId));
+
+                if (!product) continue;
+
+                // Check if this is a variant product (value is an object) or regular product (value is a number)
+                if (typeof qtyOrVariants === 'object' && qtyOrVariants !== null) {
+                    // Product with variants: {variantId: quantity}
+                    for (const [variantId, quantity] of Object.entries(qtyOrVariants)) {
+                        // Find the variant info from the product's variants array
+                        const variantInfo = product.variants?.find((v) => String(v.id) === String(variantId));
+
+                        array.push({
+                            ...product,
+                            quantity: quantity,
+                            selectedVariant: variantInfo || { id: variantId, variant: 'Unknown Variant' },
+                            // Create unique ID for cart item (needed for selection/deletion)
+                            cartItemId: `${productId}_${variantId}`
+                        });
+                    }
+                } else {
+                    // Regular product without variants
+                    array.push({
+                        ...product,
+                        quantity: qtyOrVariants,
+                        selectedVariant: null,
+                        cartItemId: productId
+                    });
+                }
             }
+
             setCartArray(array);
         } else {
             setCartArray([]);
@@ -95,7 +123,7 @@ export default function CartPage() {
     const toggleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-        setSelectedItems(newSelectAll ? cartArray.map((item) => item.id) : []);
+        setSelectedItems(newSelectAll ? cartArray.map((item) => item.cartItemId) : []);
     };
 
     const calculatePrice = (item) => item.price || item.harga || 0;
@@ -201,14 +229,14 @@ export default function CartPage() {
                                     </div>
                                 ) : (
                                     filteredCartItems.map((item) => (
-                                        <div key={item.id} className="p-4">
+                                        <div key={item.cartItemId} className="p-4">
                                             <div className="flex flex-col sm:flex-row items-start gap-4">
                                                 {/* Checkbox */}
                                                 <input
                                                     type="checkbox"
                                                     className="checkbox checkbox-sm border-gray-400 sm:mt-4 text-black"
-                                                    checked={selectedItems.includes(item.id)}
-                                                    onChange={() => toggleItemSelection(item.id)}
+                                                    checked={selectedItems.includes(item.cartItemId)}
+                                                    onChange={() => toggleItemSelection(item.cartItemId)}
                                                 />
 
                                                 <div className="flex gap-4 flex-1 w-full">
@@ -228,6 +256,7 @@ export default function CartPage() {
                                                         </h3>
                                                         <p className="text-xs text-gray-500 mb-1">
                                                             {item.store?.name || `Toko #${item.store_id}`}
+                                                            {item.selectedVariant && ` • ${item.selectedVariant.variant}`}
                                                         </p>
 
                                                         <div className="flex items-center gap-2 mb-3">
@@ -242,7 +271,7 @@ export default function CartPage() {
                                                                 <button
                                                                     onClick={() =>
                                                                         dispatch(
-                                                                            decreaseQuantity({ productId: item.id })
+                                                                            decreaseQuantity({ productId: item.cartItemId })
                                                                         )
                                                                     }
                                                                     className="px-3 py-2 hover:bg-gray-100 text-gray-600 disabled:opacity-40"
@@ -256,7 +285,7 @@ export default function CartPage() {
                                                                 <button
                                                                     onClick={() =>
                                                                         dispatch(
-                                                                            increaseQuantity({ productId: item.id })
+                                                                            increaseQuantity({ productId: item.cartItemId })
                                                                         )
                                                                     }
                                                                     className="px-3 py-2 hover:bg-gray-100 text-gray-600 disabled:opacity-40"
@@ -267,7 +296,7 @@ export default function CartPage() {
 
                                                             <button
                                                                 onClick={() =>
-                                                                    dispatch(deleteItemFromCart({ productId: item.id }))
+                                                                    dispatch(deleteItemFromCart({ productId: item.cartItemId }))
                                                                 }
                                                                 className="text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors rounded-full p-2"
                                                                 title="Hapus produk"
@@ -284,7 +313,7 @@ export default function CartPage() {
                                                         <button
                                                             onClick={() =>
                                                                 dispatch(
-                                                                    decreaseQuantity({ productId: item.id })
+                                                                    decreaseQuantity({ productId: item.cartItemId })
                                                                 )
                                                             }
                                                             className="px-3 py-1 hover:bg-gray-100 text-gray-600 disabled:opacity-40"
@@ -298,7 +327,7 @@ export default function CartPage() {
                                                         <button
                                                             onClick={() =>
                                                                 dispatch(
-                                                                    increaseQuantity({ productId: item.id })
+                                                                    increaseQuantity({ productId: item.cartItemId })
                                                                 )
                                                             }
                                                             className="px-3 py-1 hover:bg-gray-100 text-gray-600 disabled:opacity-40"
@@ -309,7 +338,7 @@ export default function CartPage() {
 
                                                     <button
                                                         onClick={() =>
-                                                            dispatch(deleteItemFromCart({ productId: item.id }))
+                                                            dispatch(deleteItemFromCart({ productId: item.cartItemId }))
                                                         }
                                                         className="text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors rounded-full p-2"
                                                         title="Hapus produk"

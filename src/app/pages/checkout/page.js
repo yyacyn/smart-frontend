@@ -92,12 +92,19 @@ export default function CheckoutPage() {
                 const searchParams = new URLSearchParams(window.location.search);
                 const productId = searchParams.get('productId');
                 const qty = parseInt(searchParams.get('qty')) || 1;
+                const variantId = searchParams.get('variantId');
                 const cartItems = searchParams.get('cartItems');
 
                 // Handle single product checkout (from product detail page)
                 if (productId) {
                     const item = productsData.find(p => p.id == productId);
                     if (item) {
+                        // If there's a variant ID, find the specific variant
+                        let selectedVariant = null;
+                        if (variantId && item.variants && item.variants.length > 0) {
+                            selectedVariant = item.variants.find(v => v.id == variantId);
+                        }
+
                         const normalizedItem = {
                             id: item.id,
                             name: item.name,
@@ -106,6 +113,12 @@ export default function CheckoutPage() {
                             store_id: item.store?.id,
                             quantity: qty
                         };
+
+                        // Add variant information if available
+                        if (selectedVariant) {
+                            normalizedItem.variant = selectedVariant;
+                        }
+
                         setSelectedItems([normalizedItem]);
                         return;
                     }
@@ -113,17 +126,55 @@ export default function CheckoutPage() {
 
                 // Handle multiple items checkout (from cart page)
                 if (cartItems) {
-                    const itemIds = cartItems.split(',').map(id => id);
-                    const selectedCartItems = productsData.filter(item => itemIds.includes(item.id));
+                    const itemIds = cartItems.split(',');
+                    const selectedCartItems = [];
+
+                    for (const itemId of itemIds) {
+                        // Check if itemId is in the new format: productId_variantId
+                        if (itemId.includes('_')) {
+                            const [productId, variantId] = itemId.split('_', 2);
+
+                            // Find the product
+                            const product = productsData.find(p => p.id == productId);
+                            if (product) {
+                                // Find the specific variant
+                                const variant = product.variants?.find(v => v.id == variantId);
+
+                                // Create normalized item with variant info
+                                const normalizedItem = {
+                                    id: itemId, // Use the combined ID
+                                    name: product.name,
+                                    image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : "/images/default.png",
+                                    price: product.price,
+                                    store_id: product.store?.id,
+                                    quantity: 1
+                                };
+
+                                // Add variant info if available
+                                if (variant) {
+                                    normalizedItem.variant = variant;
+                                }
+
+                                selectedCartItems.push(normalizedItem);
+                            }
+                        } else {
+                            // Old format: just productId
+                            const product = productsData.find(p => p.id == itemId);
+                            if (product) {
+                                selectedCartItems.push({
+                                    id: product.id,
+                                    name: product.name,
+                                    image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : "/images/default.png",
+                                    price: product.price,
+                                    store_id: product.store?.id,
+                                    quantity: 1
+                                });
+                            }
+                        }
+                    }
+
                     if (selectedCartItems.length > 0) {
-                        setSelectedItems(selectedCartItems.map(item => ({
-                            id: item.id,
-                            name: item.name,
-                            image: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : "/images/default.png",
-                            price: item.price,
-                            store_id: item.store?.id,
-                            quantity: 1
-                        })));
+                        setSelectedItems(selectedCartItems);
                         return;
                     }
                 }
@@ -340,11 +391,20 @@ export default function CheckoutPage() {
             // Prepare order data - match backend expectations exactly
             const orderData = {
                 addressId: selectedAddressId,
-                items: validItems.map(item => ({
-                    id: item.id,  // Backend uses item.id to find product and get productId
-                    quantity: item.quantity
-                    // Don't send price - backend will get it from product lookup
-                })),
+                items: validItems.map(item => {
+                    // Extract productId from the item.id which might be in format "productId_variantId"
+                    let productId = item.id;
+                    if (item.id.includes('_')) {
+                        productId = item.id.split('_')[0];
+                    }
+
+                    return {
+                        id: productId,  // Backend uses item.id to find product and get productId
+                        quantity: item.quantity,
+                        // Include variantId if available
+                        ...(item.variant && { variantId: item.variant.id })
+                    };
+                }),
                 paymentMethod: paymentMethodMap[paymentMethod] || 'BANK_TRANSFER' // Use BANK_TRANSFER as fallback
                 // Don't send userId, storeId, couponCode if null - let backend handle it
             };
@@ -646,6 +706,9 @@ export default function CheckoutPage() {
                                         <p className="font-medium text-sm text-gray-900 truncate">{item.name}</p>
                                         <p className="text-xs text-gray-500">{getStoreName(item.store_id, products)}</p>
                                         <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                                        {item.variant && (
+                                            <p className="text-xs text-gray-600">Varian: {item.variant.variant}</p>
+                                        )}
                                     </div>
                                     <div className="text-right">
                                         <p className="font-medium text-sm text-[#ED775A]">

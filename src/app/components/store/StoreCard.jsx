@@ -12,7 +12,7 @@ export default function StoreCard({ store }) {
         <div>
             <Link href={`/pages/store/${store.id}`}>
                 <div className="card bg-white border border-gray-200 rounded-lg hover:cursor-pointer hover:-translate-y-1 transition-transform duration-200">
-                    <figure className="relative w-full h-40 overflow-hidden rounded-t-lg bg-gray-100">
+                    <figure className="relative w-full h-50 overflow-hidden rounded-t-lg bg-gray-100">
                         <Image
                             width={500}
                             height={500}
@@ -20,18 +20,18 @@ export default function StoreCard({ store }) {
                             alt={store.name || "Store logo"}
                             className="w-full h-full object-cover"
                         />
-                        {store.status && (
+                        {/* {store.status && (
                             <div className={`badge absolute top-1.5 right-1.5 text-[10px] py-0.5 px-1.5 ${store.status === 'approved'
                                     ? 'bg-green-100 text-green-700 border-none'
                                     : 'bg-yellow-100 text-yellow-700 border-none'
                                 }`}>
                                 {store.status}
                             </div>
-                        )}
+                        )} */}
                     </figure>
 
-                    <div className="card-body px-2 py-2">
-                        <h2 className="card-title text-xs font-semibold text-gray-800 truncate leading-tight">
+                    <div className="card-body px-2 py-2 gap-1">
+                        <h2 className="card-title text-sm font-semibold text-gray-800 truncate leading-tight">
                             {store.name}
                         </h2>
                         {store.username && (
